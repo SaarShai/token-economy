@@ -1,0 +1,64 @@
+# Benchmark registry — datasets for evaluating our tools.
+# Each entry: what it tests, where to get it, how to adapt.
+# Adapters emit uniform eval-item schema: {id, context, question, answer, type, meta}
+
+datasets:
+  squad_v2:
+    source: hf
+    id: rajpurkar/squad_v2
+    split: validation
+    tests: [comcom]
+    type: extractive_qa
+    ctx_tokens: 100-800
+    notes: "Short-context extractive QA. Noise floor ≈2.6/3 on phi4."
+
+  coqa:
+    source: kaggle
+    id: jeromeblanchet/conversational-question-answering-dataset-coqa
+    file: coqa-dev-v1.0.json
+    tests: [comcom, context-keeper]
+    type: multiturn_qa
+    ctx_tokens: 300-1500
+    notes: "Multi-turn QA. Each conversation has prior Q&A — tests context growth, good for compaction stress."
+
+  sciq:
+    source: kaggle
+    id: thedevastator/sciq-a-dataset-for-science-question-answering
+    tests: [comcom]
+    type: multiple_choice
+    ctx_tokens: 50-300
+    notes: "Short science MCQ. Domain shift from SQuAD."
+
+  code_refactoring_120k:
+    source: kaggle
+    id: mirzayasirabdullah07/code-smells-and-refactoring-dataset-120k
+    file: code_smells_refactoring_dataset_120k.csv
+    tests: [never]
+    type: metadata_only
+    notes: "REJECTED — metadata only, no before/after code bodies. Use code_bug_fix_pairs instead."
+
+  code_bug_fix_pairs:
+    source: kaggle
+    id: shamimhasan8/python-code-bug-and-fix-pairs
+    file: code_bug_fix_pairs.csv
+    tests: [semdiff]
+    type: code_edit_pairs
+    notes: "Python bug+fix snippets. Small contexts but real before/after. Use for semdiff diff-reconstruction eval."
+
+  bbc_news:
+    source: kaggle
+    id: pariza/bbc-news-summary
+    tests: [comcom]
+    type: summarization
+    ctx_tokens: 300-1500
+    notes: "Long-article summarization. Tests fact retention under heavy compression."
+
+  longbench:
+    source: hf
+    id: THUDM/LongBench
+    subset: narrativeqa
+    split: test
+    tests: [comcom]
+    type: long_context_qa
+    ctx_tokens: 5000-30000
+    notes: "Long-context QA. Primary target for compression on large inputs."
