@@ -146,9 +146,29 @@ def llmlingua_compress(text, rate=0.5):
 
 
 def compress(context: str, question: str | None = None, rate: float = 0.5,
-             drop_articles: bool = True) -> tuple[str, dict]:
-    """Main library entry. Returns (compressed_text, stats)."""
+             drop_articles: bool = True, respect_skip: bool = True) -> tuple[str, dict]:
+    """Main library entry. Returns (compressed_text, stats).
+
+    If respect_skip=True (default), consults skip_detector first and returns
+    original context on skip flags (dense numeric, short text, etc). Prevents
+    destructive compression on content types where compression loses facts.
+    """
     orig = context
+
+    if respect_skip:
+        try:
+            from skip_detector import should_compress
+            decision = should_compress(orig)
+            if decision.get("skip"):
+                enc = tiktoken.get_encoding("cl100k_base")
+                toks = len(enc.encode(orig))
+                return orig, {"orig_tok": toks, "after_caveman": toks,
+                              "after_critprotect": toks, "after_llmlingua": toks,
+                              "final": toks, "critical_sentences": 0,
+                              "rate": 1.0, "savings": 0.0,
+                              "skipped": True, "skip_reason": decision.get("reason", "")}
+        except Exception:
+            pass  # best-effort; fall through to normal compress
 
     # Stage 1: caveman
     s1 = caveman_prose(orig, drop_articles=drop_articles)
