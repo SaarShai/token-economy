@@ -2,6 +2,12 @@
 
 Catalog. Read this + schema.md first. Grep folders for topic. Load only matched pages.
 
+## For other agents
+- [[AGENT_ONBOARDING]] — **master install guide**: point any agent at this file
+
+## Framework
+- [[concepts/optimization-axes]] — 7 axes, tool mappings, gap analysis
+
 ## Concepts (techniques)
 - [[concepts/caveman-output-compression]] — terse output style, 65% savings
 - [[concepts/caveman-compress-session-files]] — rewrite CLAUDE.md etc, 46% avg
