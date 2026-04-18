@@ -36,6 +36,13 @@ Seven axes. Every tool in this repo declares which axis it targets (frontmatter 
 | eval-v3/v4 harnesses | F. measurement | SQuAD+CoQA |
 | [[projects/skill-crystallizer/README\|skill-crystallizer]] | G. skill_crystallization | skeleton |
 
+## Governance axis (meta — cuts across all 7)
+
+| concept | see |
+|---|---|
+| Wiki frontmatter + supersession + hooks | [[concepts/wiki-governance]] |
+| Karpathy wiki spinoffs surveyed | [[raw/2026-04-18-karpathy-wiki-spinoffs]] |
+
 ## Borrowed patterns (external → our axes)
 
 | source | idea | axis | applied to |
