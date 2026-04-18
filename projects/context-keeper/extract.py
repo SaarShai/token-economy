@@ -60,13 +60,32 @@ def extract_text(content):
 
 
 def regex_extract(events):
-    """Fast regex pass over all text. Returns dict of lists."""
+    """Fast regex pass over all text. Returns dict of {item: confidence_score}.
+
+    Confidence heuristics:
+      - files_created (from Write tool success): 0.95
+      - commands_run (from Bash tool_use): 0.9
+      - errors_seen (exact string in tool_result): 0.85
+      - files_touched (regex path match): 0.7
+      - user_goals (imperative match): 0.8
+      - numbers (NUM_RE): 0.6
+      - urls: 0.95
+      - failed_attempts (fuzzy): 0.5
+    """
     out = defaultdict(list)
     seen = defaultdict(set)
+    confidence = defaultdict(dict)  # item_key -> {value: score}
+
+    KEY_CONF = {
+        "files_created": 0.95, "files_touched": 0.70, "commands_run": 0.90,
+        "errors_seen": 0.85, "user_goals": 0.80, "numbers": 0.60,
+        "urls": 0.95, "failed_attempts": 0.50,
+    }
 
     def add(key, val, limit=50):
         if val in seen[key] or len(seen[key]) >= limit: return
         seen[key].add(val); out[key].append(val)
+        confidence[key][val] = KEY_CONF.get(key, 0.5)
 
     user_goals = []
     last_user_idx = -1
@@ -121,7 +140,9 @@ def regex_extract(events):
         for m in re.finditer(r"[^.!?\n]{10,150}(?:didn't work|doesn't work|not work|broke|broken|bug|wrong|mismatch|incompat)[^.!?\n]{0,150}", text, re.I):
             add("failed_attempts", m.group(0).strip()[:200], limit=20)
 
-    return dict(out)
+    result = dict(out)
+    result["_confidence"] = {k: dict(v) for k, v in confidence.items()}
+    return result
 
 
 def llm_extract(events, model="gemma4:31b"):
@@ -181,13 +202,19 @@ def render_markdown(regex_out, llm_out, session_id, transcript_path):
         "",
     ]
 
-    def section(title, items, fmt=lambda x: f"- {x}"):
+    conf_map = regex_out.get("_confidence", {})
+
+    def section(title, items, fmt=lambda x, c: f"- {x}" + (f"  `{c:.2f}`" if c < 0.9 else ""),
+                 section_key=None):
         if not items: return
         lines.append(f"## {title}")
-        for it in items: lines.append(fmt(it))
+        kc = conf_map.get(section_key or "", {}) if section_key else {}
+        for it in items:
+            c = kc.get(it, 1.0)
+            lines.append(fmt(it, c))
         lines.append("")
 
-    section("User goals", regex_out.get("user_goals", []))
+    section("User goals", regex_out.get("user_goals", []), section_key="user_goals")
 
     if llm_out and not llm_out.get("_error"):
         dec = llm_out.get("decisions", [])
@@ -208,12 +235,14 @@ def render_markdown(regex_out, llm_out, session_id, transcript_path):
             for n in ns: lines.append(f"- {n}")
             lines.append("")
 
-    section("Files created", regex_out.get("files_created", []))
-    section("Files touched", regex_out.get("files_touched", [])[:40])
-    section("Commands run", regex_out.get("commands_run", []), fmt=lambda x: f"- `{x}`")
-    section("Errors seen", regex_out.get("errors_seen", []))
-    section("Key numbers", regex_out.get("numbers", []))
-    section("URLs", regex_out.get("urls", []))
+    section("Files created", regex_out.get("files_created", []), section_key="files_created")
+    section("Files touched", regex_out.get("files_touched", [])[:40], section_key="files_touched")
+    section("Commands run", regex_out.get("commands_run", []),
+            fmt=lambda x, c: f"- `{x}`" + (f"  `{c:.2f}`" if c < 0.9 else ""),
+            section_key="commands_run")
+    section("Errors seen", regex_out.get("errors_seen", []), section_key="errors_seen")
+    section("Key numbers", regex_out.get("numbers", []), section_key="numbers")
+    section("URLs", regex_out.get("urls", []), section_key="urls")
     if regex_out.get("failed_attempts") and not (llm_out and llm_out.get("failed_attempts")):
         section("Failure signals (regex)", regex_out.get("failed_attempts", []))
 

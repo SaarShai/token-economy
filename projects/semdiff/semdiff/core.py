@@ -76,8 +76,26 @@ def _node_name(node, source: bytes, kind_map) -> Optional[str]:
     return source[child.start_byte:child.end_byte].decode("utf-8", "replace")
 
 
-def extract_nodes(source: bytes, lang: str) -> list[Node]:
-    """Walk AST, extract top-level + nested definitions with qualified names."""
+_COMMENT_RE = {
+    "python": b"#[^\n]*",
+    "javascript": b"//[^\n]*|/\\*[\\s\\S]*?\\*/",
+    "typescript": b"//[^\n]*|/\\*[\\s\\S]*?\\*/",
+    "rust": b"//[^\n]*|/\\*[\\s\\S]*?\\*/",
+}
+
+def _strip_comments(body: bytes, lang: str) -> bytes:
+    import re as _re
+    pat = _COMMENT_RE.get(lang)
+    if not pat: return body
+    return _re.sub(pat, b"", body).strip()
+
+
+def extract_nodes(source: bytes, lang: str, ignore_comments: bool = False) -> list[Node]:
+    """Walk AST, extract top-level + nested definitions with qualified names.
+
+    If ignore_comments=True, hash is computed on comment-stripped body so that
+    comment-only edits don't register as changes.
+    """
     parser = get_parser(lang)
     tree = parser.parse(source)
     kind_map = LANG_NODES[lang]
@@ -90,7 +108,8 @@ def extract_nodes(source: bytes, lang: str) -> list[Node]:
                 if nm:
                     qname = f"{prefix}{nm}" if prefix else nm
                     body = source[child.start_byte:child.end_byte]
-                    h = hashlib.sha1(body).hexdigest()[:12]
+                    hash_body = _strip_comments(body, lang) if ignore_comments else body
+                    h = hashlib.sha1(hash_body).hexdigest()[:12]
                     out.append(Node(
                         name=qname, kind=child.type,
                         start=child.start_byte, end=child.end_byte,
@@ -109,15 +128,29 @@ def extract_nodes(source: bytes, lang: str) -> list[Node]:
     return out
 
 
-def snapshot(path: str | Path) -> dict[str, str]:
+def snapshot(path: str | Path, ignore_comments: bool = False) -> dict[str, str]:
     """{qualified_name → hash} for a file. Used for diff baseline."""
     path = Path(path)
     lang = detect_lang(path)
     if not lang:
         raise ValueError(f"unsupported extension: {path.suffix}")
     source = path.read_bytes()
-    nodes = extract_nodes(source, lang)
+    nodes = extract_nodes(source, lang, ignore_comments=ignore_comments)
     return {n.name: n.hash for n in nodes}
+
+
+def snapshot_full(path: str | Path, ignore_comments: bool = False) -> dict[str, dict]:
+    """Extended snapshot: {qname: {hash, body_b64}}. Used when rename detection is desired."""
+    import base64
+    path = Path(path)
+    lang = detect_lang(path)
+    if not lang:
+        raise ValueError(f"unsupported extension: {path.suffix}")
+    source = path.read_bytes()
+    nodes = extract_nodes(source, lang, ignore_comments=ignore_comments)
+    return {n.name: {"hash": n.hash,
+                      "body": base64.b64encode(n.source).decode("ascii")}
+            for n in nodes}
 
 
 def render_diff(path: str | Path, prev: dict[str, str]) -> tuple[str, dict]:
@@ -133,14 +166,48 @@ def render_diff(path: str | Path, prev: dict[str, str]) -> tuple[str, dict]:
     curr = {n.name: n.hash for n in nodes}
     by_name = {n.name: n for n in nodes}
 
-    added = [n for n in curr if n not in prev]
-    removed = [n for n in prev if n not in curr]
-    changed = [n for n in curr if n in prev and curr[n] != prev[n]]
-    unchanged = [n for n in curr if n in prev and curr[n] == prev[n]]
+    # Backward-compat: prev may be {name: hash} OR {name: {hash, body}}.
+    def _prev_hash(v): return v["hash"] if isinstance(v, dict) else v
+    prev_hashes = {k: _prev_hash(v) for k, v in prev.items()}
+
+    added = [n for n in curr if n not in prev_hashes]
+    removed = [n for n in prev_hashes if n not in curr]
+    changed = [n for n in curr if n in prev_hashes and curr[n] != prev_hashes[n]]
+    unchanged = [n for n in curr if n in prev_hashes and curr[n] == prev_hashes[n]]
+
+    # Rename detection: if prev has bodies, try to match added↔removed by body similarity.
+    renames = []
+    if added and removed and any(isinstance(v, dict) and "body" in v for v in prev.values()):
+        try:
+            import base64
+            from .rename_detect import detect_renames
+            prev_snap_short = {k: _prev_hash(v) for k, v in prev.items() if k in removed}
+            curr_snap_short = {n.name: n.hash for n in nodes if n.name in added}
+            prev_bodies = {k: base64.b64decode(v["body"])
+                            for k, v in prev.items() if isinstance(v, dict) and "body" in v and k in removed}
+            curr_bodies = {n.name: n.source for n in nodes if n.name in added}
+            rename_results = detect_renames(prev_snap_short, curr_snap_short, prev_bodies, curr_bodies)
+            # Strong-confidence renames only (≥0.7 per lib threshold)
+            for old_name, new_name, conf in rename_results:
+                if conf >= 0.7:
+                    renames.append((old_name, new_name, conf))
+            # remove renamed names from added/removed
+            renamed_old = {o for o, _, _ in renames}
+            renamed_new = {n for _, n, _ in renames}
+            added = [n for n in added if n not in renamed_new]
+            removed = [n for n in removed if n not in renamed_old]
+        except Exception:
+            pass  # rename detection is best-effort
 
     lines = [f"// semdiff: {path} (lang={lang}, diff-since-last-read)"]
-    lines.append(f"// summary: +{len(added)} ~{len(changed)} -{len(removed)} ={len(unchanged)}")
+    lines.append(f"// summary: +{len(added)} ~{len(changed)} -{len(removed)} ={len(unchanged)} "
+                 f"(renamed: {len(renames)})")
     lines.append("")
+
+    for old_name, new_name, conf in renames:
+        lines.append(f"// [renamed: {old_name} → {new_name}  conf={conf:.2f}]")
+    if renames:
+        lines.append("")
 
     for nm in removed:
         lines.append(f"// [removed: {nm}]")
@@ -195,6 +262,7 @@ def render_diff(path: str | Path, prev: dict[str, str]) -> tuple[str, dict]:
     meta = {
         "added": added, "removed": removed,
         "changed": changed, "unchanged": unchanged,
+        "renamed": renames,
         "lang": lang, "node_count": len(nodes),
     }
     return "\n".join(lines), meta
@@ -211,12 +279,11 @@ def read_smart(path: str | Path, session_id: str, cache_dir: Optional[Path] = No
 
     if prev is None:
         source = path.read_bytes().decode("utf-8", "replace")
-        cache.set(str(path), snapshot(path))
+        cache.set(str(path), snapshot_full(path))  # store bodies for future rename detection
         return source, {"mode": "full", "reason": "first-read"}
 
     rendered, meta = render_diff(path, prev)
-    # update snapshot
-    cache.set(str(path), {n: h for n, h in [(k, prev[k]) for k in meta["unchanged"]]
-                           + [(k, snapshot(path)[k]) for k in meta["changed"] + meta["added"]]})
+    # rewrite snapshot fully (simpler than incremental merge, avoids staleness)
+    cache.set(str(path), snapshot_full(path))
     meta["mode"] = "diff"
     return rendered, meta

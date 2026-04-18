@@ -17,6 +17,40 @@ Read [concepts/optimization-axes.md](concepts/optimization-axes.md) for the taxo
 
 ---
 
+## Step 1a — choose install SCOPE first
+
+Matters a lot. Wrong scope = tools installed globally when you wanted project-only (or vice versa).
+
+### MODE A — **global** (recommended: personal machine, single user)
+
+Every Claude Code session on this machine benefits. Done once.
+
+- MCP: `claude mcp add <name> --scope user -- ...`
+- Hooks: edit `~/.claude/settings.json`
+- Skills: `ln -sf /abs/path ~/.claude/skills/<name>`
+- CLI deps: `pip install ...` / `brew install ...` (system-wide)
+
+### MODE B — **project-scoped** (recommended: shared codebases, testing, per-project isolation)
+
+Only sessions opened in the project folder benefit. Tools become part of the repo.
+
+- Clone into project: `git submodule add https://github.com/SaarShai/token-economy tools/token-economy`
+- MCP: `claude mcp add <name> --scope project -- python ./tools/token-economy/.../server.py`
+  - Writes to `.claude.json` in the project.
+- Hooks: edit `./.claude/settings.json` (create if absent).
+- Skills: `ln -sf /abs/path ./.claude/skills/<name>` (project `.claude/skills/` dir).
+- CLI deps: use `pip install --target=./tools/deps` + set PYTHONPATH in hook commands.
+
+### MODE C — **session-local** (one-off testing)
+
+Just this CC session. Lost on restart.
+
+- MCP: `claude mcp add <name> --scope local -- ...`
+
+### Default in this doc
+
+Examples below default to **MODE A (global)**. For MODE B, replace `--scope user` with `--scope project` and substitute `~/.claude/settings.json` → `./.claude/settings.json`, `~/.claude/skills/` → `./.claude/skills/`.
+
 ## Step 1 — detect your client
 
 | If you're running inside | install these | skip these |
