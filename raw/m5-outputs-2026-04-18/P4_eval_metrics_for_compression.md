@@ -1,0 +1,14 @@
+---
+type: raw
+source: gemma4:26b
+date: 2026-04-18
+tags: [m5-generated, batch3]
+---
+
+Evaluating prompt compression requires a multi-dimensional framework that balances efficiency gains against semantic degradation. The most fundamental metric is the direct token count reduction, expressed as a compression ratio. This metric serves as the primary input for cost projection, where the economic utility is calculated by mapping the reduction in tokens to the specific pricing models of the target LLM (e.g., price per million tokens). Beyond monetary savings, compression evaluation must account for latency improvements and increased throughput capacity, specifically regarding the reduction in time-to-first-token (TTFT) during the prefill stage.
+
+However, token reduction is secondary to maintaining semantic integrity. To quantify this, researchers use a quality delta approach via an LLM judge. In this setup, a highly capable "judge" model (such as GPT-4o) evaluates the outputs of both the original and the compressed prompts against a fixed rubric, such as accuracy, reasoning, or semantic nuance. The metric of interest is the $\Delta\text{score}$, defined as the difference between the compressed output score and the original output score ($\text{score}_{\text{compressed}} - \text{score}_{\text{original}}$).
+
+To determine if the observed $\Delta\text{score}$ is statistically significant or merely a result of stochastic variance, one must implement a paired-bootstrap confidence interval (CI). This process involves generating a large number of resampled datasets from the paired (original, compressed) evaluation pairs. By calculating the $\Delta\text{score}$ for each bootstrap sample, a distribution of differences is formed. The $\Delta\text{score}$ CI represents the range of values within which the true performance difference resides with a specified level of confidence. Crucially, for a compression method to be claimed as "neutral"—meaning it preserves the original prompt's utility without significant degradation—the CI must straddle zero. If the interval is entirely below zero, the compression is statistically detrimental. If the interval is entirely above zero, the compression has significantly improved performance.
+
+Finally, evaluation must encompass adversarial robustness. Compression can introduce brittleness, where the removal of redundant tokens inadvertently strips away critical context or structural cues. Testing should involve injecting noise or edge-case instructions into the compressed prompt to ensure that the compression algorithm does not degrade the model's ability to handle complex, out-of-distribution inputs or instruction-following precision. A robust evaluation suite thus integrates economic projection with statistical certainty and structural stability.

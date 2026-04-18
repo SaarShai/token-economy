@@ -158,17 +158,22 @@ def compress(context: str, question: str | None = None, rate: float = 0.5,
     if respect_skip:
         try:
             from skip_detector import should_compress
-            decision = should_compress(orig)
-            if decision.get("skip"):
+            from skip_heuristics import should_compress_extended
+            # Combine both: basic + extended (version/temporal/unit/code/density).
+            d1 = should_compress(orig)
+            d2 = should_compress_extended(orig)
+            skip = d1.get("skip") or d2.get("skip")
+            reason = "; ".join(r for r in [d1.get("reason",""), d2.get("reason","")] if r)
+            if skip:
                 enc = tiktoken.get_encoding("cl100k_base")
                 toks = len(enc.encode(orig))
                 return orig, {"orig_tok": toks, "after_caveman": toks,
                               "after_critprotect": toks, "after_llmlingua": toks,
                               "final": toks, "critical_sentences": 0,
                               "rate": 1.0, "savings": 0.0,
-                              "skipped": True, "skip_reason": decision.get("reason", "")}
+                              "skipped": True, "skip_reason": reason}
         except Exception:
-            pass  # best-effort; fall through to normal compress
+            pass
 
     # Stage 1: caveman
     s1 = caveman_prose(orig, drop_articles=drop_articles)
