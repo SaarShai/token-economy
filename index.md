@@ -36,6 +36,7 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 - [[projects/compound-compression-pipeline/RESULTS]] — **ComCom** prototype, 44.5% @ ~Δ−0.25 score (SQuAD eval-v2); eval-v3 in progress
 - [[projects/semdiff/README]] — **prototype, 95.5% on large file re-read**
 - [[projects/context-keeper/README]] — **prototype, structured PreCompact memory**
+- [[projects/agents-triage/SKILL]] — **shipped, UserPromptSubmit hook + 4 subagents, installed**
 
 ## People
 - [[people/julius-brussee]] — caveman
