@@ -1,0 +1,14 @@
+---
+type: raw
+source: gemma4:26b
+date: 2026-04-19
+tags: [m5-generated, round9]
+---
+
+By 2026, the paradigm of scaling laws will have transitioned from the era of pre-training-centric expansion to the era of inference-time compute optimization. Following the architectural precedents set by OpenAI’s o1 and DeepSeek-R1, the industry will no longer view intelligence as a static property of a model’s weights, but as a dynamic variable of the computational budget allocated during the forward pass. This shift represents the move from "System 1" (intuitive, rapid response) to "System 2" (deliberative, iterative reasoning) architectures.
+
+In this 2026 landscape, the cost of inference will be decoupled from the length of the user-facing response. The primary driver of cost will be the "thinking" phase—the generation of hidden, intermediate tokens used for chain-of-thought (CoT) reasoning, self-correction, and search-based verification. In traditional LLMs, the cost is roughly linear to the number of output tokens. However, in a test-time compute-heavy regime, the "thinking" tokens act as a massive computational overhead. For complex reasoning tasks—such as formal verification, advanced mathematics, or complex software engineering—the ratio of thinking tokens to final-answer tokens will likely reach 50:1 or even 100:1.
+
+The economic breakdown of a single inference request will be split into two distinct categories: the search/verification cost and the synthesis cost. The search cost, comprising the vast majority of the FLOPs, involves the model exploring a tree of possibilities, often utilizing Monte Carlo Tree Search (MCTS) or similar iterative refinement processes. This phase is characterized by high-entropy token generation where the model evaluates multiple trajectories, identifies logical fallacies, and backtracks. The synthesis cost—the generation of the final, human-readable answer—will represent a negligible fraction of the total compute. The final answer is merely the terminal node of a highly expensive, computationally dense search process.
+
+This structural shift necessitates a new pricing model for AI services. Instead of "price per million tokens," providers will likely move toward "price per unit of reasoning depth" or "compute-on-demand" tiers. Users will choose between "Fast" models, where the cost is low and the latency is minimal, and "Deep" models, where the user pays for the model to "think" for minutes or even hours to achieve near-perfect accuracy. Consequently, the "final answer" becomes the cheapest part of the transaction; the true value—and the true cost—lies in the unseen, iterative computational labor required to arrive at that answer with certainty. The bottleneck for AI scaling in 2026 will not be the availability of more data for pre-training, but the availability of sufficient GPU cycles to sustain the massive, token-heavy reasoning chains required for high-order intelligence.
