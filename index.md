@@ -40,6 +40,8 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 
 ## Infra
 - [[raw/2026-04-20-machine-baselines]] — M1/M1B/M2 tok/s, bottlenecks, tweaks
+- [[concepts/turboquant-kv-cache]] — KV-cache compression 3.8-5.1x, installed on M2 via llama.cpp fork
+- [[raw/2026-04-20-turboquant-research]] — full subagent survey
 
 ## People
 - [[people/julius-brussee]] — caveman

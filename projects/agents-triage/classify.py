@@ -51,6 +51,11 @@ RULES = [
     # Explicit local/free/cheap hint
     (r"\b(?:cheap|local|free|no api|ollama)\b",
      "simple", "local-ollama", "local:qwen3:8b", 0.8, "explicit local hint", []),
+    # Long-context local (TurboQuant KV compression candidate)
+    (r"\b(?:long[-\s]?context|turboquant|kv[-\s]?cache|35b|70b|128k)\b",
+     "medium", "turboquant-local", "local:turboquant", 0.8,
+     "long-ctx local inference -- turboquant kv compression",
+     []),
 ]
 
 
@@ -68,7 +73,7 @@ def regex_classify(prompt: str) -> dict | None:
 OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
 
 LLM_PROMPT = """Classify this user task for an LLM agent. Output ONLY one-line JSON:
-{"tier":"simple|medium|hard","agent":"wiki-note|quick-fix|research-lite|local-ollama|triage|none","model":"haiku|sonnet|opus|local:qwen3:8b","confidence":0-1,"reason":"<15 words"}
+{"tier":"simple|medium|hard","agent":"wiki-note|quick-fix|research-lite|local-ollama|turboquant-local|triage|none","model":"haiku|sonnet|opus|local:qwen3:8b|local:turboquant","confidence":0-1,"reason":"<15 words"}
 
 Rules:
 - simple = single file edit, add note, one-line fix, factual question, summarize
