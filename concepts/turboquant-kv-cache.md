@@ -64,17 +64,51 @@ User's claim verified. TurboQuant compresses the *runtime* KV cache. Weight quan
 | **M1 Max** | WAIT | Active Qwen3.6-35B download + 32GB RAM tight. After download done, test. |
 | **M1B Max** | NO | EXO worker. Don't disrupt cluster. |
 
+## Measured on M2 (2026-04-20)
+
+| model | ctx | KV (K=q8_0 + V=turbo4) | weights | RSS |
+|---|---:|---:|---:|---:|
+| qwen3:8b Q4_K_M (dense, 36 layers) | 40K | 2.3GB | 5.0GB | — |
+| qwen3:8b Q4_K_M | 128K | 7.3GB (K=4.9 + V=2.45) | 5.0GB | 12.1GB |
+| **qwen3.6:35b Q4_K_M (MoE-A3B, 10 attn layers)** | **256K** | **2.0GB** (K=1.36 + V=0.68) | 21.1GB | **21.3GB** |
+| qwen3.6:35b Q4_K_M | 512K | 4.0GB (K=2.72 + V=1.36) | 21.1GB | 24.9GB |
+
+**MoE insight:** Qwen3.6-35B-A3B has only ~10 attention layers (rest are MoE routing). KV cache scales with attention layers, not total layers → tiny KV footprint. A 35B MoE at 512K uses less KV than an 8B dense at 128K. Sweet spot for long-context on constrained RAM.
+
+## EXO cluster (M1+M1B combined) — TurboQuant NOT available
+
+EXO pipeline uses MLX, not llama.cpp. TurboQuant via TheTom's llama.cpp fork doesn't plug into EXO. Swift MLX fork (`ekryski/mlx-swift-lm`) has turbo4v2 support but isn't wired into EXO.
+
+**Without TurboQuant on EXO**: 256K of 35B on 2×32GB exceeds feasibility (f16 KV too heavy). Practical EXO ctx for 35B stays ≤32K.
+
+**To enable TurboQuant on EXO**: patch EXO's inference path to Swift MLX fork. Non-trivial, not within "minimal diffs" constraint. Skip unless user prioritizes.
+
 ## Usage (after M2 build completes)
 
 ```bash
-~/src/llama-cpp-turboquant/build/bin/llama-server \
-  -m <path-to-Q4_K_M.gguf> \
-  -ctk q8_0 -ctv turbo4 \
-  -fa 1 -ngl 99 \
-  --port 8080
+# Use GGUF already in Ollama cache (symlinked)
+~/bin/llama-tq start ~/Library/gguf/qwen3.6-35b-q4km.gguf          # 65K default
+CTX=262144 ~/bin/llama-tq start ~/Library/gguf/qwen3.6-35b-q4km.gguf   # 256K
+CTX=524288 ~/bin/llama-tq start ~/Library/gguf/qwen3.6-35b-q4km.gguf   # 512K
+~/bin/llama-tq status
+~/bin/llama-tq test
 ```
 
-Then HTTP requests to `http://localhost:8080/v1/chat/completions` — OpenAI-compatible.
+Then HTTP requests to `http://localhost:8080/v1/chat/completions` — OpenAI-compatible. Qwen3.6 is a thinking model — responses go to `reasoning_content` until thinking ends. Use `max_tokens ≥ 500`.
+
+### Ollama GGUF reuse
+```bash
+# Find blob via manifest
+python3 -c "
+import json, os
+m = json.load(open(os.path.expanduser('~/.ollama/models/manifests/registry.ollama.ai/library/<model>/<tag>')))
+for l in m['layers']:
+    if 'model' in l.get('mediaType',''):
+        print(os.path.expanduser('~/.ollama/models/blobs/sha256-' + l['digest'].replace('sha256:', '')))
+"
+# Symlink to a nice name
+ln -sfn <blob-path> ~/Library/gguf/<nice-name>.gguf
+```
 
 ## Caveats
 
