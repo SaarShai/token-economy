@@ -1,0 +1,35 @@
+# Kaggle feed queue — consumed by .claude/agents/kaggle-feeder.md
+# Top of list pushed first. Append new items at bottom.
+
+queue:
+  - slug: tokecon-comcom-eval-v9-coqa-n100
+    purpose: CoQA N=100 baseline with Qwen2.5-3B CPU (N=50 v8 showed Δ=-0.16 CI[-0.40,+0.06]; want tighter CI)
+    status: pending
+    datasets:
+      - saarshai/tokecon-coqa-50        # TODO upload N=100 version
+      - saarshai/tokecon-comcom-src
+
+  - slug: tokecon-adversarial-sweep-v1
+    purpose: run adversarial_bench over ALL 25 categories on Kaggle, verify skip_heuristics universal
+    status: pending
+    datasets:
+      - saarshai/tokecon-adversarial-qa-10  # TODO add category dataset
+
+  - slug: tokecon-rate-sweep-v1
+    purpose: rate in {0.5, 0.7, 0.9} × CoQA N=50. Identify quality knee.
+    status: pending
+    datasets:
+      - saarshai/tokecon-coqa-50
+      - saarshai/tokecon-comcom-src
+
+  - slug: tokecon-longbench-narrativeqa-v1
+    purpose: LongBench narrative_qa N=20 to validate ComCom on long context (>5K tok)
+    status: pending
+    datasets: []
+
+history:
+  # Completed entries moved here by kaggle-feeder
+  - slug: tokecon-comcom-eval-v4-n-50-coqa
+    completed: 2026-04-19
+    kernel_version: 8
+    result: projects/compound-compression-pipeline/kaggle_results/v8-coqa-n50.jsonl

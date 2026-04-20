@@ -36,7 +36,10 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 - [[projects/compound-compression-pipeline/RESULTS]] — **ComCom** prototype, 44.5% @ ~Δ−0.25 score (SQuAD eval-v2); eval-v3 in progress
 - [[projects/semdiff/README]] — **prototype, 95.5% on large file re-read**
 - [[projects/context-keeper/README]] — **prototype, structured PreCompact memory**
-- [[projects/agents-triage/SKILL]] — **shipped, UserPromptSubmit hook + 4 subagents, installed**
+- [[projects/agents-triage/SKILL]] — **shipped, UserPromptSubmit hook + 5 subagents (wiki-note, quick-fix, local-ollama, research-lite, kaggle-feeder)**
+
+## Infra
+- [[raw/2026-04-20-machine-baselines]] — M1/M1B/M2 tok/s, bottlenecks, tweaks
 
 ## People
 - [[people/julius-brussee]] — caveman
