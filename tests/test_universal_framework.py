@@ -319,6 +319,12 @@ Search first, timeline second, fetch last.
         self.assertNotIn("README.md", paths)
         self.assertTrue(all(row["recommendation"] == "startup-safe" for row in rows if row["status"] == "lean"))
         self.assertTrue((REPO / "prompts/subagents/repo-maintainer.prompt.md").exists())
+        self.assertTrue((REPO / "prompts/summ.md").exists())
+        self.assertTrue((REPO / "prompts/subagents/wiki-documenter.prompt.md").exists())
+        self.assertIn("wiki-documenter", (REPO / "skills/context-refresh/SKILL.md").read_text(encoding="utf-8"))
+        summ = (REPO / "prompts/summ.md").read_text(encoding="utf-8")
+        self.assertIn("handoff packet plus `start.md`", summ)
+        self.assertIn("Do not load anything else", summ)
 
     def test_agent_detection_ignores_provider_api_keys(self):
         original = os.environ.copy()

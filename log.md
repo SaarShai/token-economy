@@ -24,6 +24,10 @@ Updated the setup prompt and onboarding docs to keep first-run setup simple: if 
 
 Added a lightweight repo-maintainer subagent prompt and routing policy for task workspaces with GitHub remotes. It runs only at verified save-points, before context refresh/handoff, or on explicit save/commit/push requests; it stages only intended task changes and skips entirely when no GitHub remote exists.
 
+## [2026-04-24] feature | summ context refresh
+
+Added the `summ` manual refresh prompt, a lightweight wiki-documenter subagent prompt, and stricter context-refresh rules. Fresh sessions now load only the lean handoff plus `start.md`; durable but non-immediate memory is routed to repo-local wiki documentation instead of being carried into fresh context.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").

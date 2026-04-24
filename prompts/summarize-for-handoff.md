@@ -1,6 +1,9 @@
 # Summarize For Handoff
 
-Use cheapest capable summarizer. Output only this structure:
+Use cheapest capable summarizer. This is for fresh context only, not durable wiki documentation.
+Send durable-but-not-needed findings to `prompts/subagents/wiki-documenter.prompt.md` and link to resulting wiki pages instead of loading them.
+
+Output only this structure:
 
 ```markdown
 ---
@@ -22,11 +25,10 @@ next-mode: plan-first
 ## 7. Wiki pages updated / created (wikilinks)
 ## 8. Open questions
 ## 9. Instructions for next agent
-- Enter plan-mode. Think step-by-step.
+- Start in plan mode. Think step-by-step.
 - Read this handoff + `start.md` only. Do not load full wiki.
 - Build plan before executing.
 - On complete: update wiki, log entry, create fresh handoff if context > 20%.
 ```
 
-Keep <=2000 estimated tokens. Preserve exact errors and paths.
-
+Keep <=2000 estimated tokens. Preserve exact errors and paths. Exclude transcript noise, raw logs, broad wiki pages, and docs-only discoveries.

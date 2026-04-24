@@ -16,6 +16,8 @@ Fresh-context workflow for preventing context rot.
 - Default max context: detected from config/env or fallback `128000`.
 - Default trigger: `refresh_threshold: 0.20`.
 - At threshold, run `./te context checkpoint`.
+- On manual `summ`, split lean handoff from durable wiki memory.
+- Durable wiki memory is handled by a lightweight documenter using `prompts/subagents/wiki-documenter.prompt.md`.
 - If the host cannot clear context programmatically, run `./te context fresh-start` and begin a new session with the emitted packet.
 
 ## Packet
@@ -27,6 +29,7 @@ Fresh packets are written to `.token-economy/checkpoints/` and kept under 2000 e
 - memory pointers
 - touched files, commands, and errors extracted from transcript when provided
 - open decisions and retrieval instructions
+- links to documented durable memory instead of loading docs-only details
 
 ## Commands
 

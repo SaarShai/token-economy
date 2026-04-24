@@ -154,11 +154,12 @@ next-mode: plan-first
 ## 8. Open questions
 - Retrieve relevant pages before deciding.
 - Keep Caveman Ultra unless user asks for detail.
-- Document durable facts only after verified execution.
+- Document durable facts only after verified execution; use a lightweight wiki-documenter for docs-only memory.
 
 ## 9. Instructions for next agent
 - Start in plan mode. Think step-by-step. Create a robust plan before executing.
 - Read this handoff + `start.md` only. Do not load full wiki.
+- Do not load docs-only wiki memory; retrieve linked pages only when relevant.
 - Build plan. Get user approval if host process requires approval. Then execute.
 - On complete: update wiki, log entry, create fresh handoff if context > 20%.
 

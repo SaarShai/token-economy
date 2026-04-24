@@ -35,7 +35,7 @@ Load only when triggered:
 | Task >3 steps | `skills/plan-first-execute/SKILL.md` |
 | Need wiki memory | `skills/wiki-retrieve/SKILL.md` |
 | Writing memory | `skills/wiki-write/SKILL.md` |
-| Context warn/refresh | `skills/context-refresh/SKILL.md` |
+| Context warn/refresh/`summ` | `skills/context-refresh/SKILL.md` |
 | Need subagents | `skills/subagent-orchestrator/SKILL.md` |
 | GitHub repo maintenance | `prompts/subagents/repo-maintainer.prompt.md` |
 | `/pa` or `/btw` prompt | `skills/personal-assistant/SKILL.md` |
@@ -53,8 +53,8 @@ Load only when triggered:
   ./te context meter --transcript <file>
   ./te context checkpoint --handoff-template
   ```
-- If no transcript path is available, use `./te context status` and checkpoint from known goal/plan.
-- If the host cannot clear context, open a fresh session with the packet from `./te context fresh-start`.
+- For manual `summ`, keep fresh handoff separate from durable wiki docs.
+- If the host cannot clear context, open a fresh session with only `./te context fresh-start` output + `start.md`.
 
 ## Wiki Rules
 

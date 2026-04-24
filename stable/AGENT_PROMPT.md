@@ -24,7 +24,8 @@ Rules:
 - Retrieve before reasoning: ./te wiki search, then ./te wiki timeline <id>, then ./te wiki fetch <id> only for relevant hits.
 - Document only after verified work, and only in the repo-local markdown wiki/log.
 - Use /pa routing for context-light assistant prompts.
-- Checkpoint/fresh-start near 20% context.
+- Checkpoint/fresh-start near 20% context; use `summ` for manual refresh.
+- For `summ`, create a lean handoff, route durable docs to a lightweight wiki-documenter, then fresh context loads only handoff + `start.md`.
 - Normal prompts should not receive hook chatter; `/pa` and `/btw` are the explicit context-light bypasses.
 - If this task workspace has a GitHub remote, use the lightweight repo-maintainer worker at verified save-points; otherwise skip repo maintenance.
 

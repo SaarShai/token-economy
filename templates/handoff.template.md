@@ -55,5 +55,6 @@ next-mode: plan-first
 
 - Start in plan mode. Think step-by-step. Create a robust plan before executing.
 - Read this handoff + `start.md` only. Do not load full wiki.
+- Do not load docs-only wiki memory; retrieve linked pages only when relevant.
 - Build plan. Get user approval if host process requires approval. Then execute.
 - On complete: update wiki, log entry, create fresh handoff if context > 20%.
