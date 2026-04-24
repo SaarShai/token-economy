@@ -9,6 +9,7 @@
 | Adversarial review | reasoning_top | medium | lightweight |
 | Math / proof | reasoning_top | local | lightweight |
 | File reads / tool execution | medium | lightweight | reasoning_top |
+| Repo save-point / commit / push | lightweight | medium | reasoning_top |
 
 Provider effort:
 - Claude: low/medium/high thinking budget.
@@ -24,3 +25,9 @@ Model choice is capability-based and host-agnostic. The router should select fro
 - Route with no full transcript and no full wiki fetch by default.
 - Personal-assistant router chooses the cheapest capable handler plus minimal context.
 - Escalate back to main/frontier only for high-risk, ambiguous, architectural, destructive, or final-synthesis work.
+
+GitHub repo maintenance:
+- Activate only when `git remote -v` shows a GitHub remote for the task repo.
+- Use `prompts/subagents/repo-maintainer.prompt.md`.
+- Trigger after verified milestones, before context refresh/handoff, and when user asks to save progress.
+- Stage only intended task files; never sweep unrelated changes.

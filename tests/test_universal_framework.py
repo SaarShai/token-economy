@@ -144,6 +144,10 @@ Search first, timeline second, fetch last.
         self.assertEqual(route.model_class, "lightweight")
         self.assertEqual(route.worker, "wiki-worker")
 
+        repo_route = classify("commit and push verified changes to the GitHub repo")
+        self.assertEqual(repo_route.model_class, "lightweight")
+        self.assertEqual(repo_route.worker, "repo-maintainer")
+
     def test_personal_assistant_prompt_bypass(self):
         invoked, clean = strip_pa_prefix("/pa summarize this wiki note")
         self.assertTrue(invoked)
@@ -314,6 +318,7 @@ Search first, timeline second, fetch last.
         self.assertIn("L1_index.md", paths)
         self.assertNotIn("README.md", paths)
         self.assertTrue(all(row["recommendation"] == "startup-safe" for row in rows if row["status"] == "lean"))
+        self.assertTrue((REPO / "prompts/subagents/repo-maintainer.prompt.md").exists())
 
     def test_agent_detection_ignores_provider_api_keys(self):
         original = os.environ.copy()

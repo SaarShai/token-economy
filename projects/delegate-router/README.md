@@ -18,6 +18,7 @@ Model-agnostic routing policy for subagents and cheaper models.
 - Use frontier models for architecture, ambiguity, high-risk domains, and final synthesis.
 - Spawn parallel workers only when tasks are independent and scopes are disjoint.
 - Workers receive compact briefs and return compact result packets.
+- For task repos with GitHub remotes, route verified save-points to the lightweight repo-maintainer worker; skip repo maintenance when no GitHub remote exists.
 
 ## Commands
 

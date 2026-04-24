@@ -36,6 +36,7 @@ Then run:
 - Use `/pa` for context-light prompts.
 - Keep normal prompt hooks quiet unless `TOKEN_ECONOMY_CLASSIFY_ALL=1` is explicitly set.
 - Checkpoint or fresh-start near 20% context.
+- If the task workspace has a GitHub remote, use the lightweight repo-maintainer worker at verified save-points; otherwise skip repo maintenance.
 
 ## Project-Local Adapters
 

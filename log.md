@@ -20,6 +20,10 @@ Reviewed the framework, repo docs, and setup prompt for duplicated startup glue,
 
 Updated the setup prompt and onboarding docs to keep first-run setup simple: if the target folder lacks `token-economy.yaml`, the prompt explicitly permits clearing that current folder only, including hidden files and `.git`, then cloning the canonical repo fresh. Purpose: avoid false stops in non-empty setup folders while still forbidding deletion outside the target folder.
 
+## [2026-04-24] feature | repo-maintainer worker
+
+Added a lightweight repo-maintainer subagent prompt and routing policy for task workspaces with GitHub remotes. It runs only at verified save-points, before context refresh/handoff, or on explicit save/commit/push requests; it stages only intended task changes and skips entirely when no GitHub remote exists.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").

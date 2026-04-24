@@ -75,6 +75,7 @@ def classify(task: str, registry: dict[str, list[str]] | None = None) -> Route:
     hard = bool(re.search(r"\b(architect|design|framework|multi[- ]?file|migration|novel|ambiguous|strategy|system)\b", text))
     research = bool(re.search(r"\b(research|survey|compare|find repos?|literature|web)\b", text))
     simple = bool(re.search(r"\b(typo|one[- ]?line|summari[sz]e|classify|extract|lint|format|small fix)\b", text))
+    repo_maintenance = bool(re.search(r"\b(commit|push|checkpoint|save progress|save-point|github|git status)\b", text))
     wiki = bool(re.search(r"\b(wiki|markdown|note|memory|document|ingest|l[0-4])\b", text))
     parallel = bool(re.search(r"\b(parallel|independent|separate|each of|split)\b", text)) or task.count("\n- ") >= 2
 
@@ -82,6 +83,8 @@ def classify(task: str, registry: dict[str, list[str]] | None = None) -> Route:
         return Route("hard", "reasoning_top", models["reasoning_top"][0], "main-orchestrator", 0.86, parallel, "retrieve exact relevant context first", "high-risk or architectural task")
     if research:
         return Route("medium", "medium", models["medium"][0], "research-worker", 0.78, parallel, "search first, fetch cited sources only", "bounded research task")
+    if repo_maintenance:
+        return Route("simple", "lightweight", models["lightweight"][0], "repo-maintainer", 0.86, False, "inspect git status/remotes; stage intended files only", "GitHub repo save-point task")
     if wiki:
         return Route("simple", "lightweight", models["lightweight"][0], "wiki-worker", 0.84, False, "use wiki search/timeline/fetch", "wiki/documentation task")
     if simple:

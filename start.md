@@ -1,6 +1,6 @@
 # Token Economy Start
 
-Universal startup file for any AI agent. Goal: excellent work with minimal context.
+Universal startup file for any AI agent. Goal: excellent work, minimal context.
 This is the canonical startup glue. Platform adapters only point here.
 Work only inside the repo root containing `token-economy.yaml`. Use the repo-local markdown wiki as source of truth.
 
@@ -37,6 +37,7 @@ Load only when triggered:
 | Writing memory | `skills/wiki-write/SKILL.md` |
 | Context warn/refresh | `skills/context-refresh/SKILL.md` |
 | Need subagents | `skills/subagent-orchestrator/SKILL.md` |
+| GitHub repo maintenance | `prompts/subagents/repo-maintainer.prompt.md` |
 | `/pa` or `/btw` prompt | `skills/personal-assistant/SKILL.md` |
 | Delegation policy | `prompts/delegation-matrix.md` |
 | New wiki page | `templates/page.template.md` |
@@ -111,6 +112,8 @@ Keep normal prompt hooks quiet unless `TOKEN_ECONOMY_CLASSIFY_ALL=1` is explicit
 
 Delegate only independent work. Give subagents compact briefs with exact scope, files, expected output, and budget. Ask for compact result packets, not full transcripts. Use local/cheap models for search, summaries, simple edits, extraction, lint, and classification. Use frontier models for architecture, ambiguity, high-risk reasoning, and final synthesis.
 Subagents are model-agnostic. Pick from whatever models the host has available; route by capability, cost, and context needs, not by vendor name.
+
+GitHub remote? Use `prompts/subagents/repo-maintainer.prompt.md` at verified save-points. No GitHub remote? Skip.
 
 ## Tool Choices
 

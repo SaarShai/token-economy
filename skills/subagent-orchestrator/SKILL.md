@@ -15,8 +15,10 @@ Protocol:
 5. Reject reports that miss contract.
 6. Orchestrator keeps final synthesis and final plan authorship.
 7. Use any available model family the host provides; do not hardcode Claude/OpenAI/Gemini names into the workflow.
+8. If the task repo has a GitHub remote, route save-points to a lightweight repo-maintainer worker using `prompts/subagents/repo-maintainer.prompt.md`.
 
 Never:
 - send full transcript
 - use reasoning_top for simple extraction
 - delegate final synthesis
+- run repo maintenance when no GitHub remote exists

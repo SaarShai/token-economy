@@ -26,6 +26,7 @@ Rules:
 - Use /pa routing for context-light assistant prompts.
 - Checkpoint/fresh-start near 20% context.
 - Normal prompts should not receive hook chatter; `/pa` and `/btw` are the explicit context-light bypasses.
+- If this task workspace has a GitHub remote, use the lightweight repo-maintainer worker at verified save-points; otherwise skip repo maintenance.
 
 Run:
 1. ./INSTALL.sh --dry-run
