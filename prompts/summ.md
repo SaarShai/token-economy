@@ -2,21 +2,22 @@
 
 Use when the user says `summ` or asks for a manual context refresh.
 
-Goal: preserve continuity with the smallest useful fresh context, while a cheap worker records durable memory in the repo-local wiki.
+Goal: preserve continuity with the smallest useful fresh context, while a cheap worker records durable memory in the repo-local wiki. `summ` is a terminal action in the current context: capture, hand off, stop.
 
 ## Protocol
 
-1. Stop new task work.
+1. Stop new task work immediately.
 2. Split session information into two buckets:
    - Fresh handoff: only goal, current state, completed work, next steps, blockers, touched paths, exact errors/commands, and links needed to continue.
    - Durable wiki memory: reusable facts, decisions, source summaries, solved workflows, and lessons that may matter later but are not needed in fresh context.
-3. Spawn or route a lightweight documentation worker using `prompts/subagents/wiki-documenter.prompt.md` when durable wiki memory exists. Give it only verified evidence and repo-local wiki targets.
-4. Create the fresh handoff with `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`.
-5. Keep the handoff under 2000 estimated tokens. Do not paste transcript, raw logs, broad wiki pages, or docs-only discoveries.
-6. If possible, lint it with `./te context lint-handoff <handoff-file>`.
-7. Clear/compact the current context. If the host cannot clear context programmatically, open a fresh session.
-8. Load only the handoff packet and `start.md` into the fresh context. Retrieve anything else on demand.
-9. Fresh session starts in plan mode, thinks step by step, and creates a robust plan before executing.
+3. Treat any extra instructions after `summ` as next-session requirements. Put them in the handoff; do not execute or expand them in the old context.
+4. Spawn or route a lightweight documentation worker using `prompts/subagents/wiki-documenter.prompt.md` when durable wiki memory exists. Give it only verified evidence and repo-local wiki targets. If that file is missing, use the prompt contract inline; do not spend context searching for substitutes.
+5. Create the fresh handoff with `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`. If the generated checkpoint is generic, replace it with a specific handoff from current session facts.
+6. Keep the handoff under 2000 estimated tokens. Do not paste transcript, raw logs, broad wiki pages, or docs-only discoveries.
+7. If possible, lint it with `./te context lint-handoff <handoff-file>`.
+8. Clear/compact the current context. If the host cannot clear context programmatically, tell the user to start a fresh session with only the handoff packet plus `start.md`.
+9. End the old-context response after the handoff with: `FRESH CONTEXT PACKET READY - STOP HERE`.
+10. Fresh session starts in plan mode, thinks step by step, and creates a robust plan before executing.
 
 ## Ready Prompt
 
@@ -27,11 +28,16 @@ Refresh context now. First split this session into:
 1. a lean fresh-context handoff containing only what is needed to continue, and
 2. durable wiki memory that should be documented but not loaded into the fresh context unless needed later.
 
-Spawn or route a lightweight documentation subagent for the durable wiki memory using `prompts/subagents/wiki-documenter.prompt.md`. It should update only the repo-local wiki/log after verified evidence and return a compact result packet.
+Treat any instructions after this `summ` prompt as requirements for the fresh session. Put them in the handoff as next-session work. Do not execute them or expand them into a large plan in this old context.
 
-Create the fresh handoff using `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`. Keep it under 2000 estimated tokens. Preserve exact paths, commands, decisions, and errors. Exclude transcript noise, raw logs, broad wiki pages, and docs-only discoveries.
+Spawn or route a lightweight documentation subagent for the durable wiki memory using `prompts/subagents/wiki-documenter.prompt.md`. It should update only the repo-local wiki/log after verified evidence and return a compact result packet. If that prompt file is missing, use this contract inline and do not search broadly for substitutes.
 
-Then clear/compact this context. If you cannot clear context programmatically, start a fresh session with only the handoff packet plus `start.md`. Do not load anything else until retrieval proves relevance.
+Create the fresh handoff using `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`. If the generated checkpoint is generic, replace it with a specific handoff from current session facts. Keep it under 2000 estimated tokens. Preserve exact paths, commands, decisions, and errors. Exclude transcript noise, raw logs, broad wiki pages, and docs-only discoveries.
+
+Then clear/compact this context. If you cannot clear context programmatically, tell me to start a fresh session with only the handoff packet plus `start.md`. Do not load anything else until retrieval proves relevance.
+
+End your old-context response immediately after the handoff with:
+FRESH CONTEXT PACKET READY - STOP HERE
 
 In the fresh context, start in plan mode. Think step by step. Create a robust plan before executing.
 ```

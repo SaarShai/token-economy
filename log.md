@@ -28,6 +28,10 @@ Added a lightweight repo-maintainer subagent prompt and routing policy for task 
 
 Added the `summ` manual refresh prompt, a lightweight wiki-documenter subagent prompt, and stricter context-refresh rules. Fresh sessions now load only the lean handoff plus `start.md`; durable but non-immediate memory is routed to repo-local wiki documentation instead of being carried into fresh context.
 
+## [2026-04-24] harden | terminal summ behavior
+
+Updated `summ` so appended instructions become next-session requirements, generic checkpoints must be replaced with session-specific handoffs, missing documenter prompts use an inline fallback instead of broad searching, and old-context work stops after emitting the packet.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").

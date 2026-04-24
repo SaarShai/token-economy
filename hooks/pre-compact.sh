@@ -10,4 +10,4 @@ else
   "$ROOT/te" context checkpoint --handoff-template
 fi
 
-echo "Token Economy: before fresh context, route durable docs-only memory to prompts/subagents/wiki-documenter.prompt.md; load only handoff + start.md." >&2
+echo "Token Economy: route durable docs-only memory to prompts/subagents/wiki-documenter.prompt.md; load only handoff + start.md; stop old-context work." >&2

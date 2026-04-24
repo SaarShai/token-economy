@@ -162,6 +162,7 @@ next-mode: plan-first
 - Do not load docs-only wiki memory; retrieve linked pages only when relevant.
 - Build plan. Get user approval if host process requires approval. Then execute.
 - On complete: update wiki, log entry, create fresh handoff if context > 20%.
+- If old host could not clear context, continue only in this fresh session.
 
 ## Memory Pointers
 {l1_pointer}

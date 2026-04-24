@@ -53,7 +53,7 @@ Load only when triggered:
   ./te context meter --transcript <file>
   ./te context checkpoint --handoff-template
   ```
-- For manual `summ`, keep fresh handoff separate from durable wiki docs.
+- For manual `summ`, make the packet, stop, and continue only in fresh context.
 - If the host cannot clear context, open a fresh session with only `./te context fresh-start` output + `start.md`.
 
 ## Wiki Rules

@@ -325,6 +325,8 @@ Search first, timeline second, fetch last.
         summ = (REPO / "prompts/summ.md").read_text(encoding="utf-8")
         self.assertIn("handoff packet plus `start.md`", summ)
         self.assertIn("Do not load anything else", summ)
+        self.assertIn("STOP HERE", summ)
+        self.assertIn("next-session requirements", summ)
 
     def test_agent_detection_ignores_provider_api_keys(self):
         original = os.environ.copy()

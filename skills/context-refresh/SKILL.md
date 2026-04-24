@@ -14,14 +14,16 @@ Trigger:
 Protocol:
 1. Run `./te context meter --transcript <file>` when transcript path exists.
 2. Split information into fresh-handoff material versus durable wiki memory.
-3. If durable memory exists, route a lightweight wiki-documenter with `prompts/subagents/wiki-documenter.prompt.md`.
-4. Create handoff with `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`.
-5. Prefer cheapest summarizer worker for the handoff; it returns only the packet.
-6. Write packet before clearing/compacting.
-7. Fresh session reads handoff + `start.md` only, enters plan-first mode, then retrieves on demand.
+3. Treat extra instructions after `summ` as next-session requirements; do not execute or expand them in the old context.
+4. If durable memory exists, route a lightweight wiki-documenter with `prompts/subagents/wiki-documenter.prompt.md`; if missing, use the contract inline.
+5. Create handoff with `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`; replace generic output with session-specific facts.
+6. Prefer cheapest summarizer worker for the handoff; it returns only the packet.
+7. Write packet before clearing/compacting, then stop old-context work.
+8. Fresh session reads handoff + `start.md` only, enters plan-first mode, then retrieves on demand.
 
 Hard rules:
 - Handoff <= 2000 estimated tokens.
 - Do not paste full transcript into fresh session.
 - Do not load docs-only wiki memory into fresh context; link to it instead.
 - Do not execute first in fresh session.
+- If host cannot clear context, emit the handoff and stop with `FRESH CONTEXT PACKET READY - STOP HERE`.
