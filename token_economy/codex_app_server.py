@@ -7,7 +7,7 @@ import subprocess
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 
 DEFAULT_CODEX_FRESH_MODEL = "gpt-5.3-codex-spark"
@@ -71,6 +71,33 @@ def _read_events(proc: subprocess.Popen[str], timeout: float) -> list[dict[str, 
             events.append(json.loads(line))
         except json.JSONDecodeError:
             events.append({"raw": line.rstrip("\n")})
+    return events
+
+
+def _read_events_until(
+    proc: subprocess.Popen[str],
+    timeout: float,
+    predicate: Callable[[list[dict[str, Any]], dict[str, Any]], bool],
+) -> list[dict[str, Any]]:
+    assert proc.stdout is not None
+    deadline = time.time() + timeout
+    events: list[dict[str, Any]] = []
+    while time.time() < deadline:
+        ready, _, _ = select.select([proc.stdout], [], [], 0.2)
+        if not ready:
+            if proc.poll() is not None:
+                break
+            continue
+        line = proc.stdout.readline()
+        if not line:
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            event = {"raw": line.rstrip("\n")}
+        events.append(event)
+        if predicate(events, event):
+            break
     return events
 
 
@@ -181,7 +208,7 @@ def run_codex_fresh_thread(repo_root: Path, handoff: Path, model: str | None = N
                 },
             },
         )
-        all_events.extend(_read_events(proc, 5))
+        all_events.extend(_read_events_until(proc, 5, lambda events, event: event.get("id") == 1))
         _send(proc, {"method": "initialized", "params": {}})
         _send(
             proc,
@@ -197,7 +224,7 @@ def run_codex_fresh_thread(repo_root: Path, handoff: Path, model: str | None = N
                 },
             },
         )
-        all_events.extend(_read_events(proc, 10))
+        all_events.extend(_read_events_until(proc, 10, lambda events, event: event.get("id") == 2))
         thread_response = _find_response(all_events, 2)
         try:
             thread_id = thread_response["result"]["thread"]["id"] if thread_response else None
@@ -217,7 +244,16 @@ def run_codex_fresh_thread(repo_root: Path, handoff: Path, model: str | None = N
                     },
                 },
             )
-            all_events.extend(_read_events(proc, timeout))
+            all_events.extend(
+                _read_events_until(
+                    proc,
+                    timeout,
+                    lambda events, event: bool(
+                        _assistant_responded(events) and _thread_idle(events, thread_id)
+                    )
+                    or bool(event.get("method") == "error" and not event.get("willRetry")),
+                )
+            )
             if not ephemeral:
                 _send(
                     proc,
@@ -233,7 +269,7 @@ def run_codex_fresh_thread(repo_root: Path, handoff: Path, model: str | None = N
                         },
                     },
                 )
-                all_events.extend(_read_events(proc, 8))
+                all_events.extend(_read_events_until(proc, 8, lambda events, event: event.get("id") == 4))
     finally:
         proc.terminate()
         try:

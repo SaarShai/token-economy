@@ -36,11 +36,13 @@ Check current host guidance:
 ./te context codex-fresh-thread --handoff <handoff-file>
 ```
 
-If an older project-local `te` does not have `host-controls`, `fresh-command`, or `codex-fresh-thread`, do not treat `./te context fresh-start` as a launcher. It only writes or prints a packet. Use a host-native new session, or for Codex use `codex fork --last -C "$PWD" "<handoff instruction>"` or `codex -C "$PWD" "<handoff instruction>"`.
+If an older project-local `te` does not have `host-controls`, `fresh-command`, or `codex-fresh-thread`, do not treat `./te context fresh-start` as a launcher. It only writes or prints a packet. For Codex, try the direct `codex app-server` successor path first if available. Only if that fails, use a host-native new session, `codex fork --last -C "$PWD" "<handoff instruction>"`, or `codex -C "$PWD" "<handoff instruction>"`.
 
 ## Workarounds
 
 Best practical workaround for hosts without callable clear: launch a fresh successor session with only `start.md` and the handoff file. This does not clear the current transcript; it bypasses it.
+
+For older Codex installs where the Token Economy wrapper is not present but `codex app-server` exists, launch the successor through Codex App Server directly. This is the same strategy as `./te context codex-fresh-thread --execute`: create a persistent `thread/start` with `ephemeral: false`, send a single `turn/start` containing only the handoff instruction, and wait for idle or a clear error. Do not stop after merely printing `codex fork` unless App Server is unavailable or failed.
 
 Examples:
 

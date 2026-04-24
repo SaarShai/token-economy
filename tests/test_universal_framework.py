@@ -337,6 +337,8 @@ Search first, timeline second, fetch last.
         self.assertIn("Do not assume you can execute host slash commands", summ)
         self.assertIn("codex-fresh-thread", summ)
         self.assertIn("do not use `./te context fresh-start` as a successor launcher", summ)
+        self.assertIn("codex app-server --help", summ)
+        self.assertIn("Do not stop merely after printing a command", summ)
         self.assertIn("codex fork --last", summ)
         self.assertEqual(host_context_controls("codex")["clear"], "/clear")
         self.assertEqual(host_context_controls("codex")["strategy"], "persistent-successor-thread")

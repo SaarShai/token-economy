@@ -68,6 +68,14 @@ Kept `summ` universal through summarize/document/handoff, then made execution pl
 
 Clarified that `./te context fresh-start` is not a successor launcher; it only writes or prints a packet. If an older project-local `te` lacks `host-controls`, `fresh-command`, or `codex-fresh-thread`, Codex `summ` should fall back to a real successor command such as `codex fork --last -C "$PWD" "<handoff instruction>"` or `codex -C "$PWD" "<handoff instruction>"`.
 
+## [2026-04-24] harden | legacy Codex launch attempt
+
+Updated `summ` so older Codex installs first attempt a direct `codex app-server` persistent successor thread when the project-local Token Economy wrapper is missing. Printing `codex fork --last` is now a last resort after App Server is unavailable or fails, not the default stopping point.
+
+## [2026-04-24] fix | Codex fresh-thread wait
+
+Changed `./te context codex-fresh-thread --execute` to stop waiting as soon as the successor thread responds and returns to idle, instead of waiting through fixed read windows. Live retest passed with `thread_id=019dbfed-9ad3-78a1-a6fa-710c1bb18d01`, `ok=true`, `thread_persistent=true`, `thread_turns_empty=true`, `assistant_responded=true`, `thread_idle=true`, and `listed_after_start=true`.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").
