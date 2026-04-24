@@ -8,7 +8,7 @@ Work only inside the repo root containing `token-economy.yaml`. Use the repo-loc
 
 Use **Caveman Ultra** by default: terse, exact, high-signal. No filler. No praise padding. Code and quoted errors stay unchanged.
 
-Start every non-trivial task in plan mode: understand intent, inspect reality, make a robust plan, then execute. If your host has an explicit Plan Mode, use it. If not, write a compact plan before changes.
+Start every non-trivial task in plan mode: first write a short step-by-step plan, then inspect reality, then execute. If your host has an explicit Plan Mode, use it. If not, write the compact plan in chat before any changes.
 
 ## Boot Sequence
 

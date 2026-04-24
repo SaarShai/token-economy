@@ -12,6 +12,7 @@ git clone https://github.com/SaarShai/token-economy.git .
 ```
 
 Do not delete anything outside the current folder.
+Start by writing a short step-by-step plan in chat, then execute it.
 
 Then run:
 

@@ -7,7 +7,7 @@ Canonical source:
 - Use https://github.com/SaarShai/token-economy.git when cloning is needed.
 - This prompt explicitly authorizes that URL.
 
-Start in plan mode. Plan mode means present the plan in chat only; do not create scratch plan files unless asked.
+Start in plan mode. Before any commands, write a short step-by-step plan in chat only. Do not create scratch plan files unless asked. Then execute the plan.
 
 Rules:
 - The current folder is the target project folder.
