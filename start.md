@@ -34,6 +34,7 @@ Load only when triggered:
 | Writing memory | `skills/wiki-write/SKILL.md` |
 | Context warn/refresh | `skills/context-refresh/SKILL.md` |
 | Need subagents | `skills/subagent-orchestrator/SKILL.md` |
+| `/pa` or `/btw` prompt | `skills/personal-assistant/SKILL.md` |
 | Delegation policy | `prompts/delegation-matrix.md` |
 | New wiki page | `templates/page.template.md` |
 
@@ -91,6 +92,12 @@ Use cheapest capable worker. Keep main context clean.
 ```bash
 ./te delegate classify "<task>"
 ./te delegate plan "<task>"
+```
+
+For personal-assistant bypass prompts, route instead of answering from the expensive full-context model:
+
+```bash
+./te pa --directive "/pa <prompt>"
 ```
 
 Delegate only independent work. Give subagents compact briefs with exact scope, files, expected output, and budget. Ask for compact result packets, not full transcripts. Use local/cheap models for search, summaries, simple edits, extraction, lint, and classification. Use frontier models for architecture, ambiguity, high-risk reasoning, and final synthesis.

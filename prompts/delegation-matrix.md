@@ -18,3 +18,8 @@ Provider effort:
 
 Rule: orchestrator keeps final synthesis.
 
+`/pa` or `/btw` bypass:
+- Run `te pa --directive "<prompt>"`.
+- Route with no full transcript and no full wiki fetch by default.
+- Personal-assistant router chooses the cheapest capable handler plus minimal context.
+- Escalate back to main/frontier only for high-risk, ambiguous, architectural, destructive, or final-synthesis work.

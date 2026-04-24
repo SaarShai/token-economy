@@ -12,7 +12,7 @@ from pathlib import Path
 
 from token_economy.cli import main
 from token_economy.context import checkpoint, lint_handoff, meter
-from token_economy.delegate import classify
+from token_economy.delegate import classify, personal_assistant_packet, strip_pa_prefix
 from token_economy.tokens import estimate_tokens
 from token_economy.wiki import WikiStore
 
@@ -101,6 +101,44 @@ Search first, timeline second, fetch last.
         self.assertEqual(route.tier, "simple")
         self.assertEqual(route.model_class, "lightweight")
         self.assertEqual(route.worker, "wiki-worker")
+
+    def test_personal_assistant_prompt_bypass(self):
+        invoked, clean = strip_pa_prefix("/pa summarize this wiki note")
+        self.assertTrue(invoked)
+        self.assertEqual(clean, "summarize this wiki note")
+        self.assertEqual(strip_pa_prefix("/btw: extract file paths")[1], "extract file paths")
+
+        packet = personal_assistant_packet("/pa summarize this wiki note")
+        self.assertEqual(packet["mode"], "personal_assistant")
+        self.assertTrue(packet["bypass_context"])
+        self.assertEqual(packet["router"]["model_class"], "lightweight")
+        self.assertEqual(packet["handler"]["model_class"], "lightweight")
+        self.assertFalse(packet["context_bundle"]["include_full_transcript"])
+        self.assertTrue(packet["context_bundle"]["include_l1_index"])
+        self.assertIn("Do not answer", packet["main_model_instruction"])
+
+    def test_cli_pa_and_hook_route(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(main(["pa", "/pa summarize this wiki note"]), 0)
+        packet = json.loads(buf.getvalue())
+        self.assertEqual(packet["mode"], "personal_assistant")
+
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(main(["pa", "--directive", "/btw", "summarize", "this"]), 0)
+        self.assertIn("[token-economy:/pa]", buf.getvalue())
+        self.assertIn("Do not answer directly", buf.getvalue())
+
+        proc = subprocess.run(
+            ["bash", str(REPO / "hooks/user-prompt-submit.sh")],
+            input=json.dumps({"prompt": "/pa summarize this"}),
+            text=True,
+            cwd=REPO,
+            capture_output=True,
+            check=True,
+        )
+        self.assertIn("[token-economy:/pa]", proc.stdout)
 
     def test_context_keeper_v2_memory_api(self):
         memory_dir = REPO / "projects" / "context-keeper-v2"

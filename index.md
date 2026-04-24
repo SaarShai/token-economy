@@ -13,6 +13,7 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 - [[templates/page.template]] — v2 frontmatter page template
 - [[prompts/delegation-matrix]] — model-agnostic delegation tiers
 - [[skills/caveman-ultra/SKILL]] — Caveman Ultra skill
+- [[skills/personal-assistant/SKILL]] — `/pa` and `/btw` bypass router for context-light prompts
 
 ## Concepts (techniques)
 - [[concepts/caveman-output-compression]] — terse output style, 65% savings
@@ -55,6 +56,7 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 - `./te context status|meter|checkpoint|fresh-start|lint-handoff` — context tracking and fresh-session packets
 - `./te docs audit|split|load` — always-loaded doc hygiene
 - `./te delegate models|classify|plan` — model/subagent routing
+- `./te pa --directive "/pa <prompt>"` — personal-assistant prompt bypass and minimal-context dispatch
 - `./te hooks doctor`, `./te profile show|set`, `./te bench run --suite framework-smoke` — productization checks
 
 ## Infra

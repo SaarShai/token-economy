@@ -10,7 +10,7 @@ from typing import Any
 from .config import detect_agent, load_config
 from .bench import run_framework_smoke
 from .context import checkpoint, lint_handoff, meter, status_for_files
-from .delegate import delegation_plan, dumps, load_models, classify
+from .delegate import delegation_plan, dumps, load_models, classify, personal_assistant_directive, personal_assistant_packet
 from .docs import audit as docs_audit, split_plan
 from .hooks import doctor as hooks_doctor
 from .profile import set_profile, show as show_profile
@@ -159,6 +159,20 @@ def cmd_delegate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_pa(args: argparse.Namespace) -> int:
+    cfg = load_config(args.repo)
+    registry = load_models(cfg.model_registry)
+    prompt = " ".join(args.prompt).strip()
+    if not prompt:
+        raise SystemExit("te pa requires a prompt, usually starting with /pa or /btw")
+    packet = personal_assistant_packet(prompt, registry)
+    if args.directive:
+        print(personal_assistant_directive(packet))
+    else:
+        print_json(packet)
+    return 0
+
+
 def cmd_hooks(args: argparse.Namespace) -> int:
     cfg = load_config(args.repo)
     if args.hooks_cmd == "doctor":
@@ -281,6 +295,11 @@ def build_parser() -> argparse.ArgumentParser:
     dp = desub.add_parser("plan")
     dp.add_argument("task")
     dp.set_defaults(func=cmd_delegate)
+
+    pa = sub.add_parser("pa", help="Route /pa or /btw prompts through the personal-assistant router")
+    pa.add_argument("--directive", action="store_true", help="Print hook-friendly routing instructions")
+    pa.add_argument("prompt", nargs=argparse.REMAINDER)
+    pa.set_defaults(func=cmd_pa)
 
     hk = sub.add_parser("hooks")
     hksub = hk.add_subparsers(dest="hooks_cmd", required=True)

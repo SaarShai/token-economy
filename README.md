@@ -13,6 +13,7 @@ Core commands:
 ./te wiki search "topic"
 ./te context status
 ./te delegate classify "task"
+./te pa --directive "/pa quick context-light request"
 ```
 
 Config lives in [`token-economy.yaml`](token-economy.yaml). Agent-specific adapters live in [`adapters/`](adapters/).
