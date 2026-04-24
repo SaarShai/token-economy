@@ -5,8 +5,6 @@ Copy-paste this into the fresh/new session after `session_handoff.md` has been c
 ```text
 Read only `start.md` and `session_handoff.md` from the repo root containing `token-economy.yaml`.
 
-Do not load prior transcript, broad wiki pages, raw sources, old handoffs, or unrelated docs.
-
 Follow `start.md` exactly:
 - run `./te doctor`
 - read `token-economy.yaml`
