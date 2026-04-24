@@ -35,6 +35,11 @@ Run:
 5. ./te wiki search "start"
 6. ./te context status
 
+Verification policy:
+- Skip verification for small changes such as prompt text, doc wording, or other trivial edits.
+- Verify medium and larger changes with tests/checks when feasible.
+- Medium changes may be verified by a smaller-capable agent when available.
+
 After setup, drop setup-only details from context.
 Keep only the repo map, command surface, scope rule, and file locations needed for future tasks.
 
