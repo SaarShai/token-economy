@@ -5,6 +5,7 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 ## For other agents
 - [[AGENT_ONBOARDING]] — **master install guide**: point any agent at this file
 - [[start]] — **universal agent entrypoint**: Caveman Ultra, wiki retrieval, 20% context refresh, delegation
+- [[adapters/universal/START]] — canonical startup glue used by all platform adapters
 - [[L0_rules]] + [[L1_index]] — lean startup memory tiers
 
 ## Framework

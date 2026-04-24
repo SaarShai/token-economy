@@ -17,6 +17,7 @@ Provider effort:
 - Local: compact prompt, bounded exploration.
 
 Rule: orchestrator keeps final synthesis.
+Model choice is capability-based and host-agnostic. The router should select from whatever cheap, medium, frontier, local, or high-context models are available in the registry.
 
 `/pa` or `/btw` bypass:
 - Run `te pa --directive "<prompt>"`.

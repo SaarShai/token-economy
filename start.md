@@ -1,6 +1,7 @@
 # Token Economy Start
 
 Universal startup file for any AI agent. Goal: excellent work with minimal context.
+This is the canonical startup glue. Platform adapters only point here.
 
 ## Prime Directive
 
@@ -101,6 +102,7 @@ For personal-assistant bypass prompts, route instead of answering from the expen
 ```
 
 Delegate only independent work. Give subagents compact briefs with exact scope, files, expected output, and budget. Ask for compact result packets, not full transcripts. Use local/cheap models for search, summaries, simple edits, extraction, lint, and classification. Use frontier models for architecture, ambiguity, high-risk reasoning, and final synthesis.
+Subagents are model-agnostic. Pick from whatever models the host has available; route by capability, cost, and context needs, not by vendor name.
 
 ## Tool Choices
 

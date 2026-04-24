@@ -3,4 +3,4 @@ description: Token Economy universal agent framework
 alwaysApply: true
 ---
 
-Read `start.md` first. Use Caveman Ultra. Load only `L0_rules.md` and `L1_index.md` at startup. Retrieve project/wiki facts with `./te wiki search`, then `timeline`, then `fetch`. Use `./te context checkpoint` at 20% estimated context. Document verified durable facts back into the LLM wiki.
+Read `../universal/START.md` first. Keep this file tiny.

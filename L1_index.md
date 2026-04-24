@@ -3,6 +3,7 @@
 Compact pointers. Fetch details on demand.
 
 - start -> `start.md`
+- universal adapter glue -> `adapters/universal/START.md`
 - config -> `token-economy.yaml`
 - model registry -> `models.yaml`
 - L0 rules -> `L0_rules.md`

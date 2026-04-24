@@ -14,9 +14,9 @@ Protocol:
 4. Run independent subtasks in parallel when scopes do not overlap.
 5. Reject reports that miss contract.
 6. Orchestrator keeps final synthesis and final plan authorship.
+7. Use any available model family the host provides; do not hardcode Claude/OpenAI/Gemini names into the workflow.
 
 Never:
 - send full transcript
 - use reasoning_top for simple extraction
 - delegate final synthesis
-
