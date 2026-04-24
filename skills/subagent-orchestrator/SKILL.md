@@ -16,9 +16,11 @@ Protocol:
 6. Orchestrator keeps final synthesis and final plan authorship.
 7. Use any available model family the host provides; do not hardcode Claude/OpenAI/Gemini names into the workflow.
 8. If the task repo has a GitHub remote, route save-points to a lightweight repo-maintainer worker using `prompts/subagents/repo-maintainer.prompt.md`.
+9. Manage worker lifecycle with `prompts/subagents/lifecycle.prompt.md`: capture result, document/feed it forward, then close completed idle workers.
 
 Never:
 - send full transcript
 - use reasoning_top for simple extraction
 - delegate final synthesis
 - run repo maintenance when no GitHub remote exists
+- close active workers just to free thread capacity

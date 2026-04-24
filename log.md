@@ -36,6 +36,10 @@ Updated `summ` so appended instructions become next-session requirements, generi
 
 Added host-native context control guidance for `summ`: Claude Code `/clear` and `/compact`, Codex `/new`, `/clear`, and `/compact`, Gemini `/compress`, and generic fallback to a fresh session. Added `./te context host-controls` so agents can retrieve the right command without loading broad docs.
 
+## [2026-04-24] feature | subagent lifecycle cleanup
+
+Added a lifecycle prompt for closing completed or idle subagents only after their result packet has been read, useful output has been merged or documented, and follow-up risks have been captured. This prevents thread-limit stalls without losing worker results.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").

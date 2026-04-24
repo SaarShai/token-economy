@@ -1,6 +1,6 @@
 # Token Economy Start
 
-Universal startup file for any AI agent. Goal: excellent work, minimal context.
+Universal startup file. Goal: excellent work, minimal context.
 This is the canonical startup glue. Platform adapters only point here.
 Work only inside the repo root containing `token-economy.yaml`. Use the repo-local markdown wiki as source of truth.
 
@@ -8,7 +8,7 @@ Work only inside the repo root containing `token-economy.yaml`. Use the repo-loc
 
 Use **Caveman Ultra**: terse, exact, high-signal. No filler/praise padding. Code and quoted errors stay unchanged.
 
-Start every non-trivial task in plan mode: first write a short step-by-step plan, then inspect reality, then execute. If your host has an explicit Plan Mode, use it. If not, write the compact plan in chat before any changes.
+Start non-trivial tasks in plan mode: short plan, inspect reality, execute. If host Plan Mode exists, use it.
 
 ## Boot Sequence
 
@@ -36,7 +36,7 @@ Load only when triggered:
 | Need wiki memory | `skills/wiki-retrieve/SKILL.md` |
 | Writing memory | `skills/wiki-write/SKILL.md` |
 | Context refresh/clear/`summ` | `skills/context-refresh/SKILL.md` |
-| Need subagents | `skills/subagent-orchestrator/SKILL.md` |
+| Need subagents | `skills/subagent-orchestrator/SKILL.md`; lifecycle: `prompts/subagents/lifecycle.prompt.md` |
 | GitHub repo maintenance | `prompts/subagents/repo-maintainer.prompt.md` |
 | `/pa` or `/btw` prompt | `skills/personal-assistant/SKILL.md` |
 | Delegation policy | `prompts/delegation-matrix.md` |
@@ -81,7 +81,7 @@ Use progressive retrieval:
 ./te wiki fetch "<id>"
 ```
 
-Do not fetch a full page unless the compact hit is relevant. When answering from wiki memory, cite page paths or IDs.
+Fetch full pages only after compact relevance. Cite wiki paths/IDs.
 
 ## Documentation Rules
 
@@ -110,8 +110,7 @@ For personal-assistant bypass prompts, route instead of answering from the expen
 
 Keep normal prompt hooks quiet unless `TOKEN_ECONOMY_CLASSIFY_ALL=1` is explicitly set. Use `/pa` or `/btw` when a prompt should bypass the full-context model.
 
-Delegate only independent work. Give subagents compact briefs with exact scope, files, expected output, and budget. Ask for compact result packets, not full transcripts. Use local/cheap models for search, summaries, simple edits, extraction, lint, and classification. Use frontier models for architecture, ambiguity, high-risk reasoning, and final synthesis.
-Subagents are model-agnostic. Pick from whatever models the host has available; route by capability, cost, and context needs, not by vendor name.
+Delegate only independent work. Give compact briefs: scope, files, output, budget. Ask for compact result packets, not transcripts. Use cheap models for search, summaries, simple edits, extraction, lint, classification; frontier models for architecture, ambiguity, high-risk reasoning, final synthesis. Subagents are model-agnostic. Close only after results are captured and documented/merged.
 
 GitHub remote? Use `prompts/subagents/repo-maintainer.prompt.md` at verified save-points. No GitHub remote? Skip.
 

@@ -31,3 +31,8 @@ GitHub repo maintenance:
 - Use `prompts/subagents/repo-maintainer.prompt.md`.
 - Trigger after verified milestones, before context refresh/handoff, and when user asks to save progress.
 - Stage only intended task files; never sweep unrelated changes.
+
+Subagent lifecycle:
+- Use `prompts/subagents/lifecycle.prompt.md` when supervising workers or when thread limits are near.
+- Close only completed, failed, cancelled, or superseded workers after the result packet is read and useful output is documented or merged into the main plan.
+- Keep a compact worker ledger in the task queue or handoff.
