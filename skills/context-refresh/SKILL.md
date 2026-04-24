@@ -18,8 +18,8 @@ Protocol:
 4. If durable memory exists, route a lightweight wiki-documenter with `prompts/subagents/wiki-documenter.prompt.md`; if missing, use the contract inline.
 5. Create handoff with `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`; replace generic output with session-specific facts.
 6. Prefer cheapest summarizer worker for the handoff; it returns only the packet.
-7. Check host controls with `./te context host-controls --agent auto` or `prompts/context-host-controls.md`.
-8. Use native clear/compact/new-chat when available; if the agent cannot invoke it, tell the user the exact command and stop old-context work.
+7. Check host controls with `./te context host-controls --agent auto`; get a successor launch command with `./te context fresh-command --agent auto --handoff <handoff-file>`.
+8. Treat native clear/compact/new-chat as a user/host action unless a real host tool exists; prefer a fresh successor process when direct clear is unavailable.
 9. Fresh session reads handoff + `start.md` only, enters plan-first mode, then retrieves on demand.
 
 Hard rules:
@@ -28,3 +28,4 @@ Hard rules:
 - Do not load docs-only wiki memory into fresh context; link to it instead.
 - Do not execute first in fresh session.
 - If host cannot clear context, emit the handoff and stop with `FRESH CONTEXT PACKET READY - STOP HERE`.
+- A handoff without a host context drop is not a completed refresh; use `prompts/summ-experiments.md` to test hosts.

@@ -12,7 +12,7 @@ from pathlib import Path
 
 from token_economy.cli import main
 from token_economy.config import detect_agent
-from token_economy.context import checkpoint, host_context_controls, lint_handoff, meter
+from token_economy.context import checkpoint, fresh_launch_commands, host_context_controls, lint_handoff, meter
 from token_economy.docs import audit as docs_audit
 from token_economy.delegate import classify, personal_assistant_packet, strip_pa_prefix
 from token_economy.tokens import estimate_tokens
@@ -321,6 +321,7 @@ Search first, timeline second, fetch last.
         self.assertTrue((REPO / "prompts/subagents/repo-maintainer.prompt.md").exists())
         self.assertTrue((REPO / "prompts/subagents/lifecycle.prompt.md").exists())
         self.assertTrue((REPO / "prompts/summ.md").exists())
+        self.assertTrue((REPO / "prompts/summ-experiments.md").exists())
         self.assertTrue((REPO / "prompts/subagents/wiki-documenter.prompt.md").exists())
         lifecycle = (REPO / "prompts/subagents/lifecycle.prompt.md").read_text(encoding="utf-8")
         self.assertIn("Close a subagent only", lifecycle)
@@ -332,13 +333,22 @@ Search first, timeline second, fetch last.
         self.assertIn("STOP HERE", summ)
         self.assertIn("next-session requirements", summ)
         self.assertIn("host-controls", summ)
+        self.assertIn("Do not assume you can execute host slash commands", summ)
+        self.assertIn("fresh-command", summ)
         self.assertEqual(host_context_controls("codex")["clear"], "/clear")
         self.assertEqual(host_context_controls("gemini")["compact"], "/compress")
+        self.assertIn("completion_test", host_context_controls("codex"))
+        self.assertIn("codex -C", fresh_launch_commands("codex", REPO, REPO / "handoff.md")["preferred"])
 
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             self.assertEqual(main(["context", "host-controls", "--agent", "claude"]), 0)
         self.assertEqual(json.loads(buf.getvalue())["clear"], "/clear")
+
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(main(["context", "fresh-command", "--agent", "codex", "--handoff", "handoff.md"]), 0)
+        self.assertIn("fresh successor", json.loads(buf.getvalue())["note"])
 
     def test_agent_detection_ignores_provider_api_keys(self):
         original = os.environ.copy()

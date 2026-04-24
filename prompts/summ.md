@@ -2,7 +2,7 @@
 
 Use when the user says `summ` or asks for a manual context refresh.
 
-Goal: preserve continuity with the smallest useful fresh context, while a cheap worker records durable memory in the repo-local wiki. `summ` is a terminal action in the current context: capture, hand off, stop.
+Goal: preserve continuity with the smallest useful fresh context, while a cheap worker records durable memory in the repo-local wiki. `summ` is a terminal action in the current context: capture, hand off, stop. The model cannot assume it can clear its own host transcript.
 
 ## Protocol
 
@@ -15,9 +15,9 @@ Goal: preserve continuity with the smallest useful fresh context, while a cheap 
 5. Create the fresh handoff with `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`. If the generated checkpoint is generic, replace it with a specific handoff from current session facts.
 6. Keep the handoff under 2000 estimated tokens. Do not paste transcript, raw logs, broad wiki pages, or docs-only discoveries.
 7. If possible, lint it with `./te context lint-handoff <handoff-file>`.
-8. Check host controls with `./te context host-controls --agent auto` or `prompts/context-host-controls.md`.
-9. Use the native host action when available: Claude `/clear` or `/compact`; Codex `/new`, `/clear`, or `/compact`; Gemini `/compress` or a new chat/session.
-10. If the agent cannot invoke the host command itself, tell the user the exact command to run and what to paste.
+8. Check host controls with `./te context host-controls --agent auto` and get a successor launch command with `./te context fresh-command --agent auto --handoff <handoff-file>`.
+9. Do not continue old-context work after the handoff. Prefer a fresh successor session/process when slash commands cannot be invoked directly.
+10. Tell the user exactly what command to run or paste. Do not output a slash command expecting it to execute unless the host explicitly provides a tool for that.
 11. End the old-context response after the handoff with: `FRESH CONTEXT PACKET READY - STOP HERE`.
 12. Fresh session starts in plan mode, thinks step by step, and creates a robust plan before executing.
 
@@ -36,7 +36,7 @@ Spawn or route a lightweight documentation subagent for the durable wiki memory 
 
 Create the fresh handoff using `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`. If the generated checkpoint is generic, replace it with a specific handoff from current session facts. Keep it under 2000 estimated tokens. Preserve exact paths, commands, decisions, and errors. Exclude transcript noise, raw logs, broad wiki pages, and docs-only discoveries.
 
-Then check `./te context host-controls --agent auto` or `prompts/context-host-controls.md`. Use the native host command when available: Claude `/clear` or `/compact`; Codex `/new`, `/clear`, or `/compact`; Gemini `/compress` or a new chat/session. If you cannot invoke the host command yourself, tell me the exact command to run and what to paste. Do not load anything else until retrieval proves relevance.
+Then check `./te context host-controls --agent auto` and `./te context fresh-command --agent auto --handoff <handoff-file>`. Do not assume you can execute host slash commands from your own response. Prefer a fresh successor session/process if direct clear is unavailable. Tell me the exact command I or the host should run and exactly what to paste next. Do not load anything else until retrieval proves relevance.
 
 End your old-context response immediately after the handoff with:
 FRESH CONTEXT PACKET READY - STOP HERE

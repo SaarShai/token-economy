@@ -9,7 +9,7 @@ from typing import Any
 
 from .config import detect_agent, load_config
 from .bench import run_framework_smoke
-from .context import checkpoint, host_context_controls, lint_handoff, meter, status_for_files
+from .context import checkpoint, fresh_launch_commands, host_context_controls, lint_handoff, meter, status_for_files
 from .delegate import delegation_plan, dumps, load_models, classify, personal_assistant_directive, personal_assistant_packet
 from .docs import audit as docs_audit, split_plan
 from .hooks import doctor as hooks_doctor
@@ -149,6 +149,12 @@ def cmd_context(args: argparse.Namespace) -> int:
     elif args.context_cmd == "host-controls":
         agent = detect_agent() if args.agent == "auto" else args.agent
         print_json(host_context_controls(agent))
+    elif args.context_cmd == "fresh-command":
+        agent = detect_agent() if args.agent == "auto" else args.agent
+        handoff = Path(args.handoff).expanduser() if args.handoff else None
+        if handoff and not handoff.is_absolute():
+            handoff = cfg.repo_root / handoff
+        print_json(fresh_launch_commands(agent, cfg.repo_root, handoff))
     return 0
 
 
@@ -293,6 +299,10 @@ def build_parser() -> argparse.ArgumentParser:
     ch = csub.add_parser("host-controls")
     ch.add_argument("--agent", choices=["auto", "claude", "codex", "gemini", "cursor", "generic"], default="auto")
     ch.set_defaults(func=cmd_context)
+    fc = csub.add_parser("fresh-command")
+    fc.add_argument("--agent", choices=["auto", "claude", "codex", "gemini", "cursor", "generic"], default="auto")
+    fc.add_argument("--handoff")
+    fc.set_defaults(func=cmd_context)
 
     de = sub.add_parser("delegate")
     desub = de.add_subparsers(dest="delegate_cmd", required=True)

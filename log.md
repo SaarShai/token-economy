@@ -40,6 +40,14 @@ Added host-native context control guidance for `summ`: Claude Code `/clear` and 
 
 Added a lifecycle prompt for closing completed or idle subagents only after their result packet has been read, useful output has been merged or documented, and follow-up risks have been captured. This prevents thread-limit stalls without losing worker results.
 
+## [2026-04-24] harden | summ host-boundary tests
+
+Clarified that `summ` cannot assume the model can execute host slash commands from its own response. Added `prompts/summ-experiments.md` for measuring whether a host actually dropped context, and updated host-control guidance to require user/host execution unless a real tool exists.
+
+## [2026-04-24] feature | fresh successor workaround
+
+Added `./te context fresh-command` and documented the best non-slash workaround: start a fresh successor host process/session with only `start.md` and the handoff file. This bypasses a full old transcript even when the current host cannot be cleared programmatically.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").

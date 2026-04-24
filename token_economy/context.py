@@ -29,7 +29,8 @@ HOST_CONTEXT_CONTROLS: dict[str, dict[str, Any]] = {
         "status": "/context or /cost when available",
         "notes": [
             "Interactive Claude Code supports /clear and /compact.",
-            "Claude SDK can dispatch /compact; for true clear, end the query and start a new one.",
+            "Built-in host commands are user/host controls; if no tool exposes them, ask the user to run them.",
+            "Claude SDK can use lifecycle hooks around compaction; for true clear, end the query and start a new one.",
         ],
     },
     "codex": {
@@ -39,6 +40,7 @@ HOST_CONTEXT_CONTROLS: dict[str, dict[str, Any]] = {
         "status": "/status",
         "notes": [
             "Codex CLI supports /compact, /clear, and /new.",
+            "These are host UI commands; an assistant response that says /new usually does not execute them.",
             "/clear starts a fresh chat; Ctrl+L only clears the terminal view.",
         ],
     },
@@ -50,6 +52,7 @@ HOST_CONTEXT_CONTROLS: dict[str, dict[str, Any]] = {
         "notes": [
             "Gemini CLI documents /compress as replacing chat context with a summary.",
             "/clear behavior varies by version/docs; verify whether it clears context or only screen.",
+            "Treat /compress and new-session actions as user/host controls unless a real tool exposes them.",
         ],
     },
     "cursor": {
@@ -107,6 +110,46 @@ def host_context_controls(agent: str = "auto") -> dict[str, Any]:
         "agent": key,
         **controls,
         "summ_rule": "After writing the handoff, use the host-native compact/clear/new-chat command when available; otherwise stop and start a fresh session manually.",
+        "completion_test": "Refresh is complete only after the host-reported active context drops or a fresh conversation starts.",
+    }
+
+
+def fresh_launch_commands(agent: str, repo_root: Path, handoff: Path | None = None) -> dict[str, Any]:
+    key = (agent or "generic").lower()
+    if key == "auto":
+        key = "generic"
+    repo = str(repo_root)
+    handoff_path = str(handoff) if handoff else ".token-economy/checkpoints/<handoff>.md"
+    prompt = (
+        f"Read {repo}/start.md and {handoff_path} only. Continue from that handoff. "
+        "Do not load anything else until retrieval proves relevance. Start in plan mode."
+    )
+    commands = {
+        "codex": [
+            f'codex -C "{repo}" "{prompt}"',
+            f'codex exec -C "{repo}" "{prompt}"',
+        ],
+        "claude": [
+            f'claude --add-dir "{repo}" "{prompt}"',
+            f'claude -p --add-dir "{repo}" "{prompt}"',
+        ],
+        "gemini": [
+            f'gemini --prompt-interactive "{prompt}"',
+            f'gemini --prompt "{prompt}"',
+        ],
+        "cursor": [
+            f"Open a new Cursor/agent chat in {repo} and provide: {prompt}",
+        ],
+        "generic": [
+            f"Start a new agent session in {repo} and provide: {prompt}",
+        ],
+    }
+    return {
+        "agent": key,
+        "handoff": handoff_path,
+        "preferred": commands.get(key, commands["generic"])[0],
+        "alternatives": commands.get(key, commands["generic"])[1:],
+        "note": "This starts a fresh successor session instead of clearing the current host transcript.",
     }
 
 
