@@ -84,6 +84,10 @@ Added `./te context codex-compact-thread` for same-session Codex compaction. It 
 
 Added `prompts/summ-codex-manual.md` because older project-local Token Economy installs may not have `codex-compact-thread` or `codex-fresh-thread`. The manual prompt now includes a self-contained Python `codex app-server` fallback so agents do not stop after reporting that local `./te` is too old.
 
+## [2026-04-24] fix | older Codex manual path
+
+Changed `prompts/summ-codex-manual.md` to use one reliable path for older installs: launch a persistent fresh successor thread directly with App Server `thread/start` + `turn/start`. Same-thread compaction is skipped in older installs because inherited Codex config such as `tools.defer_loading` can make `thread/compact/start` fail.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").
