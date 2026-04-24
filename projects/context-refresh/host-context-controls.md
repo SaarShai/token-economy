@@ -12,7 +12,7 @@ evidence_count: 4
 
 Token Economy can prepare lean handoffs and durable wiki memory, but the host controls whether the active model context is actually cleared.
 
-Claude Code has a native `/clear` command. The Claude `summ` procedure should create the handoff, document durable memory, run or ask the user to run `/clear`, then load only `start.md` plus the handoff.
+Claude Code has a native `/clear` command. The Claude `summ` procedure should summarize current work, document durable memory, create the handoff, run or ask the user to run `/clear`, then load only `start.md` plus the handoff.
 
 Codex in the tested Desktop/App Server environment did not expose a reliable in-thread clear from inside the assistant. The direct App Server current-thread compact path was tested against `CODEX_THREAD_ID`: `thread/resume` and `thread/compact/start` succeeded, but `thread/compacted` did not emit. The error was:
 
@@ -20,7 +20,7 @@ Codex in the tested Desktop/App Server environment did not expose a reliable in-
 Invalid Value: 'tools.defer_loading'. Deferred tools require tools.tool_search.
 ```
 
-So Codex same-thread clearing/compaction must not be presented as solved. The verified Codex workaround is a persistent fresh successor thread via App Server `thread/start` plus `turn/start`, seeded only with `start.md` and a handoff. This starts a clean continuation but does not reduce the old visible thread's context meter.
+So Codex same-thread clearing/compaction must not be presented as solved. Treat `./te context codex-compact-thread` as experimental unless a future host-specific test proves reliability. The verified Codex workaround is a persistent fresh successor thread via App Server `thread/start` plus `turn/start`, seeded only with `start.md` and a handoff. This starts a clean continuation but does not reduce the old visible thread's context meter.
 
 ## Operational rule
 

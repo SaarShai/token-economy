@@ -69,6 +69,7 @@ def codex_compact_thread_plan(repo_root: Path, thread_id: str | None = None, han
     return {
         "agent": "codex",
         "mode": "app-server-thread-compact",
+        "status": "experimental-current-thread-clear-unsolved",
         "model": model_name,
         "repo_root": str(repo_root),
         "thread_id": target_thread,
@@ -82,7 +83,7 @@ def codex_compact_thread_plan(repo_root: Path, thread_id: str | None = None, han
             "thread/compact/start is accepted for that thread.",
             "App Server emits thread/compacted for the same thread id.",
         ],
-        "note": "This uses Codex's native compaction. It is same-thread compaction, not a fresh successor thread.",
+        "note": "Experimental only. Codex current-thread clear/compact is unsolved in the tested Desktop/App Server environment; prefer codex-fresh-thread for clean continuation.",
     }
 
 

@@ -2,7 +2,9 @@
 
 Use when the user says `summ` or asks for a manual context refresh.
 
-Goal: preserve continuity with the smallest useful fresh context, while a cheap worker records durable memory in the repo-local wiki. `summ` is universal up to the handoff, then platform-specific for the actual context reset/successor. The model cannot assume every host clears context the same way.
+Goal: preserve continuity with the smallest useful fresh context. The required phases are: summarize current work, document durable memory with a cheap/lightweight wiki-documenter, write a lean handoff, then clear or bypass old context and start fresh with only `start.md` plus the handoff. `summ` is universal up to the handoff, then platform-specific for the actual context reset/successor. The model cannot assume every host clears context the same way.
+
+For manual copy-paste operation, use `prompts/manual-summ-document-and-handoff.md` in the old session and `prompts/manual-fresh-session-from-handoff.md` in the new session.
 
 For older Codex installs where the project-local `./te` lacks the Codex App Server subcommands, use `prompts/summ-codex-manual.md`. It uses one reliable path: a self-contained persistent fresh-successor App Server launcher. Do not attempt same-thread compaction in those older installs; inherited host config can make it fail.
 
@@ -14,11 +16,11 @@ For older Codex installs where the project-local `./te` lacks the Codex App Serv
    - Durable wiki memory: reusable facts, decisions, source summaries, solved workflows, and lessons that may matter later but are not needed in fresh context.
 3. Treat any extra instructions after `summ` as next-session requirements. Put them in the handoff; do not execute or expand them in the old context.
 4. Spawn or route a lightweight documentation worker using `prompts/subagents/wiki-documenter.prompt.md` when durable wiki memory exists. Give it only verified evidence and repo-local wiki targets. If that file is missing, use the prompt contract inline; do not spend context searching for substitutes.
-5. Create the fresh handoff with `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`. If the generated checkpoint is generic, replace it with a specific handoff from current session facts.
+5. Create the fresh handoff with `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`. If the generated checkpoint is generic, replace it with a specific handoff from current session facts. For manual copy-paste refresh, write repo-root `session_handoff.md`.
 6. Keep the handoff under 2000 estimated tokens. Do not paste transcript, raw logs, broad wiki pages, or docs-only discoveries.
 7. If possible, lint it with `./te context lint-handoff <handoff-file>`.
 8. Check host controls with `./te context host-controls --agent auto` and choose the returned platform strategy. Also get a successor launch command with `./te context fresh-command --agent auto --handoff <handoff-file>`.
-9. Codex current-thread clear is not solved in the tested Desktop/App Server environment. App Server `thread/compact/start` failed with `tools.defer_loading`; do not present same-thread Codex compaction as reliable.
+9. Codex current-thread clear is not solved in the tested Desktop/App Server environment. App Server `thread/compact/start` failed with `tools.defer_loading`; do not present same-thread Codex compaction as reliable. Treat `./te context codex-compact-thread` as experimental.
 10. Codex fresh-successor strategy: if a clean continuation is desired, prefer `./te context codex-fresh-thread --handoff <handoff-file> --execute` when available. This creates a persistent fresh project thread by default. Set `TOKEN_ECONOMY_CODEX_FRESH_MODEL` or pass `--model` if the host default model is unavailable. Treat it as successful only when it reports `ok: true`, `thread_persistent: true`, `thread_turns_empty: true`, `assistant_responded: true`, `thread_idle: true`, and ideally `listed_after_start: true`. This does not clear the old visible thread.
 11. Codex legacy fallback: if `host-controls`, `fresh-command`, or `codex-fresh-thread` is missing from the local `te`, do not use `./te context fresh-start` as a launcher. It only writes/prints a packet. Use the self-contained fresh-successor fallback in `prompts/summ-codex-manual.md`; it must run real `codex app-server` JSON-RPC, not merely describe it.
 12. Codex last resort: if the App Server fallback is unavailable or fails, provide a real successor command:

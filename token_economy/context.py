@@ -44,6 +44,7 @@ HOST_CONTEXT_CONTROLS: dict[str, dict[str, Any]] = {
             "Codex CLI supports /compact, /clear, and /new.",
             "These are host UI commands; an assistant response that says /new usually does not execute them.",
             "App Server current-thread compact was tested and failed with tools.defer_loading requiring tools.tool_search.",
+            "./te context codex-compact-thread is experimental; do not present it as a reliable current-thread clear path.",
             "Codex App Server can create a fresh successor thread with thread/start + turn/start when given an accessible model.",
             "Fresh successor is not in-place clearing; it bypasses the old transcript by starting a new thread with only the handoff.",
             "/clear starts a fresh chat; Ctrl+L only clears the terminal view.",
@@ -117,7 +118,7 @@ def host_context_controls(agent: str = "auto") -> dict[str, Any]:
     return {
         "agent": key,
         **controls,
-        "universal_protocol": "summarize current work, document durable memory, write a lean handoff, then use the selected host strategy to continue with only start.md plus the handoff.",
+        "universal_protocol": "summarize current work, document durable memory with a lightweight wiki-documenter, write a lean handoff, clear or bypass old context, then use the selected host strategy to continue with only start.md plus the handoff.",
         "summ_rule": "After writing the handoff, choose the platform strategy from this profile; do not assume all hosts can clear context the same way.",
         "completion_test": "Refresh is complete only after the host-reported active context drops or a fresh conversation starts.",
     }

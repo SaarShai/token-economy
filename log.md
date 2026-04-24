@@ -92,6 +92,10 @@ Changed `prompts/summ-codex-manual.md` to use one reliable path for older instal
 
 Ran the exact self-contained launcher from `prompts/summ-codex-manual.md` against handoff `.token-economy/checkpoints/20260424-153428-fresh-session.md`. It passed with `ok=true`, `thread_id=019dc021-4597-7560-81a5-900f4fafc950`, `thread_persistent=true`, `thread_turns_empty=true`, `assistant_responded=true`, `thread_idle=true`, and `listed_after_start=true`.
 
+## [2026-04-24] clarify | manual summ handoff prompts
+
+Added manual copy-paste prompts for the `summ` flow: `prompts/manual-summ-document-and-handoff.md` writes repo-root `session_handoff.md` after routing durable memory to a lightweight wiki-documenter, and `prompts/manual-fresh-session-from-handoff.md` starts a new context from only `start.md` plus that handoff. Reaffirmed that Claude `/clear` is the practical manual clear path, while Codex fresh successor is clean continuation only; Codex current-thread compact remains experimental/unsolved in the tested environment.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").

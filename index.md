@@ -15,6 +15,8 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 - [[prompts/delegation-matrix]] — model-agnostic delegation tiers
 - [[skills/caveman-ultra/SKILL]] — Caveman Ultra skill
 - [[skills/personal-assistant/SKILL]] — `/pa` and `/btw` bypass router for context-light prompts
+- [[prompts/manual-summ-document-and-handoff]] — copy-paste old-session `summ` prompt that documents durable memory and writes `session_handoff.md`
+- [[prompts/manual-fresh-session-from-handoff]] — copy-paste fresh-session prompt that reads only `start.md` plus `session_handoff.md`
 
 ## Concepts (techniques)
 - [[concepts/caveman-output-compression]] — terse output style, 65% savings
@@ -55,6 +57,7 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 - `./te wiki new --template page|decision|source-summary` — create v2 wiki page
 - `./te wiki init|index|search|timeline|fetch|lint|ingest|query` — repo-local markdown wiki operations
 - `./te context status|meter|checkpoint|fresh-start|lint-handoff` — context tracking and fresh-session packets
+- `./te context codex-fresh-thread` — Codex clean-continuation successor; `codex-compact-thread` is experimental/current-thread clear unsolved
 - `./te docs audit|split|load` — always-loaded doc hygiene
 - `./te delegate models|classify|plan` — model/subagent routing
 - `./te pa --directive "/pa <prompt>"` — personal-assistant prompt bypass and minimal-context dispatch

@@ -23,6 +23,8 @@ Compact pointers. Fetch details on demand.
 - HANDOFF (handoff tags=handoff,repo-local,startup) -> `HANDOFF.md`
 - HANDOFF_NEXT_AGENT (handoff) -> `HANDOFF_NEXT_AGENT.md`
 - INSTALL (page) -> `INSTALL.md`
+- manual summ old-session prompt -> `prompts/manual-summ-document-and-handoff.md`
+- manual fresh-session prompt -> `prompts/manual-fresh-session-from-handoff.md`
 - bench/README (project tags=benchmarks,kaggle,eval-infra) -> `bench/README.md`
 - bench/notebooks/kaggle_eval_template (page) -> `bench/notebooks/kaggle_eval_template.md`
 - concepts/devices-inventory (concept tags=infra,devices,inventory,compute) -> `concepts/devices-inventory.md`

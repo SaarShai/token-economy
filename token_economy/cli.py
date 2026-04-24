@@ -328,7 +328,7 @@ def build_parser() -> argparse.ArgumentParser:
     cft.add_argument("--ephemeral", action="store_true", help="Use an in-memory throwaway thread instead of the default persistent project thread")
     cft.add_argument("--timeout", type=int, default=120)
     cft.set_defaults(func=cmd_context)
-    cct = csub.add_parser("codex-compact-thread")
+    cct = csub.add_parser("codex-compact-thread", help="EXPERIMENTAL: Codex current-thread compact; current-thread clear is unsolved in tested Desktop/App Server")
     cct.add_argument("--thread-id")
     cct.add_argument("--current", action="store_true", help="Use CODEX_THREAD_ID from the current Codex session")
     cct.add_argument("--handoff")

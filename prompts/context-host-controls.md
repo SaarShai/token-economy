@@ -2,7 +2,7 @@
 
 Use during `summ`, checkpoint, or manual refresh.
 
-Token Economy uses one universal refresh protocol and host-specific execution profiles. The universal part is: summarize, document durable memory, write a lean handoff, then continue from only `start.md` plus that handoff. The host-specific part is how the fresh/compact context is actually created.
+Token Economy uses one universal refresh protocol and host-specific execution profiles. The universal part is: summarize current work, document durable memory with a lightweight/cheap wiki-documenter, write a lean handoff, clear or bypass the old context, then continue fresh from only `start.md` plus that handoff. The host-specific part is how the fresh/compact context is actually created.
 
 Do not assume every model/platform can clear context the same way. The agent must pick the right profile with `./te context host-controls --agent auto`.
 
@@ -12,7 +12,7 @@ Do not assume every model/platform can clear context the same way. The agent mus
 |---|---|---|---|---|
 | Claude Code | native clear/compact | `/compact` | `/clear`, then paste handoff + `start.md` | `/context` or `/cost` when available |
 | Claude SDK | slash-command dispatch | dispatch `/compact` | dispatch `/clear` or end query and start a new one | SDK init/usage metadata |
-| Codex CLI/Desktop | fresh successor workaround; current-thread clear unsolved in tested Desktop/App Server environment | host `/compact` if user can run it; App Server current-thread compact failed in testing | `./te context codex-fresh-thread --execute` or host new session | `/status` |
+| Codex CLI/Desktop | fresh successor workaround; current-thread clear unsolved in tested Desktop/App Server environment | host `/compact` if user can run it; App Server current-thread compact failed in testing; `codex-compact-thread` is experimental | `./te context codex-fresh-thread --execute` or host new session | `/status` |
 | Gemini CLI | native compress/new session | `/compress` | new chat/session; `/clear` behavior varies by version | `/stats` when available |
 | Cursor | new chat with handoff | host compact if available | new chat with only handoff + `start.md` | host meter |
 | Generic | manual fresh session | host compact/compress | host new-chat/new-session | host meter |
@@ -53,7 +53,7 @@ claude --add-dir "$PWD" "Read $PWD/start.md and <handoff-file> only. Continue fr
 gemini --prompt-interactive "Read $PWD/start.md and <handoff-file> only. Continue from that handoff. Start in plan mode."
 ```
 
-For Codex hosts with App Server support, Token Economy can start a persistent fresh successor thread directly:
+For Codex hosts with App Server support, Token Economy can start a persistent fresh successor thread directly. This is clean continuation, not clearing the old visible thread:
 
 ```bash
 ./te context codex-fresh-thread --handoff <handoff-file> --model gpt-5.3-codex-spark --execute
