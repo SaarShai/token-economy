@@ -35,7 +35,7 @@ Then run:
 - Document only after verified work, and only in repo-local wiki pages and `log.md`.
 - Use `/pa` for context-light prompts.
 - Keep normal prompt hooks quiet unless `TOKEN_ECONOMY_CLASSIFY_ALL=1` is explicitly set.
-- Checkpoint near 20% context. Use `summ` for manual refresh: lean handoff, durable memory to a lightweight wiki-documenter, then host-specific compact/fresh continuation. In Codex, same-session compaction is `./te context codex-compact-thread --current --handoff <handoff-file> --execute`; fresh successor is `./te context codex-fresh-thread --handoff <handoff-file> --execute`.
+- Checkpoint near 20% context. Use `summ` for manual refresh: lean handoff, durable memory to a lightweight wiki-documenter, then host-specific clear/fresh continuation. Claude can use native `/clear`. Codex current-thread clear is not solved in the tested environment; fresh successor is `./te context codex-fresh-thread --handoff <handoff-file> --execute`.
 - If the task workspace has a GitHub remote, use the lightweight repo-maintainer worker at verified save-points; otherwise skip repo maintenance.
 
 ## Project-Local Adapters

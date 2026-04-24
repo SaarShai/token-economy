@@ -12,7 +12,7 @@ Do not assume every model/platform can clear context the same way. The agent mus
 |---|---|---|---|---|
 | Claude Code | native clear/compact | `/compact` | `/clear`, then paste handoff + `start.md` | `/context` or `/cost` when available |
 | Claude SDK | slash-command dispatch | dispatch `/compact` | dispatch `/clear` or end query and start a new one | SDK init/usage metadata |
-| Codex CLI/Desktop | compact current thread or persistent successor thread | `./te context codex-compact-thread --current --execute` or `/compact` | `./te context codex-fresh-thread --execute` or `codex fork --last` | `/status` |
+| Codex CLI/Desktop | fresh successor workaround; current-thread clear unsolved in tested Desktop/App Server environment | host `/compact` if user can run it; App Server current-thread compact failed in testing | `./te context codex-fresh-thread --execute` or host new session | `/status` |
 | Gemini CLI | native compress/new session | `/compress` | new chat/session; `/clear` behavior varies by version | `/stats` when available |
 | Cursor | new chat with handoff | host compact if available | new chat with only handoff + `start.md` | host meter |
 | Generic | manual fresh session | host compact/compress | host new-chat/new-session | host meter |
@@ -33,17 +33,16 @@ Check current host guidance:
 ```bash
 ./te context host-controls --agent auto
 ./te context fresh-command --agent auto --handoff <handoff-file>
-./te context codex-compact-thread --current --handoff <handoff-file>
 ./te context codex-fresh-thread --handoff <handoff-file>
 ```
 
-If an older project-local `te` does not have `host-controls`, `fresh-command`, `codex-compact-thread`, or `codex-fresh-thread`, do not treat `./te context fresh-start` as a launcher. It only writes or prints a packet. For Codex, try direct `codex app-server` first: compact `CODEX_THREAD_ID` with `thread/compact/start` if same-session continuity matters, or start a persistent successor thread if a clean bypass matters. Only if App Server fails, use a host-native new session, `codex fork --last -C "$PWD" "<handoff instruction>"`, or `codex -C "$PWD" "<handoff instruction>"`.
+If an older project-local `te` does not have `host-controls`, `fresh-command`, or `codex-fresh-thread`, do not treat `./te context fresh-start` as a launcher. It only writes or prints a packet. For Codex, do not claim current-thread clear is solved. Start a persistent successor thread if clean continuation matters, or ask the user to use host-native clear/new-session controls.
 
 ## Workarounds
 
 Best practical workaround for hosts without callable clear: launch a fresh successor session with only `start.md` and the handoff file. This does not clear the current transcript; it bypasses it.
 
-For older Codex installs where the Token Economy wrapper is not present but `codex app-server` exists, use App Server directly. For compact, resume `CODEX_THREAD_ID` with a custom `compact_prompt`, send `thread/compact/start`, and wait for `thread/compacted`. For a fresh successor, create a persistent `thread/start` with `ephemeral: false`, send a single `turn/start` containing only the handoff instruction, and wait for idle or a clear error. Do not stop after merely printing `codex fork` unless App Server is unavailable or failed.
+For older Codex installs where the Token Economy wrapper is not present but `codex app-server` exists, a fresh successor can be created directly with persistent `thread/start` (`ephemeral: false`) plus a single `turn/start` containing only the handoff instruction. This is a clean-continuation workaround, not an in-place context clear.
 
 Examples:
 
@@ -57,11 +56,10 @@ gemini --prompt-interactive "Read $PWD/start.md and <handoff-file> only. Continu
 For Codex hosts with App Server support, Token Economy can start a persistent fresh successor thread directly:
 
 ```bash
-./te context codex-compact-thread --current --handoff <handoff-file> --execute
 ./te context codex-fresh-thread --handoff <handoff-file> --model gpt-5.3-codex-spark --execute
 ```
 
-For compaction, success means `ok: true`, `resume_ok: true`, `compact_start_ok: true`, and `compacted: true`. For fresh successor, use `--ephemeral` only for throwaway smoke tests. Use `TOKEN_ECONOMY_CODEX_FRESH_MODEL=<model>` to change the default. Success means the command reports `ok: true`, `thread_persistent: true`, `thread_turns_empty: true`, `assistant_responded: true`, `thread_idle: true`, and ideally `listed_after_start: true`. The fresh thread bypasses rather than erases the old host transcript. Codex may still show large input-token counts from host/system/tool context; that is not evidence that the old transcript was loaded.
+Use `--ephemeral` only for throwaway smoke tests. Use `TOKEN_ECONOMY_CODEX_FRESH_MODEL=<model>` to change the default. Success means the command reports `ok: true`, `thread_persistent: true`, `thread_turns_empty: true`, `assistant_responded: true`, `thread_idle: true`, and ideally `listed_after_start: true`. The fresh thread bypasses rather than erases the old host transcript. Codex may still show large input-token counts from host/system/tool context; that is not evidence that the old transcript was loaded.
 
 For Claude Code, prefer native controls:
 

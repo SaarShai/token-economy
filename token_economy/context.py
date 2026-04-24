@@ -35,17 +35,17 @@ HOST_CONTEXT_CONTROLS: dict[str, dict[str, Any]] = {
         ],
     },
     "codex": {
-        "strategy": "compact-or-persistent-successor-thread",
-        "compact": "te context codex-compact-thread --current --execute, or host /compact",
+        "strategy": "fresh-successor-workaround-current-clear-unsolved",
+        "compact": "host /compact if the user can run it; App Server current-thread compact failed in tested Desktop environment",
         "clear": "/clear",
         "fresh": "host /new or /clear when available; programmatic workaround: te context codex-fresh-thread",
         "status": "/status",
         "notes": [
             "Codex CLI supports /compact, /clear, and /new.",
             "These are host UI commands; an assistant response that says /new usually does not execute them.",
-            "When CODEX_THREAD_ID is present, Codex App Server can compact the current thread with a custom compact_prompt via thread/compact/start.",
+            "App Server current-thread compact was tested and failed with tools.defer_loading requiring tools.tool_search.",
             "Codex App Server can create a fresh successor thread with thread/start + turn/start when given an accessible model.",
-            "This is not in-place clearing; it bypasses the old transcript by starting a new thread with only the handoff.",
+            "Fresh successor is not in-place clearing; it bypasses the old transcript by starting a new thread with only the handoff.",
             "/clear starts a fresh chat; Ctrl+L only clears the terminal view.",
         ],
     },
@@ -135,7 +135,6 @@ def fresh_launch_commands(agent: str, repo_root: Path, handoff: Path | None = No
     )
     commands = {
         "codex": [
-            f'./te context codex-compact-thread --current --handoff "{handoff_path}" --execute',
             f'./te context codex-fresh-thread --handoff "{handoff_path}" --execute',
             f'codex fork --last -C "{repo}" "{prompt}"',
             f'codex -C "{repo}" "{prompt}"',

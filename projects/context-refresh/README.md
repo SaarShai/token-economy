@@ -18,7 +18,8 @@ Fresh-context workflow for preventing context rot.
 - At threshold, run `./te context checkpoint`.
 - On manual `summ`, split lean handoff from durable wiki memory.
 - Durable wiki memory is handled by a lightweight documenter using `prompts/subagents/wiki-documenter.prompt.md`.
-- If the host cannot clear context programmatically, run `./te context fresh-start` and begin a new session with the emitted packet.
+- If the host can clear context natively, use that control after creating the handoff. Claude Code's `/clear` is the known manual clear path.
+- Codex current-thread clearing is not solved in the tested environment; App Server current-thread compact failed with `tools.defer_loading`. Use a fresh successor thread only as a clean-continuation workaround, not as a claim that the old visible context was cleared.
 
 ## Packet
 

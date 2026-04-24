@@ -21,6 +21,7 @@ Compact pointers. Fetch details on demand.
 - projects/wiki-search/README (project tags=retrieval,progressive-disclosure,mcp,wiki) -> `projects/wiki-search/README.md`
 - stable/README (project tags=stable,release,curated) -> `stable/README.md`
 - HANDOFF (handoff tags=handoff,repo-local,startup) -> `HANDOFF.md`
+- HANDOFF_NEXT_AGENT (handoff) -> `HANDOFF_NEXT_AGENT.md`
 - INSTALL (page) -> `INSTALL.md`
 - bench/README (project tags=benchmarks,kaggle,eval-infra) -> `bench/README.md`
 - bench/notebooks/kaggle_eval_template (page) -> `bench/notebooks/kaggle_eval_template.md`
@@ -32,6 +33,7 @@ Compact pointers. Fetch details on demand.
 - extensions/README (page) -> `extensions/README.md`
 - projects/agents-triage/SKILL (page) -> `projects/agents-triage/SKILL.md`
 - projects/context-keeper/README (project tags=compaction,context-management,memory,hooks) -> `projects/context-keeper/README.md`
+- projects/context-refresh/host-context-controls (project tags=context-refresh,codex,claude,handoff) -> `projects/context-refresh/host-context-controls.md`
 - projects/skill-crystallizer/README (project tags=skill,L3-sop,automation) -> `projects/skill-crystallizer/README.md`
 - projects/write-gate/README (project tags=write-gate,memory-policy,middleware) -> `projects/write-gate/README.md`
 - stable/AGENT_PROMPT (page) -> `stable/AGENT_PROMPT.md`

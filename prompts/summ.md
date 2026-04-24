@@ -18,9 +18,9 @@ For older Codex installs where the project-local `./te` lacks the Codex App Serv
 6. Keep the handoff under 2000 estimated tokens. Do not paste transcript, raw logs, broad wiki pages, or docs-only discoveries.
 7. If possible, lint it with `./te context lint-handoff <handoff-file>`.
 8. Check host controls with `./te context host-controls --agent auto` and choose the returned platform strategy. Also get a successor launch command with `./te context fresh-command --agent auto --handoff <handoff-file>`.
-9. Codex same-session compact strategy: if same-thread continuity is desired and `CODEX_THREAD_ID` is present, prefer `./te context codex-compact-thread --current --handoff <handoff-file> --execute`. This uses Codex App Server `thread/resume` with a Token Economy `compact_prompt`, then `thread/compact/start`. Treat it as successful only when it reports `ok: true`, `resume_ok: true`, `compact_start_ok: true`, and `compacted: true`.
-10. Codex fresh-successor strategy: if a clean bypass is desired, prefer `./te context codex-fresh-thread --handoff <handoff-file> --execute` when available. This creates a persistent fresh project thread by default. Set `TOKEN_ECONOMY_CODEX_FRESH_MODEL` or pass `--model` if the host default model is unavailable. Treat it as successful only when it reports `ok: true`, `thread_persistent: true`, `thread_turns_empty: true`, `assistant_responded: true`, `thread_idle: true`, and ideally `listed_after_start: true`.
-11. Codex legacy fallback: if `host-controls`, `fresh-command`, `codex-compact-thread`, or `codex-fresh-thread` is missing from the local `te`, do not use `./te context fresh-start` as a launcher. It only writes/prints a packet. Use the self-contained fresh-successor fallback in `prompts/summ-codex-manual.md`; it must run real `codex app-server` JSON-RPC, not merely describe it.
+9. Codex current-thread clear is not solved in the tested Desktop/App Server environment. App Server `thread/compact/start` failed with `tools.defer_loading`; do not present same-thread Codex compaction as reliable.
+10. Codex fresh-successor strategy: if a clean continuation is desired, prefer `./te context codex-fresh-thread --handoff <handoff-file> --execute` when available. This creates a persistent fresh project thread by default. Set `TOKEN_ECONOMY_CODEX_FRESH_MODEL` or pass `--model` if the host default model is unavailable. Treat it as successful only when it reports `ok: true`, `thread_persistent: true`, `thread_turns_empty: true`, `assistant_responded: true`, `thread_idle: true`, and ideally `listed_after_start: true`. This does not clear the old visible thread.
+11. Codex legacy fallback: if `host-controls`, `fresh-command`, or `codex-fresh-thread` is missing from the local `te`, do not use `./te context fresh-start` as a launcher. It only writes/prints a packet. Use the self-contained fresh-successor fallback in `prompts/summ-codex-manual.md`; it must run real `codex app-server` JSON-RPC, not merely describe it.
 12. Codex last resort: if the App Server fallback is unavailable or fails, provide a real successor command:
     `codex fork --last -C "$PWD" "Read $PWD/start.md and $PWD/<handoff-file> only. Continue from that handoff. Do not load anything else until retrieval proves relevance. Start in plan mode."`
     If `fork --last` is not appropriate, use:
@@ -49,17 +49,11 @@ Create the fresh handoff using `./te context checkpoint --handoff-template` or `
 
 Then check `./te context host-controls --agent auto` and choose the returned platform strategy. Also run `./te context fresh-command --agent auto --handoff <handoff-file>`.
 
-For Codex, choose one of two real App Server paths:
-
-1. Same-session compaction when you want to continue in this session and `CODEX_THREAD_ID` exists:
-`./te context codex-compact-thread --current --handoff <handoff-file> --execute`
-Success requires `ok: true`, `resume_ok: true`, `compact_start_ok: true`, and `compacted: true`.
-
-2. Fresh successor when you want the cleanest bypass:
+For Codex, do not claim same-thread clearing is solved. Use a fresh successor when you want the cleanest available continuation:
 `./te context codex-fresh-thread --handoff <handoff-file> --execute`
 Success requires `ok: true`, `thread_persistent: true`, `thread_turns_empty: true`, `assistant_responded: true`, `thread_idle: true`, and ideally `listed_after_start: true`.
 
-If the local `te` is older and does not support `host-controls`, `fresh-command`, `codex-compact-thread`, or `codex-fresh-thread`, do not use `./te context fresh-start` as a launcher. It only writes/prints a packet. For Codex, run the self-contained Python fallback from `prompts/summ-codex-manual.md` or use an equivalent direct `codex app-server` JSON-RPC script. Do not stop merely because the local `./te` lacks the new subcommands.
+If the local `te` is older and does not support `host-controls`, `fresh-command`, or `codex-fresh-thread`, do not use `./te context fresh-start` as a launcher. It only writes/prints a packet. For Codex, run the self-contained Python fallback from `prompts/summ-codex-manual.md` or use an equivalent direct `codex app-server` JSON-RPC script. Do not stop merely because the local `./te` lacks the new subcommands.
 
 If the direct App Server fallback is unavailable or fails, give this exact fallback command and stop:
 `codex fork --last -C "$PWD" "Read $PWD/start.md and $PWD/<handoff-file> only. Continue from that handoff. Do not load anything else until retrieval proves relevance. Start in plan mode."`
