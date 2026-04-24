@@ -124,9 +124,9 @@ These are optional adapters, not required core dependencies.
 
 ## Done Means
 
-- Verify medium and larger changes with tests/checks when feasible.
-- Skip verification for small changes such as prompt text, doc wording, or other trivial edits.
-- Medium changes may be verified by a smaller-capable agent when available.
+Before final response:
+
+- Verify with tests/checks when feasible.
 - Record durable facts only after successful execution.
 - Update wiki/log for meaningful discoveries.
 - Report changed files, verification, and remaining risk briefly.
