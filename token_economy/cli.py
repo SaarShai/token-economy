@@ -9,6 +9,7 @@ from typing import Any
 
 from .config import detect_agent, load_config
 from .bench import run_framework_smoke
+from .codex_app_server import codex_fresh_thread_plan, run_codex_fresh_thread
 from .context import checkpoint, fresh_launch_commands, host_context_controls, lint_handoff, meter, status_for_files
 from .delegate import delegation_plan, dumps, load_models, classify, personal_assistant_directive, personal_assistant_packet
 from .docs import audit as docs_audit, split_plan
@@ -155,6 +156,14 @@ def cmd_context(args: argparse.Namespace) -> int:
         if handoff and not handoff.is_absolute():
             handoff = cfg.repo_root / handoff
         print_json(fresh_launch_commands(agent, cfg.repo_root, handoff))
+    elif args.context_cmd == "codex-fresh-thread":
+        handoff = Path(args.handoff).expanduser()
+        if not handoff.is_absolute():
+            handoff = cfg.repo_root / handoff
+        if args.execute:
+            print_json(run_codex_fresh_thread(cfg.repo_root, handoff, model=args.model, timeout=args.timeout))
+        else:
+            print_json(codex_fresh_thread_plan(cfg.repo_root, handoff, model=args.model))
     return 0
 
 
@@ -303,6 +312,12 @@ def build_parser() -> argparse.ArgumentParser:
     fc.add_argument("--agent", choices=["auto", "claude", "codex", "gemini", "cursor", "generic"], default="auto")
     fc.add_argument("--handoff")
     fc.set_defaults(func=cmd_context)
+    cft = csub.add_parser("codex-fresh-thread")
+    cft.add_argument("--handoff", required=True)
+    cft.add_argument("--model")
+    cft.add_argument("--execute", action="store_true", help="Actually launch Codex App Server and start a fresh ephemeral thread")
+    cft.add_argument("--timeout", type=int, default=120)
+    cft.set_defaults(func=cmd_context)
 
     de = sub.add_parser("delegate")
     desub = de.add_subparsers(dest="delegate_cmd", required=True)

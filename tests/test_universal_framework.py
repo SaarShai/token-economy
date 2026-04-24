@@ -12,6 +12,7 @@ from pathlib import Path
 
 from token_economy.cli import main
 from token_economy.config import detect_agent
+from token_economy.codex_app_server import codex_fresh_thread_plan, default_codex_fresh_model
 from token_economy.context import checkpoint, fresh_launch_commands, host_context_controls, lint_handoff, meter
 from token_economy.docs import audit as docs_audit
 from token_economy.delegate import classify, personal_assistant_packet, strip_pa_prefix
@@ -334,11 +335,14 @@ Search first, timeline second, fetch last.
         self.assertIn("next-session requirements", summ)
         self.assertIn("host-controls", summ)
         self.assertIn("Do not assume you can execute host slash commands", summ)
-        self.assertIn("fresh-command", summ)
+        self.assertIn("codex-fresh-thread", summ)
         self.assertEqual(host_context_controls("codex")["clear"], "/clear")
         self.assertEqual(host_context_controls("gemini")["compact"], "/compress")
         self.assertIn("completion_test", host_context_controls("codex"))
-        self.assertIn("codex -C", fresh_launch_commands("codex", REPO, REPO / "handoff.md")["preferred"])
+        self.assertIn("codex-fresh-thread", fresh_launch_commands("codex", REPO, REPO / "handoff.md")["preferred"])
+        plan = codex_fresh_thread_plan(REPO, REPO / "handoff.md")
+        self.assertEqual(plan["model"], default_codex_fresh_model())
+        self.assertIn("thread/started", " ".join(plan["success_test"]))
 
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
@@ -349,6 +353,11 @@ Search first, timeline second, fetch last.
         with contextlib.redirect_stdout(buf):
             self.assertEqual(main(["context", "fresh-command", "--agent", "codex", "--handoff", "handoff.md"]), 0)
         self.assertIn("fresh successor", json.loads(buf.getvalue())["note"])
+
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(main(["context", "codex-fresh-thread", "--handoff", "handoff.md", "--model", "gpt-5.3-codex-spark"]), 0)
+        self.assertEqual(json.loads(buf.getvalue())["mode"], "app-server-fresh-thread")
 
     def test_agent_detection_ignores_provider_api_keys(self):
         original = os.environ.copy()

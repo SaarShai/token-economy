@@ -36,11 +36,13 @@ HOST_CONTEXT_CONTROLS: dict[str, dict[str, Any]] = {
     "codex": {
         "compact": "/compact",
         "clear": "/clear",
-        "fresh": "/new, or /clear then paste only the handoff packet plus start.md",
+        "fresh": "host /new or /clear when available; programmatic workaround: te context codex-fresh-thread",
         "status": "/status",
         "notes": [
             "Codex CLI supports /compact, /clear, and /new.",
             "These are host UI commands; an assistant response that says /new usually does not execute them.",
+            "Codex App Server can create a fresh successor thread with thread/start + turn/start when given an accessible model.",
+            "This is not in-place clearing; it bypasses the old transcript by starting a new thread with only the handoff.",
             "/clear starts a fresh chat; Ctrl+L only clears the terminal view.",
         ],
     },
@@ -126,6 +128,7 @@ def fresh_launch_commands(agent: str, repo_root: Path, handoff: Path | None = No
     )
     commands = {
         "codex": [
+            f'./te context codex-fresh-thread --handoff "{handoff_path}" --execute',
             f'codex -C "{repo}" "{prompt}"',
             f'codex exec -C "{repo}" "{prompt}"',
         ],
@@ -149,7 +152,7 @@ def fresh_launch_commands(agent: str, repo_root: Path, handoff: Path | None = No
         "handoff": handoff_path,
         "preferred": commands.get(key, commands["generic"])[0],
         "alternatives": commands.get(key, commands["generic"])[1:],
-        "note": "This starts a fresh successor session instead of clearing the current host transcript.",
+        "note": "This starts a fresh successor session/thread instead of clearing the current host transcript.",
     }
 
 

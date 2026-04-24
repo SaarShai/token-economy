@@ -12,6 +12,7 @@ Core commands:
 ./te doctor
 ./te wiki search "topic"
 ./te context status
+./te context codex-fresh-thread --handoff <handoff-file>
 ./te delegate classify "task"
 ./te pa --directive "/pa quick context-light request"
 ```
@@ -30,6 +31,8 @@ Supplemental productization:
 ```
 
 Skills, prompts, hooks, configs, templates, and optional extension recipes live in their matching top-level folders.
+
+For manual context refresh, use [`prompts/summ.md`](prompts/summ.md). In Codex, the strongest programmatic workaround is `./te context codex-fresh-thread --handoff <handoff-file> --execute`, which starts a fresh App Server thread with only `start.md` plus the handoff.
 
 **Active projects:**
 

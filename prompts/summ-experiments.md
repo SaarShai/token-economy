@@ -77,3 +77,22 @@ Expected: reduces future context growth and improves recovery, but does not itse
 4. Start the printed command in a terminal/new host session.
 
 Expected: reliable workaround. The old transcript remains full, but the successor agent starts with fresh context containing only `start.md` plus the handoff.
+
+### G. Codex App Server Fresh Thread
+
+Use when Codex slash-command text does not execute and `codex app-server` is available.
+
+1. Create or choose a handoff file.
+2. Dry-run the successor plan:
+
+```bash
+./te context codex-fresh-thread --handoff <handoff-file> --model gpt-5.3-codex-spark
+```
+
+3. Execute it:
+
+```bash
+./te context codex-fresh-thread --handoff <handoff-file> --model gpt-5.3-codex-spark --execute
+```
+
+Expected: App Server creates an ephemeral thread with `turns: []`, starts a turn in that thread, receives an assistant response, and returns idle. This is a real fresh successor context, not an in-place clear of the old transcript. If it fails with “model does not exist or you do not have access,” rerun with an available model or set `TOKEN_ECONOMY_CODEX_FRESH_MODEL`.

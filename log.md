@@ -48,6 +48,10 @@ Clarified that `summ` cannot assume the model can execute host slash commands fr
 
 Added `./te context fresh-command` and documented the best non-slash workaround: start a fresh successor host process/session with only `start.md` and the handoff file. This bypasses a full old transcript even when the current host cannot be cleared programmatically.
 
+## [2026-04-24] feature | Codex App Server fresh thread
+
+Added `./te context codex-fresh-thread` as the verified Codex successor path. It uses Codex App Server `thread/start` + `turn/start` with an explicit accessible model, creates an ephemeral thread with `turns: []`, and loads only `start.md` plus the handoff. Live smoke passed with `gpt-5.3-codex-spark`; this bypasses rather than erases the old host transcript.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").

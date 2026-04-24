@@ -10,7 +10,7 @@ Token Economy can create the handoff packet and durable memory updates. The host
 |---|---|---|---|
 | Claude Code | `/compact` | `/clear`, then paste handoff + `start.md` | `/context` or `/cost` when available |
 | Claude SDK | dispatch `/compact` | end current query and start a new one | SDK init/usage metadata |
-| Codex CLI | `/compact` | `/new`, or `/clear` then paste handoff + `start.md` | `/status` |
+| Codex CLI | `/compact` | `/new` or `/clear` when host accepts it; programmatic successor via `./te context codex-fresh-thread` | `/status` |
 | Gemini CLI | `/compress` | new chat/session; `/clear` behavior varies by version | `/stats` when available |
 | Generic | host compact/compress | host new-chat/new-session | host meter |
 
@@ -22,7 +22,7 @@ After `summ` writes the handoff:
 2. Load only the handoff packet plus `start.md`.
 3. Do not continue old-context task work.
 4. Treat native slash commands as user/host actions unless the host exposes a real tool for invoking them.
-5. If slash commands cannot be invoked, use a fresh successor process/session.
+5. If slash commands cannot be invoked, use a fresh successor process/session. For Codex, prefer the App Server fresh-thread path.
 6. Tell the user the exact command to run and stop.
 
 Check current host guidance:
@@ -30,6 +30,7 @@ Check current host guidance:
 ```bash
 ./te context host-controls --agent auto
 ./te context fresh-command --agent auto --handoff <handoff-file>
+./te context codex-fresh-thread --handoff <handoff-file>
 ```
 
 ## Workarounds
@@ -43,6 +44,14 @@ codex -C "$PWD" "Read $PWD/start.md and <handoff-file> only. Continue from that 
 claude --add-dir "$PWD" "Read $PWD/start.md and <handoff-file> only. Continue from that handoff. Start in plan mode."
 gemini --prompt-interactive "Read $PWD/start.md and <handoff-file> only. Continue from that handoff. Start in plan mode."
 ```
+
+For Codex hosts with App Server support, Token Economy can start a fresh ephemeral successor thread directly:
+
+```bash
+./te context codex-fresh-thread --handoff <handoff-file> --model gpt-5.3-codex-spark --execute
+```
+
+Use `TOKEN_ECONOMY_CODEX_FRESH_MODEL=<model>` to change the default. Success means App Server emits `thread/started` with `turns: []`, accepts `turn/start`, receives an assistant response, and returns the new thread to idle. The old host transcript is not erased.
 
 Other possible but brittle workarounds:
 
