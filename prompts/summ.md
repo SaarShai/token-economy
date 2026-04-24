@@ -16,7 +16,7 @@ Goal: preserve continuity with the smallest useful fresh context, while a cheap 
 6. Keep the handoff under 2000 estimated tokens. Do not paste transcript, raw logs, broad wiki pages, or docs-only discoveries.
 7. If possible, lint it with `./te context lint-handoff <handoff-file>`.
 8. Check host controls with `./te context host-controls --agent auto` and get a successor launch command with `./te context fresh-command --agent auto --handoff <handoff-file>`.
-9. In Codex, prefer `./te context codex-fresh-thread --handoff <handoff-file> --execute` when available. Set `TOKEN_ECONOMY_CODEX_FRESH_MODEL` or pass `--model` if the host default model is unavailable.
+9. In Codex, prefer `./te context codex-fresh-thread --handoff <handoff-file> --execute` when available. Set `TOKEN_ECONOMY_CODEX_FRESH_MODEL` or pass `--model` if the host default model is unavailable. Treat it as successful only when it reports `ok: true`, `thread_ephemeral: true`, `thread_turns_empty: true`, `assistant_responded: true`, and `thread_idle: true`.
 10. Do not continue old-context work after the handoff. Prefer a fresh successor session/process when slash commands cannot be invoked directly.
 11. Tell the user exactly what command to run or paste. Do not output a slash command expecting it to execute unless the host explicitly provides a tool for that.
 12. End the old-context response after the handoff with: `FRESH CONTEXT PACKET READY - STOP HERE`.
@@ -37,7 +37,7 @@ Spawn or route a lightweight documentation subagent for the durable wiki memory 
 
 Create the fresh handoff using `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`. If the generated checkpoint is generic, replace it with a specific handoff from current session facts. Keep it under 2000 estimated tokens. Preserve exact paths, commands, decisions, and errors. Exclude transcript noise, raw logs, broad wiki pages, and docs-only discoveries.
 
-Then check `./te context host-controls --agent auto` and `./te context fresh-command --agent auto --handoff <handoff-file>`. If running in Codex and App Server is available, use `./te context codex-fresh-thread --handoff <handoff-file> --execute` to start a fresh successor thread; pass `--model <available-model>` if needed. Do not assume you can execute host slash commands from your own response. Prefer a fresh successor session/process if direct clear is unavailable. Tell me the exact command I or the host should run and exactly what to paste next. Do not load anything else until retrieval proves relevance.
+Then check `./te context host-controls --agent auto` and `./te context fresh-command --agent auto --handoff <handoff-file>`. If running in Codex and App Server is available, use `./te context codex-fresh-thread --handoff <handoff-file> --execute` to start a fresh successor thread; pass `--model <available-model>` if needed. Treat the App Server path as successful only if it reports `ok: true`, `thread_ephemeral: true`, `thread_turns_empty: true`, `assistant_responded: true`, and `thread_idle: true`. Do not assume you can execute host slash commands from your own response. Prefer a fresh successor session/process if direct clear is unavailable. Tell me the exact command I or the host should run and exactly what to paste next. Do not load anything else until retrieval proves relevance.
 
 End your old-context response immediately after the handoff with:
 FRESH CONTEXT PACKET READY - STOP HERE

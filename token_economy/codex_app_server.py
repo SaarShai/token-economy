@@ -102,6 +102,46 @@ def _thread_idle(events: list[dict[str, Any]], thread_id: str | None) -> bool:
     return False
 
 
+def _thread_started_info(events: list[dict[str, Any]], thread_id: str | None) -> dict[str, Any]:
+    for event in events:
+        if event.get("method") != "thread/started":
+            continue
+        thread = (event.get("params") or {}).get("thread") or {}
+        if thread_id and thread.get("id") != thread_id:
+            continue
+        return {
+            "thread_ephemeral": bool(thread.get("ephemeral")),
+            "thread_turns_empty": thread.get("turns") == [],
+            "thread_source": thread.get("source"),
+            "thread_cwd": thread.get("cwd"),
+        }
+    return {"thread_ephemeral": False, "thread_turns_empty": False, "thread_source": None, "thread_cwd": None}
+
+
+def _latest_token_usage(events: list[dict[str, Any]], thread_id: str | None) -> dict[str, Any]:
+    for event in reversed(events):
+        if event.get("method") != "thread/tokenUsage/updated":
+            continue
+        params = event.get("params") or {}
+        if thread_id and params.get("threadId") != thread_id:
+            continue
+        usage = params.get("tokenUsage") or {}
+        last = usage.get("last") or {}
+        total = usage.get("total") or {}
+        return {
+            "model_context_window": usage.get("modelContextWindow"),
+            "last_input_tokens": last.get("inputTokens"),
+            "last_total_tokens": last.get("totalTokens"),
+            "cumulative_total_tokens": total.get("totalTokens"),
+        }
+    return {
+        "model_context_window": None,
+        "last_input_tokens": None,
+        "last_total_tokens": None,
+        "cumulative_total_tokens": None,
+    }
+
+
 def run_codex_fresh_thread(repo_root: Path, handoff: Path, model: str | None = None, timeout: int = 120) -> dict[str, Any]:
     plan = codex_fresh_thread_plan(repo_root, handoff, model)
     outdir = repo_root / ".token-economy" / "checkpoints" / "codex-app-server" / datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
@@ -182,8 +222,10 @@ def run_codex_fresh_thread(repo_root: Path, handoff: Path, model: str | None = N
     summary = {
         **plan,
         "thread_id": thread_id,
+        **_thread_started_info(all_events, thread_id),
         "assistant_responded": _assistant_responded(all_events),
         "thread_idle": _thread_idle(all_events, thread_id),
+        **_latest_token_usage(all_events, thread_id),
         "ok": bool(thread_id and _assistant_responded(all_events) and _thread_idle(all_events, thread_id)),
         "events": str(events_path),
         "stderr": str(stderr_path),

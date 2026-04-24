@@ -95,4 +95,12 @@ Use when Codex slash-command text does not execute and `codex app-server` is ava
 ./te context codex-fresh-thread --handoff <handoff-file> --model gpt-5.3-codex-spark --execute
 ```
 
-Expected: App Server creates an ephemeral thread with `turns: []`, starts a turn in that thread, receives an assistant response, and returns idle. This is a real fresh successor context, not an in-place clear of the old transcript. If it fails with “model does not exist or you do not have access,” rerun with an available model or set `TOKEN_ECONOMY_CODEX_FRESH_MODEL`.
+Expected: App Server creates an ephemeral thread with `turns: []`, starts a turn in that thread, receives an assistant response, and returns idle. The JSON should report `ok: true`, `thread_ephemeral: true`, `thread_turns_empty: true`, `assistant_responded: true`, and `thread_idle: true`. This is a real fresh successor context, not an in-place clear of the old transcript. If it fails with "model does not exist or you do not have access," rerun with an available model or set `TOKEN_ECONOMY_CODEX_FRESH_MODEL`. Large input-token counts can come from Codex host/system/tool context; they do not by themselves prove that the old transcript was loaded.
+
+Verified controlled `summ` result on 2026-04-24:
+
+```bash
+./te context codex-fresh-thread --handoff .token-economy/checkpoints/20260424-135455-fresh-session.md --model gpt-5.3-codex-spark --execute
+```
+
+Result: `ok=true`, `thread_id=019dbfc5-edbe-7632-9a51-0dda81340fb0`, `assistant_responded=true`, and `thread_idle=true`. Events showed `thread/started` with `ephemeral=true` and `turns=[]`; the successor read `start.md` plus the handoff only. The old visible host transcript was not erased. Token usage still included large Codex host/system overhead, about 53k input tokens, despite no old transcript in the successor-visible prompt.

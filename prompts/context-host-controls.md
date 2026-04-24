@@ -51,7 +51,7 @@ For Codex hosts with App Server support, Token Economy can start a fresh ephemer
 ./te context codex-fresh-thread --handoff <handoff-file> --model gpt-5.3-codex-spark --execute
 ```
 
-Use `TOKEN_ECONOMY_CODEX_FRESH_MODEL=<model>` to change the default. Success means App Server emits `thread/started` with `turns: []`, accepts `turn/start`, receives an assistant response, and returns the new thread to idle. The old host transcript is not erased.
+Use `TOKEN_ECONOMY_CODEX_FRESH_MODEL=<model>` to change the default. Success means the command reports `ok: true`, `thread_ephemeral: true`, `thread_turns_empty: true`, `assistant_responded: true`, and `thread_idle: true`. The old host transcript is not erased; the fresh thread bypasses it. Codex may still show large input-token counts from host/system/tool context, but that is not evidence that the old transcript was loaded.
 
 Other possible but brittle workarounds:
 

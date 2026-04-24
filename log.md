@@ -52,6 +52,10 @@ Added `./te context fresh-command` and documented the best non-slash workaround:
 
 Added `./te context codex-fresh-thread` as the verified Codex successor path. It uses Codex App Server `thread/start` + `turn/start` with an explicit accessible model, creates an ephemeral thread with `turns: []`, and loads only `start.md` plus the handoff. Live smoke passed with `gpt-5.3-codex-spark`; this bypasses rather than erases the old host transcript.
 
+## [2026-04-24] verify | controlled summ fresh-thread result
+
+Verified controlled `summ` successor run: `./te context codex-fresh-thread --handoff .token-economy/checkpoints/20260424-135455-fresh-session.md --model gpt-5.3-codex-spark --execute` returned `ok=true`, `thread_id=019dbfc5-edbe-7632-9a51-0dda81340fb0`, `assistant_responded=true`, and `thread_idle=true`. Events showed `thread/started` with `ephemeral=true` and `turns=[]`; successor read `start.md` plus the handoff only, while the old visible host transcript was not erased. Token usage still showed large Codex host/system overhead, about 53k input tokens, despite no old transcript in the successor-visible prompt. See [[prompts/summ-experiments]].
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").
