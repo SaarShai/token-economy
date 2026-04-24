@@ -32,7 +32,7 @@ Supplemental productization:
 
 Skills, prompts, hooks, configs, templates, and optional extension recipes live in their matching top-level folders.
 
-For manual context refresh, use [`prompts/summ.md`](prompts/summ.md). In Codex, the strongest programmatic workaround is `./te context codex-fresh-thread --handoff <handoff-file> --execute`, which starts a fresh App Server thread with only `start.md` plus the handoff.
+For manual context refresh, use [`prompts/summ.md`](prompts/summ.md). In Codex, use `./te context codex-compact-thread --current --handoff <handoff-file> --execute` for same-session compaction with a Token Economy compact prompt, or `./te context codex-fresh-thread --handoff <handoff-file> --execute` for a persistent fresh successor thread with only `start.md` plus the handoff.
 
 **Active projects:**
 

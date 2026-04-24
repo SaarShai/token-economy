@@ -19,7 +19,8 @@ Protocol:
 5. Create handoff with `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`; replace generic output with session-specific facts.
 6. Prefer cheapest summarizer worker for the handoff; it returns only the packet.
 7. Check host controls with `./te context host-controls --agent auto`; get a successor launch command with `./te context fresh-command --agent auto --handoff <handoff-file>`.
-8. Treat native clear/compact/new-chat as a user/host action unless a real host tool exists; prefer a fresh successor process when direct clear is unavailable.
+8. In Codex, prefer `./te context codex-compact-thread --current --handoff <handoff-file> --execute` when `CODEX_THREAD_ID` exists and same-session continuity matters; use `./te context codex-fresh-thread --handoff <handoff-file> --execute` when a clean successor thread is better.
+9. Treat native clear/compact/new-chat as a user/host action unless a real host tool exists; prefer a fresh successor process when direct clear is unavailable.
 9. Fresh session reads handoff + `start.md` only, enters plan-first mode, then retrieves on demand.
 
 Hard rules:
@@ -27,5 +28,5 @@ Hard rules:
 - Do not paste full transcript into fresh session.
 - Do not load docs-only wiki memory into fresh context; link to it instead.
 - Do not execute first in fresh session.
-- If host cannot clear context, emit the handoff and stop with `FRESH CONTEXT PACKET READY - STOP HERE`.
+- If host cannot clear context or compact through a real tool, emit the handoff and stop with `FRESH CONTEXT PACKET READY - STOP HERE`.
 - A handoff without a host context drop is not a completed refresh; use `prompts/summ-experiments.md` to test hosts.

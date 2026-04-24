@@ -76,6 +76,10 @@ Updated `summ` so older Codex installs first attempt a direct `codex app-server`
 
 Changed `./te context codex-fresh-thread --execute` to stop waiting as soon as the successor thread responds and returns to idle, instead of waiting through fixed read windows. Live retest passed with `thread_id=019dbfed-9ad3-78a1-a6fa-710c1bb18d01`, `ok=true`, `thread_persistent=true`, `thread_turns_empty=true`, `assistant_responded=true`, `thread_idle=true`, and `listed_after_start=true`.
 
+## [2026-04-24] add | Codex compact lane
+
+Added `./te context codex-compact-thread` for same-session Codex compaction. It uses `CODEX_THREAD_ID` or an explicit `--thread-id`, resumes the thread with a Token Economy `compact_prompt`, calls App Server `thread/compact/start`, and treats success as `resume_ok=true`, `compact_start_ok=true`, and `compacted=true`. `summ` now has two Codex paths: compact current thread when continuity matters, or launch a persistent fresh successor when bypassing the old transcript is better. Disposable live smoke passed on thread `019dbffe-65ca-7441-9c1b-2a400a4e375a` with `ok=true`, `resume_ok=true`, `compact_start_ok=true`, and `compacted=true`.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").

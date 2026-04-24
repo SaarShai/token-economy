@@ -12,7 +12,7 @@ from pathlib import Path
 
 from token_economy.cli import main
 from token_economy.config import detect_agent
-from token_economy.codex_app_server import codex_fresh_thread_plan, default_codex_fresh_model
+from token_economy.codex_app_server import codex_compact_thread_plan, codex_fresh_thread_plan, default_codex_fresh_model
 from token_economy.context import checkpoint, fresh_launch_commands, host_context_controls, lint_handoff, meter
 from token_economy.docs import audit as docs_audit
 from token_economy.delegate import classify, personal_assistant_packet, strip_pa_prefix
@@ -336,17 +336,17 @@ Search first, timeline second, fetch last.
         self.assertIn("host-controls", summ)
         self.assertIn("Do not assume you can execute host slash commands", summ)
         self.assertIn("codex-fresh-thread", summ)
-        self.assertIn("do not use `./te context fresh-start` as a successor launcher", summ)
+        self.assertIn("do not use `./te context fresh-start` as a launcher", summ)
         self.assertIn("codex app-server --help", summ)
         self.assertIn("Do not stop merely after printing a command", summ)
         self.assertIn("codex fork --last", summ)
         self.assertEqual(host_context_controls("codex")["clear"], "/clear")
-        self.assertEqual(host_context_controls("codex")["strategy"], "persistent-successor-thread")
+        self.assertEqual(host_context_controls("codex")["strategy"], "compact-or-persistent-successor-thread")
         self.assertEqual(host_context_controls("claude")["strategy"], "native-clear-or-compact")
         self.assertEqual(host_context_controls("gemini")["compact"], "/compress")
         self.assertIn("universal_protocol", host_context_controls("generic"))
         self.assertIn("completion_test", host_context_controls("codex"))
-        self.assertIn("codex-fresh-thread", fresh_launch_commands("codex", REPO, REPO / "handoff.md")["preferred"])
+        self.assertIn("codex-compact-thread", fresh_launch_commands("codex", REPO, REPO / "handoff.md")["preferred"])
         plan = codex_fresh_thread_plan(REPO, REPO / "handoff.md")
         self.assertEqual(plan["model"], default_codex_fresh_model())
         self.assertEqual(plan["persistence"], "persistent")
@@ -368,6 +368,13 @@ Search first, timeline second, fetch last.
             self.assertEqual(main(["context", "codex-fresh-thread", "--handoff", "handoff.md", "--model", "gpt-5.3-codex-spark"]), 0)
         self.assertEqual(json.loads(buf.getvalue())["mode"], "app-server-fresh-thread")
         self.assertIn("thread_persistent", (REPO / "prompts/summ.md").read_text(encoding="utf-8"))
+        compact_plan = codex_compact_thread_plan(REPO, thread_id="thread-test", handoff=REPO / "handoff.md")
+        self.assertEqual(compact_plan["mode"], "app-server-thread-compact")
+        self.assertIn("compact_prompt", compact_plan)
+        self.assertIn("thread/compact/start", " ".join(compact_plan["success_test"]))
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(main(["context", "codex-compact-thread", "--thread-id", "thread-test", "--handoff", "handoff.md"]), 0)
+        self.assertIn("app-server-thread-compact", buf.getvalue())
 
     def test_agent_detection_ignores_provider_api_keys(self):
         original = os.environ.copy()
