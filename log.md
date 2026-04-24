@@ -64,6 +64,10 @@ Changed `./te context codex-fresh-thread` to create a persistent same-project su
 
 Kept `summ` universal through summarize/document/handoff, then made execution platform-specific. `./te context host-controls --agent auto` now returns a `strategy`: Codex uses persistent same-project successor threads, Claude uses native `/clear` or `/compact`, Gemini uses `/compress` or a new session, and generic hosts use a manual fresh session with only `start.md` plus the handoff.
 
+## [2026-04-24] harden | legacy summ fallback
+
+Clarified that `./te context fresh-start` is not a successor launcher; it only writes or prints a packet. If an older project-local `te` lacks `host-controls`, `fresh-command`, or `codex-fresh-thread`, Codex `summ` should fall back to a real successor command such as `codex fork --last -C "$PWD" "<handoff instruction>"` or `codex -C "$PWD" "<handoff instruction>"`.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").

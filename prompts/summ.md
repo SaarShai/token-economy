@@ -17,12 +17,16 @@ Goal: preserve continuity with the smallest useful fresh context, while a cheap 
 7. If possible, lint it with `./te context lint-handoff <handoff-file>`.
 8. Check host controls with `./te context host-controls --agent auto` and choose the returned platform strategy. Also get a successor launch command with `./te context fresh-command --agent auto --handoff <handoff-file>`.
 9. Codex strategy: prefer `./te context codex-fresh-thread --handoff <handoff-file> --execute` when available. This creates a persistent fresh project thread by default. Set `TOKEN_ECONOMY_CODEX_FRESH_MODEL` or pass `--model` if the host default model is unavailable. Treat it as successful only when it reports `ok: true`, `thread_persistent: true`, `thread_turns_empty: true`, `assistant_responded: true`, `thread_idle: true`, and ideally `listed_after_start: true`.
-10. Claude strategy: prefer native `/clear` for a fresh context, then load only `start.md` plus the handoff. Use `/compact <handoff focus>` when preserving same-chat continuity matters. If a SlashCommand/SDK tool is exposed, invoke it there; otherwise ask the user/host to run it.
-11. Gemini/Cursor/generic strategy: use the host's native compress/new-chat command when available; otherwise start a fresh session manually with only `start.md` plus the handoff.
-12. Do not continue old-context work after the handoff. Prefer a fresh successor session/process when slash commands cannot be invoked directly.
-13. Tell the user exactly what command to run or paste. Do not output a slash command expecting it to execute unless the host explicitly provides a tool for that.
-14. End the old-context response after the handoff with: `FRESH CONTEXT PACKET READY - STOP HERE`.
-15. Fresh session starts in plan mode, thinks step by step, and creates a robust plan before executing.
+10. Codex legacy fallback: if `host-controls`, `fresh-command`, or `codex-fresh-thread` is missing from the local `te`, do not use `./te context fresh-start` as a successor launcher. It only writes/prints a packet. Instead provide a real successor command:
+    `codex fork --last -C "$PWD" "Read $PWD/start.md and $PWD/<handoff-file> only. Continue from that handoff. Do not load anything else until retrieval proves relevance. Start in plan mode."`
+    If `fork --last` is not appropriate, use:
+    `codex -C "$PWD" "Read $PWD/start.md and $PWD/<handoff-file> only. Continue from that handoff. Do not load anything else until retrieval proves relevance. Start in plan mode."`
+11. Claude strategy: prefer native `/clear` for a fresh context, then load only `start.md` plus the handoff. Use `/compact <handoff focus>` when preserving same-chat continuity matters. If a SlashCommand/SDK tool is exposed, invoke it there; otherwise ask the user/host to run it.
+12. Gemini/Cursor/generic strategy: use the host's native compress/new-chat command when available; otherwise start a fresh session manually with only `start.md` plus the handoff.
+13. Do not continue old-context work after the handoff. Prefer a fresh successor session/process when slash commands cannot be invoked directly.
+14. Tell the user exactly what command to run or paste. Do not output a slash command expecting it to execute unless the host explicitly provides a tool for that.
+15. End the old-context response after the handoff with: `FRESH CONTEXT PACKET READY - STOP HERE`.
+16. Fresh session starts in plan mode, thinks step by step, and creates a robust plan before executing.
 
 ## Ready Prompt
 
@@ -39,7 +43,14 @@ Spawn or route a lightweight documentation subagent for the durable wiki memory 
 
 Create the fresh handoff using `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`. If the generated checkpoint is generic, replace it with a specific handoff from current session facts. Keep it under 2000 estimated tokens. Preserve exact paths, commands, decisions, and errors. Exclude transcript noise, raw logs, broad wiki pages, and docs-only discoveries.
 
-Then check `./te context host-controls --agent auto` and choose the returned platform strategy. Also run `./te context fresh-command --agent auto --handoff <handoff-file>`. If running in Codex and App Server is available, use `./te context codex-fresh-thread --handoff <handoff-file> --execute` to start a persistent fresh successor thread in this project; pass `--model <available-model>` if needed. Treat the App Server path as successful only if it reports `ok: true`, `thread_persistent: true`, `thread_turns_empty: true`, `assistant_responded: true`, `thread_idle: true`, and ideally `listed_after_start: true`. If running in Claude Code, use `/clear` or `/compact` through a real host/SlashCommand tool if one is available; otherwise ask me to run it and stop. Do not assume you can execute host slash commands from your own response. Tell me the exact command I or the host should run and exactly what to paste next. Do not load anything else until retrieval proves relevance.
+Then check `./te context host-controls --agent auto` and choose the returned platform strategy. Also run `./te context fresh-command --agent auto --handoff <handoff-file>`. If running in Codex and App Server is available, use `./te context codex-fresh-thread --handoff <handoff-file> --execute` to start a persistent fresh successor thread in this project; pass `--model <available-model>` if needed. Treat the App Server path as successful only if it reports `ok: true`, `thread_persistent: true`, `thread_turns_empty: true`, `assistant_responded: true`, `thread_idle: true`, and ideally `listed_after_start: true`.
+
+If the local `te` is older and does not support `host-controls`, `fresh-command`, or `codex-fresh-thread`, do not use `./te context fresh-start` as a successor launcher. It only writes/prints a packet. For Codex, give this exact fallback command and stop:
+`codex fork --last -C "$PWD" "Read $PWD/start.md and $PWD/<handoff-file> only. Continue from that handoff. Do not load anything else until retrieval proves relevance. Start in plan mode."`
+If `fork --last` is not appropriate, use:
+`codex -C "$PWD" "Read $PWD/start.md and $PWD/<handoff-file> only. Continue from that handoff. Do not load anything else until retrieval proves relevance. Start in plan mode."`
+
+If running in Claude Code, use `/clear` or `/compact` through a real host/SlashCommand tool if one is available; otherwise ask me to run it and stop. Do not assume you can execute host slash commands from your own response. Tell me the exact command I or the host should run and exactly what to paste next. Do not load anything else until retrieval proves relevance.
 
 End your old-context response immediately after the handoff with:
 FRESH CONTEXT PACKET READY - STOP HERE

@@ -36,6 +36,8 @@ Check current host guidance:
 ./te context codex-fresh-thread --handoff <handoff-file>
 ```
 
+If an older project-local `te` does not have `host-controls`, `fresh-command`, or `codex-fresh-thread`, do not treat `./te context fresh-start` as a launcher. It only writes or prints a packet. Use a host-native new session, or for Codex use `codex fork --last -C "$PWD" "<handoff instruction>"` or `codex -C "$PWD" "<handoff instruction>"`.
+
 ## Workarounds
 
 Best practical workaround for hosts without callable clear: launch a fresh successor session with only `start.md` and the handoff file. This does not clear the current transcript; it bypasses it.
