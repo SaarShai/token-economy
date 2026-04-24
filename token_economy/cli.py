@@ -8,9 +8,12 @@ from pathlib import Path
 from typing import Any
 
 from .config import detect_agent, load_config
-from .context import checkpoint, status_for_files
+from .bench import run_framework_smoke
+from .context import checkpoint, lint_handoff, meter, status_for_files
 from .delegate import delegation_plan, dumps, load_models, classify
 from .docs import audit as docs_audit, split_plan
+from .hooks import doctor as hooks_doctor
+from .profile import set_profile, show as show_profile
 from .tokens import estimate_tokens
 from .wiki import WikiStore
 
@@ -81,9 +84,14 @@ def cmd_wiki(args: argparse.Namespace) -> int:
     elif args.wiki_cmd == "timeline":
         print_json(wiki.timeline(args.id, args.window))
     elif args.wiki_cmd == "lint":
-        print_json(wiki.lint())
+        result = wiki.lint_pages(strict=args.strict)
+        print_json(result)
+        if args.fail_on_error and result.get("errors"):
+            return 1
     elif args.wiki_cmd == "ingest":
         print_json(wiki.ingest(args.source, args.title))
+    elif args.wiki_cmd == "new":
+        print_json(wiki.new_page(args.template, args.title, args.domain, args.slug))
     elif args.wiki_cmd == "query":
         hits = wiki.search(args.query, args.k)
         print_json({"query": args.query, "hits": hits, "next": "Use `te wiki timeline <id>` then `te wiki fetch <id>` for relevant hits only."})
@@ -116,9 +124,15 @@ def cmd_context(args: argparse.Namespace) -> int:
             files.append(cfg.wiki_root / rel)
         result = status_for_files(files, cfg.context_max_tokens, cfg.refresh_threshold)
         print_json(result)
+    elif args.context_cmd == "meter":
+        transcript = Path(args.transcript).expanduser() if args.transcript else None
+        print_json(meter(transcript=transcript, model=args.model, max_tokens=cfg.context_max_tokens))
     elif args.context_cmd == "checkpoint":
         transcript = Path(args.transcript).expanduser() if args.transcript else None
-        result = checkpoint(cfg.repo_root, goal=args.goal or "", plan=args.plan or "", transcript=transcript, max_packet_tokens=args.max_tokens)
+        context_pct = "unknown"
+        if transcript and transcript.exists():
+            context_pct = str(meter(transcript=transcript, max_tokens=cfg.context_max_tokens)["pct"])
+        result = checkpoint(cfg.repo_root, goal=args.goal or "", plan=args.plan or "", transcript=transcript, max_packet_tokens=args.max_tokens, context_pct=context_pct)
         if args.print_packet:
             print(result["packet"])
         else:
@@ -128,6 +142,8 @@ def cmd_context(args: argparse.Namespace) -> int:
         print(result["packet"])
         print(f"\nFresh packet written: {result['path']}")
         print("Open a fresh session with this packet if the host cannot clear context programmatically.")
+    elif args.context_cmd == "lint-handoff":
+        print_json(lint_handoff(Path(args.path).expanduser(), max_tokens=args.max_tokens))
     return 0
 
 
@@ -140,6 +156,35 @@ def cmd_delegate(args: argparse.Namespace) -> int:
         print(dumps(classify(args.task, registry).as_dict()))
     elif args.delegate_cmd == "plan":
         print_json(delegation_plan(args.task, registry))
+    return 0
+
+
+def cmd_hooks(args: argparse.Namespace) -> int:
+    cfg = load_config(args.repo)
+    if args.hooks_cmd == "doctor":
+        result = hooks_doctor(cfg.repo_root)
+        print_json(result)
+        return 0 if result["ok"] else 1
+    return 0
+
+
+def cmd_profile(args: argparse.Namespace) -> int:
+    cfg = load_config(args.repo)
+    if args.profile_cmd == "show":
+        print_json(show_profile(cfg.repo_root))
+    elif args.profile_cmd == "set":
+        print_json(set_profile(cfg.repo_root, args.name))
+    return 0
+
+
+def cmd_bench(args: argparse.Namespace) -> int:
+    cfg = load_config(args.repo)
+    if args.bench_cmd == "run":
+        if args.suite != "framework-smoke":
+            raise SystemExit(f"unknown suite: {args.suite}")
+        result = run_framework_smoke(cfg.repo_root)
+        print_json(result)
+        return 0 if result["ok"] else 1
     return 0
 
 
@@ -171,11 +216,20 @@ def build_parser() -> argparse.ArgumentParser:
     wt.add_argument("id")
     wt.add_argument("--window", type=int, default=3)
     wt.set_defaults(func=cmd_wiki)
-    wsub.add_parser("lint").set_defaults(func=cmd_wiki)
+    wl = wsub.add_parser("lint")
+    wl.add_argument("--strict", action="store_true")
+    wl.add_argument("--fail-on-error", action="store_true")
+    wl.set_defaults(func=cmd_wiki)
     wi = wsub.add_parser("ingest")
     wi.add_argument("source")
     wi.add_argument("--title")
     wi.set_defaults(func=cmd_wiki)
+    wn = wsub.add_parser("new")
+    wn.add_argument("--template", choices=["page", "decision", "source-summary"], default="page")
+    wn.add_argument("--title", required=True)
+    wn.add_argument("--domain", default="framework")
+    wn.add_argument("--slug")
+    wn.set_defaults(func=cmd_wiki)
     wq = wsub.add_parser("query")
     wq.add_argument("query")
     wq.add_argument("-k", type=int, default=10)
@@ -196,18 +250,27 @@ def build_parser() -> argparse.ArgumentParser:
     ctx = sub.add_parser("context")
     csub = ctx.add_subparsers(dest="context_cmd", required=True)
     csub.add_parser("status").set_defaults(func=cmd_context)
+    cm = csub.add_parser("meter")
+    cm.add_argument("--model", default="auto")
+    cm.add_argument("--transcript")
+    cm.set_defaults(func=cmd_context)
     cc = csub.add_parser("checkpoint")
     cc.add_argument("--goal")
     cc.add_argument("--plan")
     cc.add_argument("--transcript")
     cc.add_argument("--max-tokens", type=int, default=2000)
     cc.add_argument("--print-packet", action="store_true")
+    cc.add_argument("--handoff-template", action="store_true")
     cc.set_defaults(func=cmd_context)
     cf = csub.add_parser("fresh-start")
     cf.add_argument("--goal")
     cf.add_argument("--plan")
     cf.add_argument("--max-tokens", type=int, default=2000)
     cf.set_defaults(func=cmd_context)
+    cl = csub.add_parser("lint-handoff")
+    cl.add_argument("path")
+    cl.add_argument("--max-tokens", type=int, default=2000)
+    cl.set_defaults(func=cmd_context)
 
     de = sub.add_parser("delegate")
     desub = de.add_subparsers(dest="delegate_cmd", required=True)
@@ -218,6 +281,23 @@ def build_parser() -> argparse.ArgumentParser:
     dp = desub.add_parser("plan")
     dp.add_argument("task")
     dp.set_defaults(func=cmd_delegate)
+
+    hk = sub.add_parser("hooks")
+    hksub = hk.add_subparsers(dest="hooks_cmd", required=True)
+    hksub.add_parser("doctor").set_defaults(func=cmd_hooks)
+
+    pr = sub.add_parser("profile")
+    prsub = pr.add_subparsers(dest="profile_cmd", required=True)
+    prsub.add_parser("show").set_defaults(func=cmd_profile)
+    ps = prsub.add_parser("set")
+    ps.add_argument("name")
+    ps.set_defaults(func=cmd_profile)
+
+    be = sub.add_parser("bench")
+    besub = be.add_subparsers(dest="bench_cmd", required=True)
+    br = besub.add_parser("run")
+    br.add_argument("--suite", default="framework-smoke")
+    br.set_defaults(func=cmd_bench)
     return p
 
 
@@ -229,4 +309,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

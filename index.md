@@ -10,6 +10,9 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 ## Framework
 - [[concepts/optimization-axes]] — 7 axes, tool mappings, gap analysis
 - [[schema]] — rigorous LLM wiki ingest/query/lint/crystallize contract
+- [[templates/page.template]] — v2 frontmatter page template
+- [[prompts/delegation-matrix]] — model-agnostic delegation tiers
+- [[skills/caveman-ultra/SKILL]] — Caveman Ultra skill
 
 ## Concepts (techniques)
 - [[concepts/caveman-output-compression]] — terse output style, 65% savings
@@ -47,10 +50,12 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 
 ## Universal CLI
 - `./te doctor` — verify framework health
+- `./te wiki new --template page|decision|source-summary` — create v2 wiki page
 - `./te wiki init|index|search|timeline|fetch|lint|ingest|query` — Obsidian wiki operations
-- `./te context status|checkpoint|fresh-start` — context tracking and fresh-session packets
+- `./te context status|meter|checkpoint|fresh-start|lint-handoff` — context tracking and fresh-session packets
 - `./te docs audit|split|load` — always-loaded doc hygiene
 - `./te delegate models|classify|plan` — model/subagent routing
+- `./te hooks doctor`, `./te profile show|set`, `./te bench run --suite framework-smoke` — productization checks
 
 ## Infra
 - [[raw/2026-04-20-machine-baselines]] — M1/M1B/M2 tok/s, bottlenecks, tweaks

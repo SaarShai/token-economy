@@ -5,7 +5,8 @@ wiki_root: .
 agent_adapter: auto
 context_max_tokens: auto
 refresh_threshold: 0.20
+warn_threshold: 0.15
 default_scope: project
 model_registry: ./models.yaml
+profile: ultra
 external_adapters: []
-

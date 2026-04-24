@@ -12,6 +12,9 @@ from typing import Any
 WIKI_DIRS = ("raw", "concepts", "patterns", "projects", "people", "queries", "L2_facts", "L3_sops", "L4_archive")
 SKIP_PARTS = {".git", ".token-economy", "__pycache__", ".pytest_cache"}
 WIKILINK_RE = re.compile(r"\[\[([^\]#|]+)(?:[#|][^\]]*)?\]\]")
+V2_REQUIRED = ("title", "type", "domain", "tier", "confidence", "created", "updated", "verified", "sources", "supersedes", "superseded-by", "tags")
+V2_TYPES = {"entity", "summary", "decision", "source-summary", "procedure", "concept", "pattern", "project", "query", "fact", "sop", "raw"}
+V2_TIERS = {"working", "episodic", "semantic", "procedural"}
 
 
 DEFAULT_SCHEMA = """# Token Economy Wiki Schema
@@ -83,7 +86,7 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
     for line in raw.splitlines():
         if ":" in line:
             key, value = line.split(":", 1)
-            fm[key.strip()] = value.strip()
+            fm[key.strip()] = value.strip().strip("\"'")
     return fm, body
 
 
@@ -94,6 +97,24 @@ def parse_tags(value: str) -> list[str]:
     if not value:
         return []
     return [value]
+
+
+def is_v2_page(fm: dict[str, str]) -> bool:
+    return fm.get("schema_version") == "2" or all(key in fm for key in ("title", "domain", "tier", "sources"))
+
+
+def confidence_value(value: str) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        legacy = {"low": 0.25, "med": 0.6, "medium": 0.6, "high": 0.9}
+        return legacy.get(str(value).strip().lower())
+
+
+def render_template(text: str, values: dict[str, str]) -> str:
+    for key, value in values.items():
+        text = text.replace("{{" + key + "}}", value)
+    return text
 
 
 class WikiStore:
@@ -324,6 +345,9 @@ class WikiStore:
         return {"id": target_id, "backlinks": backlinks[:20], "neighbors": neighbors[:20], "log": log_hits[-10:]}
 
     def lint(self) -> dict[str, Any]:
+        return self.lint_pages(strict=False)
+
+    def lint_pages(self, strict: bool = False) -> dict[str, Any]:
         pages = self.pages()
         ids = {p.id for p in pages}
         stems = {Path(p.id).name for p in pages}
@@ -331,26 +355,121 @@ class WikiStore:
         broken = []
         missing_frontmatter = []
         supersession = []
+        errors = []
+        warnings = []
         for p in pages:
+            rel_parts = set(p.path.relative_to(self.root).parts)
+            if strict and rel_parts & {"templates", "skills", "prompts", "hooks", "configs", "extensions", "adapters"}:
+                continue
             if p.path.name not in {"index.md", "log.md", "schema.md", "L0_rules.md", "L1_index.md"} and not p.frontmatter:
                 missing_frontmatter.append(p.id)
+                if strict:
+                    warnings.append({"code": "legacy_missing_frontmatter", "page": p.id})
             if "supersedes" in p.frontmatter or "superseded-by" in p.frontmatter:
                 supersession.append(p.id)
+            if strict:
+                if is_v2_page(p.frontmatter):
+                    self._lint_v2_page(p, ids, stems, errors, warnings)
+                elif p.frontmatter and p.path.name not in {"index.md", "log.md", "schema.md", "L0_rules.md", "L1_index.md"}:
+                    warnings.append({"code": "legacy_frontmatter_v1", "page": p.id})
+                if p.id.startswith("raw/") and p.frontmatter.get("type") not in {"raw", "source-summary"}:
+                    warnings.append({"code": "raw_type_not_raw", "page": p.id})
             for link in p.links:
                 link_id = link.removesuffix(".md")
                 if link_id in incoming:
                     incoming[link_id] += 1
                 elif link_id not in ids and Path(link_id).name not in stems:
                     broken.append({"from": p.id, "to": link})
+                    if strict and is_v2_page(p.frontmatter):
+                        errors.append({"code": "broken_link", "page": p.id, "target": link})
         exempt = {"index", "log", "schema", "L0_rules", "L1_index", "README", "start"}
-        orphans = [pid for pid, count in incoming.items() if count == 0 and Path(pid).name not in exempt and not pid.startswith("raw/")]
-        return {
+        support_dirs = {"templates", "skills", "prompts", "hooks", "configs", "extensions", "adapters"}
+        orphans = [
+            pid
+            for pid, count in incoming.items()
+            if count == 0
+            and Path(pid).name not in exempt
+            and not pid.startswith("raw/")
+            and not (set(Path(pid).parts) & support_dirs)
+        ]
+        if strict:
+            for pid in orphans:
+                page = next((p for p in pages if p.id == pid), None)
+                if page and is_v2_page(page.frontmatter):
+                    warnings.append({"code": "orphan", "page": pid})
+        result = {
             "pages": len(pages),
             "missing_frontmatter": missing_frontmatter,
             "broken_links": broken,
             "orphans": orphans,
             "supersession_candidates": supersession,
         }
+        if strict:
+            result["strict"] = True
+            result["errors"] = errors
+            result["warnings"] = warnings
+            result["ok"] = not errors
+        return result
+
+    def _lint_v2_page(self, page: Page, ids: set[str], stems: set[str], errors: list[dict[str, Any]], warnings: list[dict[str, Any]]) -> None:
+        fm = page.frontmatter
+        for key in V2_REQUIRED:
+            if key not in fm:
+                errors.append({"code": "missing_v2_field", "page": page.id, "field": key})
+        if fm.get("type") and fm["type"] not in V2_TYPES:
+            errors.append({"code": "invalid_type", "page": page.id, "value": fm["type"]})
+        if fm.get("tier") and fm["tier"] not in V2_TIERS:
+            errors.append({"code": "invalid_tier", "page": page.id, "value": fm["tier"]})
+        conf = confidence_value(fm.get("confidence", ""))
+        if conf is None or conf < 0.0 or conf > 1.0:
+            errors.append({"code": "invalid_confidence", "page": page.id, "value": fm.get("confidence", "")})
+        for key in ("created", "updated", "verified"):
+            value = fm.get(key, "")
+            if value:
+                try:
+                    date.fromisoformat(value)
+                except ValueError:
+                    errors.append({"code": "invalid_date", "page": page.id, "field": key, "value": value})
+        for key in ("supersedes", "superseded-by"):
+            value = fm.get(key, "")
+            for target in re.findall(r"\[\[([^\]]+)\]\]", value):
+                target_id = target.removesuffix(".md")
+                if target_id not in ids and Path(target_id).name not in stems:
+                    errors.append({"code": "broken_supersession", "page": page.id, "target": target})
+
+    def new_page(self, template: str, title: str, domain: str = "framework", slug: str | None = None) -> dict[str, Any]:
+        self.init()
+        template_map = {
+            "page": ("templates/page.template.md", "concepts"),
+            "decision": ("templates/decision.template.md", "queries"),
+            "source-summary": ("templates/source-summary.template.md", "raw"),
+        }
+        if template not in template_map:
+            raise KeyError(f"unknown template: {template}")
+        template_rel, target_dir = template_map[template]
+        template_path = self.root / template_rel
+        if not template_path.exists():
+            template_path = Path(__file__).resolve().parents[1] / template_rel
+        content_template = template_path.read_text(encoding="utf-8")
+        today = date.today().isoformat()
+        page_slug = slugify(slug or title)
+        filename = f"{today}-{page_slug}.md" if target_dir == "raw" else f"{page_slug}.md"
+        target = self.root / target_dir / filename
+        if target.exists():
+            raise FileExistsError(target)
+        content = render_template(
+            content_template,
+            {
+                "title": title,
+                "domain": domain,
+                "date": today,
+            },
+        )
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        self.append_log("update", title, f"Created `{target.relative_to(self.root).as_posix()}` from `{template}` template.")
+        self.index()
+        return {"created": target.relative_to(self.root).as_posix(), "template": template, "title": title}
 
     def ingest(self, source: str, title: str | None = None) -> dict[str, Any]:
         self.init()

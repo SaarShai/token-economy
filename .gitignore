@@ -16,6 +16,7 @@ projects/compound-compression-pipeline/eval_v*_run.out
 
 # Token Economy runtime state
 .token-economy/
+.token-economy-profile
 
 # OS
 .DS_Store

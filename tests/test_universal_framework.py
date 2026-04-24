@@ -3,13 +3,15 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 from token_economy.cli import main
-from token_economy.context import checkpoint
+from token_economy.context import checkpoint, lint_handoff, meter
 from token_economy.delegate import classify
 from token_economy.tokens import estimate_tokens
 from token_economy.wiki import WikiStore
@@ -97,7 +99,7 @@ Search first, timeline second, fetch last.
     def test_delegate_prefers_cheapest_capable_worker(self):
         route = classify("summarize this Obsidian wiki note and document the result")
         self.assertEqual(route.tier, "simple")
-        self.assertEqual(route.model_class, "cheap")
+        self.assertEqual(route.model_class, "lightweight")
         self.assertEqual(route.worker, "wiki-worker")
 
     def test_context_keeper_v2_memory_api(self):
@@ -136,7 +138,70 @@ Search first, timeline second, fetch last.
             route = json.loads(buf.getvalue())
             self.assertEqual(route["tier"], "simple")
 
+    def test_wiki_new_v2_page_and_strict_lint(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            wiki = WikiStore(root)
+            wiki.init()
+            # Copy templates into temp wiki to emulate repo install.
+            (root / "templates").mkdir(exist_ok=True)
+            for name in ("page.template.md", "decision.template.md", "source-summary.template.md"):
+                (root / "templates" / name).write_text((REPO / "templates" / name).read_text(encoding="utf-8"), encoding="utf-8")
+            created = wiki.new_page("page", "Progressive Retrieval", "framework")
+            self.assertTrue((root / created["created"]).exists())
+            lint = wiki.lint_pages(strict=True)
+            self.assertEqual(lint["errors"], [])
+
+    def test_context_meter_env_threshold_and_handoff_lint(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            transcript = root / "transcript.txt"
+            transcript.write_text("x" * 200, encoding="utf-8")
+            old_refresh = os.environ.get("REFRESH_AT_PCT")
+            old_warn = os.environ.get("WARN_AT_PCT")
+            old_max = os.environ.get("TOKEN_ECONOMY_CONTEXT_MAX")
+            os.environ["REFRESH_AT_PCT"] = "20"
+            os.environ["WARN_AT_PCT"] = "15"
+            os.environ["TOKEN_ECONOMY_CONTEXT_MAX"] = "250"
+            try:
+                status = meter(transcript, model="test")
+                self.assertEqual(status["action"], "refresh")
+            finally:
+                for key, value in (("REFRESH_AT_PCT", old_refresh), ("WARN_AT_PCT", old_warn), ("TOKEN_ECONOMY_CONTEXT_MAX", old_max)):
+                    if value is None:
+                        os.environ.pop(key, None)
+                    else:
+                        os.environ[key] = value
+            packet = checkpoint(root, goal="meter test", plan="verify", transcript=transcript)
+            self.assertTrue(lint_handoff(Path(packet["path"]))["ok"])
+
+    def test_delegate_plan_contract(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(main(["delegate", "plan", "extract two symbols from code"]), 0)
+        plan = json.loads(buf.getvalue())
+        self.assertNotEqual(plan["chosen_tier"], "reasoning_top")
+        self.assertIn("Orchestrator does not delegate final synthesis", plan["orchestrator_rule"])
+        self.assertIn("sources", plan["result_contract"])
+
+    def test_output_filter_preserves_errors(self):
+        proc = subprocess.run(
+            ["bash", str(REPO / "hooks/output-filter/filter.sh")],
+            input="same\nsame\nERROR exact failure\nsame\n",
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        self.assertIn("ERROR exact failure", proc.stdout)
+        self.assertIn("deduped", proc.stdout)
+
+    def test_install_dry_run_and_bench(self):
+        subprocess.run(["bash", str(REPO / "INSTALL.sh"), "--dry-run"], cwd=REPO, check=True, capture_output=True, text=True)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(main(["bench", "run", "--suite", "framework-smoke"]), 0)
+        self.assertTrue(json.loads(buf.getvalue())["ok"])
+
 
 if __name__ == "__main__":
     unittest.main()
-

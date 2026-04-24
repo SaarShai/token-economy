@@ -29,13 +29,19 @@ def resolve_max_tokens(value: int | str | None) -> int:
 def status_for_text(text: str, max_tokens: int | str | None = None, threshold: float = 0.20) -> dict[str, Any]:
     used = estimate_tokens(text)
     maximum = resolve_max_tokens(max_tokens)
+    refresh_threshold = float(os.environ.get("REFRESH_AT_PCT", threshold * 100)) / 100
+    warn_threshold = float(os.environ.get("WARN_AT_PCT", "15")) / 100
     ratio = used / maximum if maximum else 0.0
+    action = "refresh" if ratio >= refresh_threshold else "warn" if ratio >= warn_threshold else "continue"
     return {
         "estimated_tokens": used,
         "max_tokens": maximum,
         "ratio": round(ratio, 4),
-        "threshold": threshold,
-        "action": "checkpoint" if ratio >= threshold else "continue",
+        "pct": round(ratio * 100, 2),
+        "warn_threshold": warn_threshold,
+        "refresh_threshold": refresh_threshold,
+        "threshold": refresh_threshold,
+        "action": action,
     }
 
 
@@ -51,7 +57,19 @@ def extract_transcript_facts(text: str) -> dict[str, list[str]]:
     paths = sorted(set(m.group("path").strip() for m in PATH_RE.finditer(text)))[:80]
     commands = sorted(set(m.group(1).strip().strip("\"'") for m in CMD_RE.finditer(text)))[:50]
     errors = sorted(set(m.group(1).strip() for m in ERR_RE.finditer(text)))[:50]
-    return {"files": paths, "commands": commands, "errors": errors}
+    decisions = sorted(set(line.strip("- ").strip() for line in text.splitlines() if "decision" in line.lower() or "decide" in line.lower()))[:30]
+    wiki_pages = sorted(set(x for x in re.findall(r"\[\[([^\]]+)\]\]", text)))[:30]
+    return {"files": paths, "commands": commands, "errors": errors, "decisions": decisions, "wiki_pages": wiki_pages}
+
+
+def meter(transcript: Path | None = None, model: str = "auto", max_tokens: int | str | None = None) -> dict[str, Any]:
+    text = ""
+    if transcript and transcript.exists():
+        text = transcript.read_text(encoding="utf-8", errors="replace")
+    status = status_for_text(text, max_tokens=max_tokens)
+    status["model"] = model
+    status["tokenizer"] = "char/4-fallback"
+    return status
 
 
 def checkpoint(
@@ -60,6 +78,7 @@ def checkpoint(
     plan: str = "",
     transcript: Path | None = None,
     max_packet_tokens: int = 2000,
+    context_pct: str | float = "unknown",
 ) -> dict[str, Any]:
     state_dir = repo_root / ".token-economy" / "checkpoints"
     state_dir.mkdir(parents=True, exist_ok=True)
@@ -70,15 +89,52 @@ def checkpoint(
     facts = extract_transcript_facts(transcript_text)
     l1 = repo_root / "L1_index.md"
     l1_pointer = f"- L1 index: `{l1}`" if l1.exists() else "- L1 index: missing; run `./te wiki index`."
-    packet = f"""# Fresh Session Packet
+    task_slug = re.sub(r"[^a-zA-Z0-9]+", "-", (goal or "token-economy-task").lower()).strip("-") or "token-economy-task"
+    iso = datetime.now(timezone.utc).isoformat()
+    packet = f"""---
+type: handoff
+from-session: local
+created: {iso}
+context-pct-at-refresh: {context_pct}
+next-mode: plan-first
+---
 
-Instruction: Start in plan mode. Think step by step. Create a robust plan before executing.
+# HANDOFF - {task_slug}
 
-## Goal
+## 1. Current task (1-liner)
 {goal or "Continue the current Token Economy task."}
 
-## Current Plan
-{plan or "Inspect repo state, retrieve relevant wiki/context on demand, then execute verified steps."}
+## 2. What done
+- Handoff generated. Review repo state before acting.
+
+## 3. What in-progress (blockers)
+- {plan or "Inspect repo state, retrieve relevant wiki/context on demand, then execute verified steps."}
+
+## 4. What next (priority order)
+- Read this handoff and `start.md` only.
+- Load L0/L1 pointers.
+- Build plan before execution.
+
+## 5. Key files touched (paths only - do NOT re-read speculatively)
+{format_list(facts["files"])}
+
+## 6. Key decisions + reasoning (why, not what)
+{format_list(facts["decisions"])}
+
+## 7. Wiki pages updated / created (wikilinks)
+{format_list(facts["wiki_pages"])}
+
+## 8. Open questions
+- Retrieve relevant pages before deciding.
+- Keep Caveman Ultra unless user asks for detail.
+- Document durable facts only after verified execution.
+
+## 9. Instructions for next agent
+- Start in plan mode. Think step-by-step. Create a robust plan before executing.
+- Enter plan-mode. Think step-by-step.
+- Read this handoff + `start.md` only. Do not load full wiki.
+- Build plan. Get user approval if host process requires approval. Then execute.
+- On complete: update wiki, log entry, create fresh handoff if context > 20%.
 
 ## Memory Pointers
 {l1_pointer}
@@ -88,19 +144,11 @@ Instruction: Start in plan mode. Think step by step. Create a robust plan before
 - L3 SOPs: `L3_sops/`
 - L4 archive: `L4_archive/`
 
-## Touched Files
-{format_list(facts["files"])}
-
 ## Commands Seen
 {format_list(facts["commands"])}
 
 ## Errors Seen
 {format_list(facts["errors"])}
-
-## Open Decisions
-- Retrieve relevant pages before deciding.
-- Keep Caveman Ultra unless user asks for detail.
-- Document durable facts only after verified execution.
 """
     packet = trim_to_tokens(packet, max_packet_tokens)
     path = state_dir / f"{ts}-fresh-session.md"
@@ -108,8 +156,26 @@ Instruction: Start in plan mode. Think step by step. Create a robust plan before
     return {"path": str(path), "tokens": estimate_tokens(packet), "packet": packet}
 
 
+def lint_handoff(path: Path, max_tokens: int = 2000) -> dict[str, Any]:
+    text = path.read_text(encoding="utf-8", errors="replace")
+    required = [
+        "## 1. Current task",
+        "## 2. What done",
+        "## 3. What in-progress",
+        "## 4. What next",
+        "## 5. Key files touched",
+        "## 6. Key decisions",
+        "## 7. Wiki pages updated",
+        "## 8. Open questions",
+        "## 9. Instructions for next agent",
+        "Enter plan-mode",
+    ]
+    missing = [item for item in required if item not in text]
+    tokens = estimate_tokens(text)
+    return {"path": str(path), "tokens": tokens, "max_tokens": max_tokens, "missing": missing, "ok": not missing and tokens <= max_tokens}
+
+
 def format_list(items: list[str]) -> str:
     if not items:
         return "- none captured"
     return "\n".join(f"- `{item}`" for item in items[:40])
-

@@ -17,6 +17,19 @@ Core commands:
 
 Config lives in [`token-economy.yaml`](token-economy.yaml). Agent-specific adapters live in [`adapters/`](adapters/).
 
+Supplemental productization:
+
+```bash
+./te wiki new --template page --title "New Memory"
+./te wiki lint --strict
+./te context meter --transcript session.jsonl
+./te hooks doctor
+./te profile show
+./te bench run --suite framework-smoke
+```
+
+Skills, prompts, hooks, configs, templates, and optional extension recipes live in their matching top-level folders.
+
 **Active projects:**
 
 | project | what | status |

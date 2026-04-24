@@ -22,6 +22,21 @@ Start every non-trivial task in plan mode: understand intent, inspect reality, m
    - `L1_index.md` if present
 5. Do not load full wiki pages, raw sources, old sessions, or large docs until retrieval proves relevance.
 
+## On-Demand Loader
+
+Load only when triggered:
+
+| Trigger | Load |
+|---|---|
+| Terse style details | `skills/caveman-ultra/SKILL.md` |
+| Task >3 steps | `skills/plan-first-execute/SKILL.md` |
+| Need wiki memory | `skills/wiki-retrieve/SKILL.md` |
+| Writing memory | `skills/wiki-write/SKILL.md` |
+| Context warn/refresh | `skills/context-refresh/SKILL.md` |
+| Need subagents | `skills/subagent-orchestrator/SKILL.md` |
+| Delegation policy | `prompts/delegation-matrix.md` |
+| New wiki page | `templates/page.template.md` |
+
 ## Context Rules
 
 - Retrieve before reasoning about project/wiki facts.
@@ -29,7 +44,8 @@ Start every non-trivial task in plan mode: understand intent, inspect reality, m
 - Prefer pointers first: index, search hits, timelines, then full pages.
 - At `20%` estimated context used, run:
   ```bash
-  ./te context checkpoint
+  ./te context meter --transcript <file>
+  ./te context checkpoint --handoff-template
   ```
 - If the host cannot clear context, open a fresh session with the packet from `./te context fresh-start`.
 

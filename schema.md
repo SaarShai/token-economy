@@ -17,16 +17,26 @@ This file is the operating contract. Agents must use the wiki before reasoning a
 - `L3_sops/` solved-task playbooks.
 - `L4_archive/` cold session archives and fresh-start packets.
 
-## Frontmatter
+## Frontmatter v2 (new pages)
 ```
 ---
-type: concept|pattern|project|person|raw|query
-tags: [token-compression, caching, ...]
-confidence: low|med|high
-evidence_count: N
-related: [[page]]
+schema_version: 2
+title: Example
+type: entity|summary|decision|source-summary|procedure|concept|pattern|project|query|fact|sop|raw
+domain: framework|tools|patterns|experiments|project
+tier: working|episodic|semantic|procedural
+confidence: 0.0
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+verified: YYYY-MM-DD
+sources: []
+supersedes: []
+superseded-by:
+tags: []
 ---
 ```
+
+Legacy v1 pages remain readable. `./te wiki lint --strict` emits migration warnings for v1 pages and enforces v2 fields on v2/template-generated pages.
 
 ## Ops
 - **Ingest**: source -> `raw/`, update relevant concepts/projects/patterns, add backlinks, append `log.md`, update `index.md`/`L1_index.md`.

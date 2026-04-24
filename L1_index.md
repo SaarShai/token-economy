@@ -20,6 +20,7 @@ Compact pointers. Fetch details on demand.
 - projects/wiki-search/README (project tags=retrieval,progressive-disclosure,mcp,wiki) -> `projects/wiki-search/README.md`
 - stable/README (project tags=stable,release,curated) -> `stable/README.md`
 - HANDOFF (handoff) -> `HANDOFF.md`
+- INSTALL (page) -> `INSTALL.md`
 - adapters/README (page) -> `adapters/README.md`
 - adapters/claude/CLAUDE (page) -> `adapters/claude/CLAUDE.md`
 - adapters/codex/AGENTS (page) -> `adapters/codex/AGENTS.md`
@@ -31,15 +32,14 @@ Compact pointers. Fetch details on demand.
 - concepts/semantic-diff-edits (concept tags=semantic-diff,ast,context-compression,code-editing) -> `concepts/semantic-diff-edits.md`
 - concepts/turboquant-kv-cache (concept tags=turboquant,kv-cache,llama-cpp,apple-silicon,gguf-stack) -> `concepts/turboquant-kv-cache.md`
 - concepts/wiki-governance (concept tags=wiki,governance,schema) -> `concepts/wiki-governance.md`
+- extensions/README (page) -> `extensions/README.md`
+- extensions/claude-context (page) -> `extensions/claude-context.md`
+- extensions/code-review-graph (page) -> `extensions/code-review-graph.md`
+- extensions/cognee (page) -> `extensions/cognee.md`
+- extensions/context-mode (page) -> `extensions/context-mode.md`
+- extensions/omni (page) -> `extensions/omni.md`
+- extensions/qmd (page) -> `extensions/qmd.md`
+- extensions/rtk (page) -> `extensions/rtk.md`
+- extensions/token-economy-tools (page) -> `extensions/token-economy-tools.md`
+- extensions/token-savior (page) -> `extensions/token-savior.md`
 - external-adapters (page) -> `external-adapters.md`
-- projects/agents-triage/SKILL (page) -> `projects/agents-triage/SKILL.md`
-- projects/agents-triage/agents/kaggle-feeder (page) -> `projects/agents-triage/agents/kaggle-feeder.md`
-- projects/agents-triage/agents/local-ollama (page) -> `projects/agents-triage/agents/local-ollama.md`
-- projects/agents-triage/agents/quick-fix (page) -> `projects/agents-triage/agents/quick-fix.md`
-- projects/agents-triage/agents/research-lite (page) -> `projects/agents-triage/agents/research-lite.md`
-- projects/agents-triage/agents/turboquant-local (page) -> `projects/agents-triage/agents/turboquant-local.md`
-- projects/agents-triage/agents/wiki-note (page) -> `projects/agents-triage/agents/wiki-note.md`
-- projects/compound-compression-pipeline/INSTALL (page) -> `projects/compound-compression-pipeline/INSTALL.md`
-- projects/compound-compression-pipeline/kaggle_results/README (page) -> `projects/compound-compression-pipeline/kaggle_results/README.md`
-- projects/context-keeper/README (project tags=compaction,context-management,memory,hooks) -> `projects/context-keeper/README.md`
-- projects/semdiff/INSTALL (page) -> `projects/semdiff/INSTALL.md`
