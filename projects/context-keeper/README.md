@@ -15,25 +15,25 @@ Before compaction (PreCompact hook):
 1. Parse current transcript JSONL.
 2. Regex-extract: `user_goals`, `files_created`, `files_touched`, `commands_run`, `errors_seen`, `numbers`, `urls`, `failed_attempts`.
 3. Optional LLM pass (local Ollama, e.g. `gemma4:31b`): decisions/rationale, failed-attempts, next-steps → JSON.
-4. Write markdown memory page: `~/.claude/memory/sessions/YYYY-MM-DD-HHMM-<sid8>.md`.
+4. Write markdown memory page: `.token-economy/sessions/YYYY-MM-DD-HHMM-<sid8>.md`.
 5. stdout = terse pointer. PreCompact hook injects it into compaction context → summarizer includes pointer. Agent can read file post-compact.
 
 ## Files
 ```
 projects/context-keeper/extract.py   # the work
-~/.claude/skills/context-keeper/SKILL.md
-~/.claude/skills/context-keeper/hook.sh
+.claude/skills/context-keeper/SKILL.md
+.claude/skills/context-keeper/hook.sh
 ```
 
 ## Activation (manual step — don't overwrite existing pre-compact hook)
 
-Current user `~/.claude/settings.json` has `PreCompact → node ~/.claude/hooks/pre-compact.js` (timestamp log). Two options:
+Project-local `.claude/settings.json` can chain a PreCompact hook when the host supports project settings:
 
 **Option A — replace** (lose timestamp log):
 ```json
 "PreCompact": [{
   "matcher": "*",
-  "hooks": [{"type":"command","command":"bash ~/.claude/skills/context-keeper/hook.sh"}]
+  "hooks": [{"type":"command","command":"bash ./.claude/skills/context-keeper/hook.sh"}]
 }]
 ```
 
@@ -42,8 +42,7 @@ Current user `~/.claude/settings.json` has `PreCompact → node ~/.claude/hooks/
 "PreCompact": [{
   "matcher": "*",
   "hooks": [
-    {"type":"command","command":"node ~/.claude/hooks/pre-compact.js"},
-    {"type":"command","command":"bash ~/.claude/skills/context-keeper/hook.sh"}
+    {"type":"command","command":"bash ./.claude/skills/context-keeper/hook.sh"}
   ]
 }]
 ```

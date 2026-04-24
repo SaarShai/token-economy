@@ -16,7 +16,6 @@ Protocol:
 6. Cite page paths/IDs.
 
 Never:
-- load whole vault
+- load the whole wiki
 - fetch raw archive speculatively
 - cite superseded page without noting newer page
-

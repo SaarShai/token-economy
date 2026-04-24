@@ -26,7 +26,7 @@ EFFORT_GUIDANCE = {
 }
 
 PA_PREFIX_RE = re.compile(r"^\s*/(?:pa|btw)(?::|\s|$)", re.IGNORECASE)
-WIKI_CONTEXT_RE = re.compile(r"\b(wiki|obsidian|note|memory|document|ingest|project|repo|framework|decision|sop|l[0-4])\b", re.IGNORECASE)
+WIKI_CONTEXT_RE = re.compile(r"\b(wiki|markdown|note|memory|document|ingest|project|repo|framework|decision|sop|l[0-4])\b", re.IGNORECASE)
 FILE_CONTEXT_RE = re.compile(r"\b(file|path|code|test|bug|diff|function|class|module|script)\b", re.IGNORECASE)
 WEB_CONTEXT_RE = re.compile(r"\b(web|online|latest|current|url|http|research|survey|compare|source)\b", re.IGNORECASE)
 PATH_RE = re.compile(r"(?<![\w.-])(?:\.{0,2}/|/|[A-Za-z0-9_.-]+/)[^\s,;:]+")
@@ -75,7 +75,7 @@ def classify(task: str, registry: dict[str, list[str]] | None = None) -> Route:
     hard = bool(re.search(r"\b(architect|design|framework|multi[- ]?file|migration|novel|ambiguous|strategy|system)\b", text))
     research = bool(re.search(r"\b(research|survey|compare|find repos?|literature|web)\b", text))
     simple = bool(re.search(r"\b(typo|one[- ]?line|summari[sz]e|classify|extract|lint|format|small fix)\b", text))
-    wiki = bool(re.search(r"\b(wiki|obsidian|note|memory|document|ingest|l[0-4])\b", text))
+    wiki = bool(re.search(r"\b(wiki|markdown|note|memory|document|ingest|l[0-4])\b", text))
     parallel = bool(re.search(r"\b(parallel|independent|separate|each of|split)\b", text)) or task.count("\n- ") >= 2
 
     if high_risk or hard:

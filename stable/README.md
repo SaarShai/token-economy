@@ -15,7 +15,7 @@ Curated bundle of the measured, tested tools. Safe to install. Unstable/speculat
 |---|---|---|---|
 | **ComCom MCP** (`projects/compound-compression-pipeline/comcom_mcp/`) | input compression | shipped | 44.9% savings, Δq −0.12 on SQuAD n=8; 57.3% @ Δ +0.08 CI[−0.18,+0.34] on CoQA n=50 |
 | **semdiff MCP** (`projects/semdiff/semdiff_mcp/`) | output filter (file reads) | shipped | 95.5% on argparse.py re-read |
-| **context-keeper hook** (`~/.claude/skills/context-keeper/`) | cross-session memory (intra only) | shipped | 22 files / 21 cmds / 21 errs extracted per session |
+| **context-keeper hook** (`.claude/skills/context-keeper/`) | cross-session memory (intra only) | shipped | 22 files / 21 cmds / 21 errs extracted per session |
 | **skip_detector** (in ComCom pipeline_v2) | verification | shipped, default-on | caught 2/6 adversarial numeric items |
 | **rename_detect** (in semdiff core) | verification | shipped, auto-wired | `alpha→gamma` conf=1.0 on test |
 | **adversarial_bench.py** | measurement | shipped | CI gate working — caught regression Δ=−1.10 |

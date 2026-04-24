@@ -1,12 +1,13 @@
 """context-keeper v2 retrieval API: ck_query, ck_fetch, ck_recent."""
 from __future__ import annotations
 
+import os
 import time
 from pathlib import Path
 from typing import Any
 
 
-DEFAULT_ROOT = Path.home() / ".claude" / "memory"
+DEFAULT_ROOT = Path(os.environ.get("TOKEN_ECONOMY_ROOT", Path.cwd())) / ".token-economy" / "memory"
 ALLOWED_TIERS = {"L0": "L0_rules.md", "L1": "L1_index.md", "L2": "L2_facts", "L3": "L3_sops", "L4": "L4_archive"}
 
 
@@ -62,4 +63,3 @@ def ck_recent(days: int = 7, root: str | Path | None = None) -> list[dict[str, A
         if path.stat().st_mtime >= cutoff:
             rows.append({"path": path.relative_to(base).as_posix(), "mtime": int(path.stat().st_mtime)})
     return rows
-

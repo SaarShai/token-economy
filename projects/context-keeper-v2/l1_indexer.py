@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 
@@ -28,7 +29,8 @@ def rebuild(root: Path) -> Path:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", default=str(Path.home() / ".claude" / "memory"))
+    default_root = Path(os.environ.get("TOKEN_ECONOMY_ROOT", Path.cwd())) / ".token-economy" / "memory"
+    parser.add_argument("--root", default=str(default_root))
     args = parser.parse_args()
     print(rebuild(Path(args.root)))
     return 0

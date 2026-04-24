@@ -19,7 +19,7 @@ V2_TIERS = {"working", "episodic", "semantic", "procedural"}
 
 DEFAULT_SCHEMA = """# Token Economy Wiki Schema
 
-Purpose: an Obsidian-compatible LLM wiki for durable agent memory.
+Purpose: a repo-local markdown LLM wiki for durable agent memory.
 
 ## Layers
 - `raw/`: immutable sources. Never rewrite.
@@ -242,7 +242,21 @@ class WikiStore:
             "projects/semdiff/README",
         }
         ordered = sorted(pages, key=lambda p: (0 if p.id in priority else 1, p.id))
-        seen_l1 = {"start", "config", "model registry", "L0 rules", "schema", "wiki catalog", "log", "L0_rules", "L1_index", "index"}
+        seen_l1 = {
+            "start",
+            "config",
+            "model registry",
+            "L0 rules",
+            "schema",
+            "wiki catalog",
+            "log",
+            "L0_rules",
+            "L1_index",
+            "index",
+            "AGENTS",
+            "CLAUDE",
+            "GEMINI",
+        }
         for page in ordered:
             if len(l1_lines) >= 45:
                 break

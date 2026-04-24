@@ -15,7 +15,7 @@ Added `/pa` and `/btw` prompt bypass via `te pa`, hook routing, a personal-assis
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").
-- Wiki created. Folder: `Token Economy/` in `Spark Obsidian Beast` vault.
+- Wiki created. Folder: repo-local `Token Economy/` markdown wiki.
 - Ingested research brief → `raw/2026-04-17-research-brief.md`.
 - Setup confirmed: caveman plugin active, superpowers skill loaded, wiki initialized.
 - Next: flesh out concept pages, pick first project (likely compound-compression-pipeline or wiki-query-shortcircuit).
@@ -25,7 +25,7 @@ Terminology: **ComCom** = our compound-compression project (disambiguate from Cl
 - Built eval-v2: SQuAD v2 + gemma4:31b judge + bootstrap CIs + failure-mode classification. Running in background.
 - Built [[projects/semdiff]] (AST-node diff). Measured 95.5% savings after 2 method edits on argparse.py (2575 lines, 19,280 → 859 tokens); 99.5% on stable re-read. Tree-sitter for py/js/ts/rust.
 - Kaggle auth set up (user: saarshai).
-- Built [[projects/context-keeper]]. Skill + PreCompact hook. Regex extractor + optional local-LLM pass. Memory file written to ~/.claude/memory/sessions/. Registered in skills list.
+- Built [[projects/context-keeper]]. Skill + PreCompact hook. Regex extractor + optional local-LLM pass. Current framework writes memory under repo-local `.token-economy/` paths.
 - **Eval-v2 completed** (SQuAD v2, n=8, 2 runs, phi4:14b + qwen3:8b judge). Token savings **44.5% CI [41.5-47.4]**. Δscore **−0.25 CI [−0.62, 0.00]**. Failure modes on comp: 8 NONE, 6 MISSING, 2 SWAP. **v1's "55.7% @ 100%" overstated**; principled measurement shows small, non-significant quality hit. N too small to resolve CI. Judge swap (gemma4:31b → qwen3:8b) fixed 129s latency thrash.
 - Built ComCom v2 (pipeline_v2.py) with question-aware + critical-zone protection; eval-v3 in progress (4 conditions: full, v1, v2, adaptive-escalation). Early data shows v2 over-compresses (critical-protect + rate=0.5 on remainder = total too low). Fix planned: scale rate by (1 - protected_fraction).
 - **semdiff MCP server built**. Python 3.11 + mcp SDK. 3 tools exposed (read_file_smart, snapshot_clear, snapshot_status). Protocol roundtrip tested (initialize, tools/list, tools/call all pass). CC plugin wrapper at `plugin/.mcp.json`. Install docs at [[projects/semdiff/INSTALL]].

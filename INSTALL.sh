@@ -15,6 +15,11 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
+if [ "$SCOPE" != "project" ]; then
+  echo "Token Economy installs project-locally only. Use --scope project." >&2
+  exit 2
+fi
+
 export TOKEN_ECONOMY_ROOT="$ROOT"
 
 echo "[1/4] doctor"
@@ -38,4 +43,3 @@ else
 fi
 
 echo "Install check complete."
-

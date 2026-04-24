@@ -1,22 +1,18 @@
 #!/bin/bash
-# agents-triage installer. Global by default; pass --project for project-scoped.
+# agents-triage installer. Project-local only.
 
 set -e
-MODE="user"
-[ "$1" = "--project" ] && MODE="project"
+if [ "${1:-}" != "" ] && [ "${1:-}" != "--project" ]; then
+    echo "agents-triage installs project-locally only. Use --project or no flag." >&2
+    exit 2
+fi
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 SKILL_SRC="$REPO/projects/agents-triage"
 
-if [ "$MODE" = "user" ]; then
-    SKILL_DIR="$HOME/.claude/skills"
-    AGENT_DIR="$HOME/.claude/agents"
-    SETTINGS="$HOME/.claude/settings.json"
-else
-    SKILL_DIR="$(pwd)/.claude/skills"
-    AGENT_DIR="$(pwd)/.claude/agents"
-    SETTINGS="$(pwd)/.claude/settings.json"
-fi
+SKILL_DIR="$REPO/.claude/skills"
+AGENT_DIR="$REPO/.claude/agents"
+SETTINGS="$REPO/.claude/settings.json"
 mkdir -p "$SKILL_DIR" "$AGENT_DIR"
 
 echo "[1/3] symlinking skill → $SKILL_DIR/agents-triage"

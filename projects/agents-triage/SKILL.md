@@ -28,22 +28,22 @@ Full opus bypass isn't possible (CC always routes through main model), but the d
 
 ### Layer 3: specialized subagents
 Four bundled agents, each minimal-context:
-- **wiki-note** (haiku) — Obsidian/wiki edits only. Read+Write+Glob+Grep, no Bash.
+- **wiki-note** (haiku) — repo-local wiki edits only. Read+Write+Glob+Grep, no Bash.
 - **quick-fix** (haiku) — small scoped edits, one `Bash` verify max.
 - **local-ollama** (haiku coordinator) — shells out to local Ollama models, zero API cost for the actual work.
 - **research-lite** (haiku) — ≤5 web calls, ≤800-word output.
 
 ## Install
 
-Global (all CC sessions):
+Project-local:
 ```bash
 bash projects/agents-triage/install.sh
 ```
 
 This:
-1. Symlinks skill → `~/.claude/skills/agents-triage/`.
-2. Copies 4 agent definitions → `~/.claude/agents/`.
-3. Adds `UserPromptSubmit` hook to `~/.claude/settings.json` (chains if one exists).
+1. Symlinks skill -> `.claude/skills/agents-triage/`.
+2. Copies agent definitions -> `.claude/agents/`.
+3. Adds `UserPromptSubmit` hook to `.claude/settings.json` when project settings are supported.
 
 Project-scoped variant:
 ```bash
@@ -84,7 +84,7 @@ projects/agents-triage/
 ├── SKILL.md        (this file)
 ├── classify.py     (regex + Ollama classifier)
 ├── hook.sh         (UserPromptSubmit entry)
-├── install.sh      (wires into ~/.claude)
+├── install.sh      (wires into project-local `.claude/`)
 └── agents/
     ├── wiki-note.md
     ├── quick-fix.md

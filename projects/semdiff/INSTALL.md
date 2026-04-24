@@ -19,11 +19,11 @@ cd semdiff
 
 ```bash
 claude mcp add semdiff \
-  --scope user \
+  --scope project \
   -- python /absolute/path/to/semdiff/semdiff_mcp/server.py
 ```
 
-Or add manually to `~/.claude/mcp_servers.json`:
+Or add manually to the project-local MCP config supported by your client:
 ```json
 {
   "semdiff": {

@@ -1,6 +1,6 @@
 # Install Token Economy Framework
 
-Project-scoped install:
+Project-local install:
 
 ```bash
 ./INSTALL.sh --scope project
@@ -18,5 +18,4 @@ What it checks:
 - `te wiki index`
 - optional adapter copy via `te start`
 
-Stable measured tools remain available through `stable/INSTALL.sh`.
-
+The framework does not install global agent settings. Stable measured tools remain available through `stable/INSTALL.sh` in project-local mode.

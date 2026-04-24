@@ -21,6 +21,29 @@ REPO = Path(__file__).resolve().parents[1]
 
 
 class UniversalFrameworkTests(unittest.TestCase):
+    def test_active_docs_do_not_reintroduce_global_or_app_setup(self):
+        active_paths = [
+            REPO / "AGENT_ONBOARDING.md",
+            REPO / "INSTALL.md",
+            REPO / "README.md",
+            REPO / "start.md",
+            REPO / "stable/AGENT_PROMPT.md",
+            REPO / "stable/INSTALL.sh",
+            REPO / "schema.md",
+            REPO / "token_economy/wiki.py",
+            REPO / "token_economy/delegate.py",
+            REPO / "projects/wiki-search/README.md",
+            REPO / "projects/agents-triage/SKILL.md",
+            REPO / "projects/agents-triage/install.sh",
+            REPO / "projects/agents-triage/classify.py",
+            REPO / "projects/agents-triage/agents/wiki-note.md",
+        ]
+        forbidden = ("obsidian", "vault", "~/.claude", "--scope user", "scope user")
+        for path in active_paths:
+            text = path.read_text(encoding="utf-8", errors="replace").lower()
+            for needle in forbidden:
+                self.assertNotIn(needle, text, f"{needle!r} found in {path.relative_to(REPO)}")
+
     def test_start_and_adapters_stay_lean(self):
         start = (REPO / "start.md").read_text(encoding="utf-8")
         self.assertLessEqual(estimate_tokens(start), 1500)
@@ -29,6 +52,10 @@ class UniversalFrameworkTests(unittest.TestCase):
             REPO / "adapters/codex/AGENTS.md",
             REPO / "adapters/gemini/GEMINI.md",
             REPO / "adapters/cursor/token-economy.mdc",
+            REPO / "CLAUDE.md",
+            REPO / "AGENTS.md",
+            REPO / "GEMINI.md",
+            REPO / ".cursor/rules/token-economy.mdc",
         ]:
             combined = start + "\n" + adapter.read_text(encoding="utf-8")
             self.assertLessEqual(estimate_tokens(combined), 2500)
@@ -97,7 +124,7 @@ Search first, timeline second, fetch last.
             self.assertIn("pytest tests/test_x.py", result["packet"])
 
     def test_delegate_prefers_cheapest_capable_worker(self):
-        route = classify("summarize this Obsidian wiki note and document the result")
+        route = classify("summarize this markdown wiki note and document the result")
         self.assertEqual(route.tier, "simple")
         self.assertEqual(route.model_class, "lightweight")
         self.assertEqual(route.worker, "wiki-worker")
@@ -235,6 +262,11 @@ Search first, timeline second, fetch last.
 
     def test_install_dry_run_and_bench(self):
         subprocess.run(["bash", str(REPO / "INSTALL.sh"), "--dry-run"], cwd=REPO, check=True, capture_output=True, text=True)
+        blocked = subprocess.run(["bash", str(REPO / "INSTALL.sh"), "--scope", "user", "--dry-run"], cwd=REPO, capture_output=True, text=True)
+        self.assertNotEqual(blocked.returncode, 0)
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                main(["start", "--scope", "user"])
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             self.assertEqual(main(["bench", "run", "--suite", "framework-smoke"]), 0)

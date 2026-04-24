@@ -1,6 +1,6 @@
 # Token Economy Wiki — Schema
 
-Purpose: persistent, contextual, inter-linked long-term memory for AI agents building tools that reduce LLM token/compute consumption. Karpathy 3-layer (raw/wiki/schema) + Obsidian Mind session continuity + git-wiki immutability + progressive retrieval.
+Purpose: persistent, contextual, inter-linked long-term memory for AI agents building tools that reduce LLM token/compute consumption. Karpathy 3-layer (raw/wiki/schema) + git-wiki immutability + progressive retrieval.
 
 This file is the operating contract. Agents must use the wiki before reasoning about stored project facts, and must document durable discoveries after verified execution.
 

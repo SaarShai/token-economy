@@ -22,7 +22,7 @@ import json, os, re, sys, urllib.request
 # Each rule: (pattern, tier, agent, model, confidence, reason, context_globs)
 RULES = [
     # Wiki admin: add/append/note to wiki
-    (r"\b(?:add|append|write|note|log|record)\b.{0,40}\b(?:wiki|obsidian|vault|kb|knowledge base)\b",
+    (r"\b(?:add|append|write|note|log|record)\b.{0,40}\b(?:wiki|markdown|kb|knowledge base)\b",
      "simple", "wiki-note", "haiku", 0.9, "wiki add/edit pattern",
      ["**/*.md", "index.md"]),
     # One-line fix / quick edit / typo

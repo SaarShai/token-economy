@@ -53,12 +53,14 @@ def adapter_target(repo_root: Path, agent: str) -> Path:
 
 def cmd_start(args: argparse.Namespace) -> int:
     cfg = load_config(args.repo)
+    if args.scope != "project":
+        raise SystemExit("Token Economy installs project-locally only; use --scope project.")
     agent = detect_agent() if args.agent == "auto" else args.agent
     src_name = "token-economy.mdc" if agent == "cursor" else {"claude": "CLAUDE.md", "gemini": "GEMINI.md"}.get(agent, "AGENTS.md")
     src = cfg.repo_root / "adapters" / agent / src_name
     if not src.exists():
         raise SystemExit(f"unknown adapter: {agent}")
-    target = adapter_target(cfg.repo_root if args.scope == "project" else Path.home(), agent)
+    target = adapter_target(cfg.repo_root, agent)
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists() and "Token Economy Adapter" not in target.read_text(encoding="utf-8", errors="replace"):
         sidecar = target.with_name(target.name + ".token-economy")
@@ -212,7 +214,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("start")
     s.add_argument("--agent", choices=["auto", "claude", "codex", "gemini", "cursor"], default="auto")
-    s.add_argument("--scope", choices=["project", "user"], default="project")
+    s.add_argument("--scope", choices=["project"], default="project")
     s.set_defaults(func=cmd_start)
 
     w = sub.add_parser("wiki")

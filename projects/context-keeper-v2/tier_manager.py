@@ -9,13 +9,13 @@ Usage:
     tm.record_task_completion(task_slug, steps, outcome)  # may write L3 SOP
 """
 from __future__ import annotations
-import json, re
+import json, os, re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
 
-DEFAULT_ROOT = Path.home() / ".claude" / "memory"
+DEFAULT_ROOT = Path(os.environ.get("TOKEN_ECONOMY_ROOT", Path.cwd())) / ".token-economy" / "memory"
 
 
 @dataclass

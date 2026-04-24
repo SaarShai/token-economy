@@ -8,7 +8,7 @@ evidence_count: 0
 
 # wiki-search — progressive-disclosure retrieval over the Token Economy wiki
 
-**Status: IMPLEMENTED v1.** Adopts claude-mem's 3-layer retrieval pattern (index → timeline → fetch) for any Obsidian-style markdown wiki.
+**Status: IMPLEMENTED v1.** Adopts claude-mem's 3-layer retrieval pattern (index -> timeline -> fetch) for any repo-local markdown wiki.
 
 ## Problem
 
@@ -57,7 +57,7 @@ python projects/wiki-search/mcp_server.py
 
 ## Stores
 
-- SQLite at `~/.cache/wiki-search/<vault>/index.db`.
+- SQLite at repo-local `.token-economy/wiki.sqlite3`.
 - Rebuilds on file modification (watchdog).
 - Optionally vector index via sentence-transformers (opt-in, heavier).
 

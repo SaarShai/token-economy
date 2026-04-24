@@ -1,10 +1,10 @@
 # Token Economy
 
-A research workspace building tools that reduce LLM token/compute consumption while preserving capability.
+A repo-local framework for reducing LLM token/compute consumption while preserving capability.
 
 ## Universal agent start
 
-Give any AI agent [`start.md`](start.md). It provides the lean operating contract: Caveman Ultra, LLM wiki memory, progressive retrieval, 20% context refresh, and model-aware delegation.
+Give any AI agent [`start.md`](start.md). It provides the lean operating contract: Caveman Ultra, repo-local markdown wiki memory, progressive retrieval, 20% context refresh, and model-aware delegation.
 
 Core commands:
 
@@ -79,18 +79,11 @@ claude mcp add semdiff -- python /path/to/semdiff/semdiff_mcp/server.py
 
 ### context-keeper (PreCompact memory)
 
-Already installed as Claude Code skill at `~/.claude/skills/context-keeper/`. To activate hook, add to `~/.claude/settings.json`:
-
-```json
-"PreCompact": [{
-  "matcher": "*",
-  "hooks": [{"type":"command","command":"bash ~/.claude/skills/context-keeper/hook.sh"}]
-}]
-```
+Context-keeper writes session memory under repo-local `.token-economy/` paths by default. Do not configure global agent settings unless a human explicitly requests machine-wide behavior outside this framework.
 
 ## Wiki
 
-The `Token Economy` folder doubles as a Karpathy-style LLM wiki — living knowledge base. See [index.md](index.md), [schema.md](schema.md).
+The `Token Economy` folder doubles as a repo-local markdown LLM wiki. See [index.md](index.md), [schema.md](schema.md).
 
 Folders:
 - `concepts/` — atomic technique pages

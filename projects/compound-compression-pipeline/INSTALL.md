@@ -12,7 +12,7 @@ git clone https://github.com/SaarShai/token-economy
 
 ### Claude Code
 ```bash
-claude mcp add comcom --scope user \
+claude mcp add comcom --scope project \
   -- python /path/to/token-economy/projects/compound-compression-pipeline/comcom_mcp/server.py
 ```
 

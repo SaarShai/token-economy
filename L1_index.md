@@ -3,7 +3,6 @@
 Compact pointers. Fetch details on demand.
 
 - start -> `start.md`
-- universal adapter glue -> `adapters/universal/START.md`
 - config -> `token-economy.yaml`
 - model registry -> `models.yaml`
 - L0 rules -> `L0_rules.md`
@@ -26,6 +25,7 @@ Compact pointers. Fetch details on demand.
 - adapters/claude/CLAUDE (page) -> `adapters/claude/CLAUDE.md`
 - adapters/codex/AGENTS (page) -> `adapters/codex/AGENTS.md`
 - adapters/gemini/GEMINI (page) -> `adapters/gemini/GEMINI.md`
+- adapters/universal/START (page) -> `adapters/universal/START.md`
 - bench/README (project tags=benchmarks,kaggle,eval-infra) -> `bench/README.md`
 - bench/notebooks/kaggle_eval_template (page) -> `bench/notebooks/kaggle_eval_template.md`
 - concepts/devices-inventory (concept tags=infra,devices,inventory,compute) -> `concepts/devices-inventory.md`
@@ -43,4 +43,3 @@ Compact pointers. Fetch details on demand.
 - extensions/rtk (page) -> `extensions/rtk.md`
 - extensions/token-economy-tools (page) -> `extensions/token-economy-tools.md`
 - extensions/token-savior (page) -> `extensions/token-savior.md`
-- external-adapters (page) -> `external-adapters.md`

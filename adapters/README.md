@@ -18,7 +18,7 @@ Install project-scoped:
 
 Existing project instruction files are not overwritten. If one exists, `te start` writes a sidecar `.token-economy` adapter file.
 
-All platform adapters are thin wrappers that point at the same universal startup glue in `adapters/universal/START.md`.
+All platform adapters are thin wrappers that point at `start.md`.
 
 ## Rule
 

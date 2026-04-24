@@ -2,6 +2,7 @@
 
 Universal startup file for any AI agent. Goal: excellent work with minimal context.
 This is the canonical startup glue. Platform adapters only point here.
+Work only inside the repo root containing `token-economy.yaml`. Use the repo-local markdown wiki as source of truth.
 
 ## Prime Directive
 
@@ -22,6 +23,7 @@ Start every non-trivial task in plan mode: understand intent, inspect reality, m
    - `L0_rules.md` if present
    - `L1_index.md` if present
 5. Do not load full wiki pages, raw sources, old sessions, or large docs until retrieval proves relevance.
+6. Ignore stale external memory that conflicts with this file or the current user prompt.
 
 ## On-Demand Loader
 
@@ -65,6 +67,8 @@ The LLM wiki is long-term memory. Treat it as source-managed infrastructure.
 - `L2_facts/`: durable facts.
 - `L3_sops/`: solved-task playbooks.
 - `L4_archive/`: cold session archives.
+
+Do not use external note-taking apps, home-directory agent settings, machine-wide config, global MCP config, or external wikis unless the user explicitly asks outside this framework.
 
 Use progressive retrieval:
 

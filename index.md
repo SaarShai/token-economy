@@ -31,7 +31,7 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 ## Patterns
 - [[patterns/compound-compression-pipeline]] — stack 4 techniques, 80-90% total
 - [[patterns/semantic-diff-edits]] — send diff not full file
-- [[patterns/wiki-query-shortcircuit]] — grep vault before re-synthesis
+- [[patterns/wiki-query-shortcircuit]] — search repo-local wiki before re-synthesis
 - [[patterns/tiny-model-router]] — 0.5B classifier dispatches
 
 ## Roadmap
@@ -53,7 +53,7 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 ## Universal CLI
 - `./te doctor` — verify framework health
 - `./te wiki new --template page|decision|source-summary` — create v2 wiki page
-- `./te wiki init|index|search|timeline|fetch|lint|ingest|query` — Obsidian wiki operations
+- `./te wiki init|index|search|timeline|fetch|lint|ingest|query` — repo-local markdown wiki operations
 - `./te context status|meter|checkpoint|fresh-start|lint-handoff` — context tracking and fresh-session packets
 - `./te docs audit|split|load` — always-loaded doc hygiene
 - `./te delegate models|classify|plan` — model/subagent routing
