@@ -114,6 +114,48 @@ class TierManager:
         path.write_text("# L1 — index\n\n" + "\n".join(entries) + "\n")
         return path
 
+    def ck_query(self, keyword: str, k: int = 10) -> list[dict]:
+        """Return compact L1/L2/L3 hits for on-demand retrieval."""
+        hits = []
+        needle = keyword.lower()
+        candidates = [self.root / "L0_rules.md", self.root / "L1_index.md"]
+        candidates.extend(sorted((self.root / "L2_facts").glob("*.md")))
+        candidates.extend(sorted((self.root / "L3_sops").glob("*.md")))
+        for path in candidates:
+            if not path.exists():
+                continue
+            text = path.read_text(errors="replace")
+            if needle in text.lower() or needle in path.stem.lower():
+                preview = next((ln.strip() for ln in text.splitlines() if needle in ln.lower()), "")
+                hits.append({"id": path.stem, "path": str(path.relative_to(self.root)), "preview": preview[:240]})
+            if len(hits) >= k:
+                break
+        return hits
+
+    def ck_fetch(self, tier: str, slug: str) -> dict:
+        """Fetch one memory object by tier and slug."""
+        tier_map = {
+            "L0": self.root / "L0_rules.md",
+            "L1": self.root / "L1_index.md",
+            "L2": self.root / "L2_facts" / (slug if slug.endswith(".md") else f"{slug}.md"),
+            "L3": self.root / "L3_sops" / (slug if slug.endswith(".md") else f"{slug}.md"),
+            "L4": self.root / "L4_archive" / (slug if slug.endswith(".md") else f"{slug}.md"),
+        }
+        if tier not in tier_map:
+            raise KeyError(tier)
+        path = tier_map[tier]
+        if not path.exists():
+            raise FileNotFoundError(path)
+        return {"tier": tier, "slug": slug, "path": str(path.relative_to(self.root)), "content": path.read_text(errors="replace")}
+
+    def ck_recent(self, limit: int = 10) -> list[dict]:
+        """Return recent L4 archive pointers."""
+        archive = self.root / "L4_archive"
+        rows = []
+        for path in sorted(archive.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True)[:limit]:
+            rows.append({"path": str(path.relative_to(self.root)), "mtime": int(path.stat().st_mtime)})
+        return rows
+
     # --- helpers ---
     def _categorize(self, tool: str, args: dict) -> Optional[str]:
         if tool == "Bash":

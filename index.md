@@ -4,9 +4,12 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 
 ## For other agents
 - [[AGENT_ONBOARDING]] — **master install guide**: point any agent at this file
+- [[start]] — **universal agent entrypoint**: Caveman Ultra, wiki retrieval, 20% context refresh, delegation
+- [[L0_rules]] + [[L1_index]] — lean startup memory tiers
 
 ## Framework
 - [[concepts/optimization-axes]] — 7 axes, tool mappings, gap analysis
+- [[schema]] — rigorous LLM wiki ingest/query/lint/crystallize contract
 
 ## Concepts (techniques)
 - [[concepts/caveman-output-compression]] — terse output style, 65% savings
@@ -36,7 +39,18 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 - [[projects/compound-compression-pipeline/RESULTS]] — **ComCom** prototype, 44.5% @ ~Δ−0.25 score (SQuAD eval-v2); eval-v3 in progress
 - [[projects/semdiff/README]] — **prototype, 95.5% on large file re-read**
 - [[projects/context-keeper/README]] — **prototype, structured PreCompact memory**
+- [[projects/context-keeper-v2/README]] — **v2 retrieval API**: `ck_query`, `ck_fetch`, `ck_recent`
+- [[projects/wiki-search/README]] — **implemented v1**, progressive disclosure wiki search/timeline/fetch
+- [[projects/context-refresh/README]] — fresh-context packet workflow at 20% context
+- [[projects/delegate-router/README]] — model-agnostic routing and subagent supervision policy
 - [[projects/agents-triage/SKILL]] — **shipped, UserPromptSubmit hook + 5 subagents (wiki-note, quick-fix, local-ollama, research-lite, kaggle-feeder)**
+
+## Universal CLI
+- `./te doctor` — verify framework health
+- `./te wiki init|index|search|timeline|fetch|lint|ingest|query` — Obsidian wiki operations
+- `./te context status|checkpoint|fresh-start` — context tracking and fresh-session packets
+- `./te docs audit|split|load` — always-loaded doc hygiene
+- `./te delegate models|classify|plan` — model/subagent routing
 
 ## Infra
 - [[raw/2026-04-20-machine-baselines]] — M1/M1B/M2 tok/s, bottlenecks, tweaks

@@ -1,0 +1,45 @@
+# L1 Index
+
+Compact pointers. Fetch details on demand.
+
+- start -> `start.md`
+- config -> `token-economy.yaml`
+- model registry -> `models.yaml`
+- L0 rules -> `L0_rules.md`
+- schema -> `schema.md`
+- wiki catalog -> `index.md`
+- log -> `log.md`
+- AGENT_ONBOARDING (page) -> `AGENT_ONBOARDING.md`
+- README (page) -> `README.md`
+- ROADMAP (project tags=roadmap,tracking) -> `ROADMAP.md`
+- projects/compound-compression-pipeline/RESULTS (project tags=compression,measured) -> `projects/compound-compression-pipeline/RESULTS.md`
+- projects/context-keeper-v2/README (project tags=context-keeper,v2,L0-L4,spec) -> `projects/context-keeper-v2/README.md`
+- projects/context-refresh/README (project tags=context-refresh,checkpoint,compaction) -> `projects/context-refresh/README.md`
+- projects/delegate-router/README (project tags=delegation,routing,subagents,models) -> `projects/delegate-router/README.md`
+- projects/semdiff/README (project tags=semantic-diff,ast,context-compression) -> `projects/semdiff/README.md`
+- projects/wiki-search/README (project tags=retrieval,progressive-disclosure,mcp,wiki) -> `projects/wiki-search/README.md`
+- stable/README (project tags=stable,release,curated) -> `stable/README.md`
+- HANDOFF (handoff) -> `HANDOFF.md`
+- adapters/README (page) -> `adapters/README.md`
+- adapters/claude/CLAUDE (page) -> `adapters/claude/CLAUDE.md`
+- adapters/codex/AGENTS (page) -> `adapters/codex/AGENTS.md`
+- adapters/gemini/GEMINI (page) -> `adapters/gemini/GEMINI.md`
+- bench/README (project tags=benchmarks,kaggle,eval-infra) -> `bench/README.md`
+- bench/notebooks/kaggle_eval_template (page) -> `bench/notebooks/kaggle_eval_template.md`
+- concepts/devices-inventory (concept tags=infra,devices,inventory,compute) -> `concepts/devices-inventory.md`
+- concepts/optimization-axes (concept tags=framework,categorization,meta) -> `concepts/optimization-axes.md`
+- concepts/semantic-diff-edits (concept tags=semantic-diff,ast,context-compression,code-editing) -> `concepts/semantic-diff-edits.md`
+- concepts/turboquant-kv-cache (concept tags=turboquant,kv-cache,llama-cpp,apple-silicon,gguf-stack) -> `concepts/turboquant-kv-cache.md`
+- concepts/wiki-governance (concept tags=wiki,governance,schema) -> `concepts/wiki-governance.md`
+- external-adapters (page) -> `external-adapters.md`
+- projects/agents-triage/SKILL (page) -> `projects/agents-triage/SKILL.md`
+- projects/agents-triage/agents/kaggle-feeder (page) -> `projects/agents-triage/agents/kaggle-feeder.md`
+- projects/agents-triage/agents/local-ollama (page) -> `projects/agents-triage/agents/local-ollama.md`
+- projects/agents-triage/agents/quick-fix (page) -> `projects/agents-triage/agents/quick-fix.md`
+- projects/agents-triage/agents/research-lite (page) -> `projects/agents-triage/agents/research-lite.md`
+- projects/agents-triage/agents/turboquant-local (page) -> `projects/agents-triage/agents/turboquant-local.md`
+- projects/agents-triage/agents/wiki-note (page) -> `projects/agents-triage/agents/wiki-note.md`
+- projects/compound-compression-pipeline/INSTALL (page) -> `projects/compound-compression-pipeline/INSTALL.md`
+- projects/compound-compression-pipeline/kaggle_results/README (page) -> `projects/compound-compression-pipeline/kaggle_results/README.md`
+- projects/context-keeper/README (project tags=compaction,context-management,memory,hooks) -> `projects/context-keeper/README.md`
+- projects/semdiff/INSTALL (page) -> `projects/semdiff/INSTALL.md`

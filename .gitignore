@@ -14,6 +14,9 @@ projects/compound-compression-pipeline/eval_v*_run.out
 # semdiff session cache
 .cache/semdiff/
 
+# Token Economy runtime state
+.token-economy/
+
 # OS
 .DS_Store
 Thumbs.db

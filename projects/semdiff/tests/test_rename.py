@@ -12,17 +12,16 @@ def run():
             fp.write("def alpha(x): return x + 1\n")
         
         # First read
-        meta = read_smart(f, "sess")
+        _text, meta = read_smart(f, "sess")
         
         # Rewrite file
         with open(f, 'w') as fp:
             fp.write("def beta(x): return x + 1\n")
         
         # Second read
-        meta2 = read_smart(f, "sess")
+        _text2, meta2 = read_smart(f, "sess")
         
-        assert "alpha" in meta2["removed"]
-        assert "beta" in meta2["added"]
+        assert ("alpha", "beta", 1.0) in meta2["renamed"]
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))

@@ -1,0 +1,20 @@
+# Model registry template. `te delegate` has built-in defaults and uses this
+# file as human-readable project policy.
+
+local:
+  - qwen3:8b
+  - gemma4:26b
+  - phi4:14b
+cheap:
+  - haiku
+  - gpt-low
+medium:
+  - sonnet
+  - gpt-medium
+frontier:
+  - opus
+  - gpt-frontier
+high_context:
+  - local:turboquant
+  - long-context-api
+

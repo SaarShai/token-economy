@@ -1,0 +1,11 @@
+# Token Economy universal framework config.
+# Defaults favor project-scoped installs and low startup context.
+
+wiki_root: .
+agent_adapter: auto
+context_max_tokens: auto
+refresh_threshold: 0.20
+default_scope: project
+model_registry: ./models.yaml
+external_adapters: []
+

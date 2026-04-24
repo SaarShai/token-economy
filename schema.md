@@ -1,6 +1,8 @@
 # Token Economy Wiki — Schema
 
-Purpose: persistent knowledge base for building tools that reduce LLM token/compute consumption. Karpathy 3-layer (raw/wiki/schema) + obsidian-mind hooks + git-wiki immutability.
+Purpose: persistent, contextual, inter-linked long-term memory for AI agents building tools that reduce LLM token/compute consumption. Karpathy 3-layer (raw/wiki/schema) + Obsidian Mind session continuity + git-wiki immutability + progressive retrieval.
+
+This file is the operating contract. Agents must use the wiki before reasoning about stored project facts, and must document durable discoveries after verified execution.
 
 ## Folders
 - `raw/` immutable sources (papers, repos, gists). Filename: `YYYY-MM-DD-slug.md`.
@@ -9,6 +11,11 @@ Purpose: persistent knowledge base for building tools that reduce LLM token/comp
 - `projects/` active builds (our tools).
 - `people/` humans (authors, collaborators).
 - `queries/` durable Q&A.
+- `L0_rules.md` stable behavior rules loaded at startup.
+- `L1_index.md` compact pointer index loaded at startup.
+- `L2_facts/` verified durable facts.
+- `L3_sops/` solved-task playbooks.
+- `L4_archive/` cold session archives and fresh-start packets.
 
 ## Frontmatter
 ```
@@ -22,10 +29,44 @@ related: [[page]]
 ```
 
 ## Ops
-- **Ingest**: new source → `raw/`, update ≥3 concepts, append `log.md`, update `index.md`.
+- **Ingest**: source -> `raw/`, update relevant concepts/projects/patterns, add backlinks, append `log.md`, update `index.md`/`L1_index.md`.
+- **Query**: `wiki search` -> inspect compact hits -> `timeline` for relevant hits -> `fetch` only pages needed -> answer with path citations -> optionally file useful synthesis in `queries/`.
 - **New concept**: full frontmatter, link related, add to index.
 - **Evidence up**: bump `evidence_count`, recalibrate confidence.
-- **Contradiction**: flag both pages, downgrade confidence, log.
+- **Contradiction**: flag both pages, prefer newer/stronger evidence, downgrade confidence, log.
+- **Crystallize**: after successful verified work, write an L3 SOP if the workflow is reusable.
+
+## Retrieval Discipline
+
+Default command sequence:
+
+```bash
+./te wiki search "<task/topic>"
+./te wiki timeline "<id>"
+./te wiki fetch "<id>"
+```
+
+Rules:
+- Load `L1_index.md` first, never the whole wiki.
+- Search before full fetch.
+- Fetch all relevant pages, and only relevant pages.
+- Stop fetching when additional pages would not change the plan or answer.
+- Cite page IDs or paths in answers and durable notes.
+- If search finds nothing, say so and use `rg`/filesystem search before inventing.
+
+## Documentation Discipline
+
+Document only after verified work:
+- successful command, test, build, benchmark, install, source read, or user-confirmed decision.
+- no execution -> no durable memory.
+- failed attempts can be recorded in session archive or issue notes, but do not promote as facts.
+- raw sources are append-only; synthesized pages can be updated with supersession links.
+
+Every material update must:
+- include provenance (source path, URL, command, result, or linked note)
+- add backlinks where useful
+- append `log.md`
+- refresh `L1_index.md` with `./te wiki index` when page pointers change
 
 ## Confidence rungs
 - low: 1 source, unverified

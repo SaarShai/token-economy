@@ -2,6 +2,21 @@
 
 A research workspace building tools that reduce LLM token/compute consumption while preserving capability.
 
+## Universal agent start
+
+Give any AI agent [`start.md`](start.md). It provides the lean operating contract: Caveman Ultra, LLM wiki memory, progressive retrieval, 20% context refresh, and model-aware delegation.
+
+Core commands:
+
+```bash
+./te doctor
+./te wiki search "topic"
+./te context status
+./te delegate classify "task"
+```
+
+Config lives in [`token-economy.yaml`](token-economy.yaml). Agent-specific adapters live in [`adapters/`](adapters/).
+
 **Active projects:**
 
 | project | what | status |

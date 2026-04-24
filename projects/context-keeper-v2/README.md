@@ -8,7 +8,7 @@ evidence_count: 0
 
 # context-keeper v2 — L0-L4 tiered memory
 
-**Status: SPEC / SKELETON.** v1 extracts intra-session state pre-compact. v2 adds true cross-session persistence + tiered retrieval, borrowed from GenericAgent.
+**Status: IMPLEMENTED v1 retrieval + skeleton promotion.** v1 extracts intra-session state pre-compact. v2 adds true cross-session persistence + tiered retrieval, borrowed from GenericAgent.
 
 ## Tier schema
 
@@ -58,20 +58,24 @@ ck_fetch(tier, slug) → full content of one L2/L3 file
 ck_recent(days=7) → recent L4 archive entries
 ```
 
-## Not implemented yet (this doc = spec)
+## Implemented
 
-- `tier_manager.py` — write-gate enforcement + tier promotion
-- `l1_indexer.py` — rebuilds L1 from L2/L3 on demand
-- `mcp_server.py` — exposes ck_query/ck_fetch/ck_recent
+- `tier_manager.py` — write-gate enforcement + tier promotion.
+- `l1_indexer.py` — rebuilds L1 from L2/L3 on demand.
+- `memory_api.py` — exposes `ck_query`, `ck_fetch`, `ck_recent`.
+- `mcp_server.py` — optional MCP wrapper for those tools.
+
+CLI-adjacent use:
+
+```python
+from memory_api import ck_query, ck_fetch, ck_recent
+```
 
 ## Implementation plan
 
 1. Convert current `~/.claude/memory/sessions/*.md` to L4 archive.
-2. Write `tier_manager.py` with write-gate + promotion rules.
-3. Write `l1_indexer.py`.
-4. Wire into existing context-keeper PreCompact hook.
-5. Build MCP server; register in Claude Code.
-6. Eval: synthetic compaction fact-retention with/without v2.
+2. Wire v2 retrieval into existing context-keeper PreCompact hook.
+3. Add synthetic compaction fact-retention eval with/without v2.
 
 ## Caveats
 - Not measured yet.
