@@ -88,6 +88,10 @@ Added `prompts/summ-codex-manual.md` because older project-local Token Economy i
 
 Changed `prompts/summ-codex-manual.md` to use one reliable path for older installs: launch a persistent fresh successor thread directly with App Server `thread/start` + `turn/start`. Same-thread compaction is skipped in older installs because inherited Codex config such as `tools.defer_loading` can make `thread/compact/start` fail.
 
+## [2026-04-24] verify | manual Codex fresh successor
+
+Ran the exact self-contained launcher from `prompts/summ-codex-manual.md` against handoff `.token-economy/checkpoints/20260424-153428-fresh-session.md`. It passed with `ok=true`, `thread_id=019dc021-4597-7560-81a5-900f4fafc950`, `thread_persistent=true`, `thread_turns_empty=true`, `assistant_responded=true`, `thread_idle=true`, and `listed_after_start=true`.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").
