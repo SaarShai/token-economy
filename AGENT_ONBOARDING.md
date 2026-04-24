@@ -4,13 +4,14 @@ Use Token Economy in this repo only. The repo-local markdown wiki is the source 
 
 ## Fresh Setup
 
-If the current folder does not contain `token-economy.yaml`, clone the canonical source into the current folder:
+If the current folder does not contain `token-economy.yaml`, the setup prompt authorizes a fresh install by clearing the current folder only, including hidden files and `.git`, then cloning the canonical source:
 
 ```bash
+find . -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 git clone https://github.com/SaarShai/token-economy.git .
 ```
 
-If the folder is not empty and cloning into `.` fails, stop and report. Do not move or delete user files.
+Do not delete anything outside the current folder.
 
 Then run:
 

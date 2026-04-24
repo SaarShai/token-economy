@@ -50,6 +50,15 @@ class UniversalFrameworkTests(unittest.TestCase):
             for needle in forbidden:
                 self.assertNotIn(needle, text, f"{needle!r} found in {path.relative_to(REPO)}")
 
+    def test_setup_prompt_allows_fresh_folder_clear_only(self):
+        text = (REPO / "stable/AGENT_PROMPT.md").read_text(encoding="utf-8")
+        self.assertIn("explicit permission to clear the current folder", text)
+        self.assertIn("find . -mindepth 1 -maxdepth 1 -exec rm -rf {} +", text)
+        self.assertIn("git clone https://github.com/SaarShai/token-economy.git .", text)
+        self.assertIn("Do not delete anything outside the current folder", text)
+        self.assertNotIn("git restore --source origin/main", text)
+        self.assertNotIn("git reset --hard", text)
+
     def test_start_and_adapters_stay_lean(self):
         start = (REPO / "start.md").read_text(encoding="utf-8")
         self.assertLessEqual(estimate_tokens(start), 1500)

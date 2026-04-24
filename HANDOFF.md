@@ -38,6 +38,7 @@ Token Economy is a repo-local, model-agnostic agent framework. The source of tru
 - Keep always-loaded files tiny. Put details behind `L1_index.md`, skills, prompts, templates, or wiki pages.
 - Keep normal prompt hooks quiet. Use `/pa` or `/btw` for explicit context-light routing.
 - Refresh context near 20% used with a compact handoff packet.
+- If setup starts in a folder without `token-economy.yaml`, the canonical setup prompt permits clearing that folder only, then cloning fresh.
 
 ## Verification Baseline
 
