@@ -24,9 +24,7 @@ After `summ` writes the handoff:
 1. Run `./te context host-controls --agent auto`.
 2. Choose the returned `strategy`, not a generic guess.
 3. Load only the handoff packet plus `start.md` in the fresh/compacted context.
-4. Do not continue old-context task work after emitting or launching the successor.
-5. Treat native slash commands as user/host actions unless the host exposes a real tool for invoking them.
-6. Tell the user the exact command to run when the host action cannot be invoked programmatically.
+4. Treat native slash commands as user/host actions unless the host exposes a real tool for invoking them.
 
 Check current host guidance:
 

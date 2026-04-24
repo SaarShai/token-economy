@@ -96,6 +96,10 @@ Ran the exact self-contained launcher from `prompts/summ-codex-manual.md` agains
 
 Added manual copy-paste prompts for the `summ` flow: `prompts/manual-summ-document-and-handoff.md` writes repo-root `session_handoff.md` after routing durable memory to a lightweight wiki-documenter, and `prompts/manual-fresh-session-from-handoff.md` starts a new context from only `start.md` plus that handoff. Reaffirmed that Claude `/clear` is the practical manual clear path, while Codex fresh successor is clean continuation only; Codex current-thread compact remains experimental/unsolved in the tested environment.
 
+## [2026-04-24] simplify | summ procedure wording
+
+Trimmed manual-session management text from the canonical `summ` procedure and context-refresh skill. The procedure now focuses on splitting handoff vs durable wiki memory, routing wiki documentation to a lightweight worker, writing/linting the handoff, and starting the next context from only `start.md` plus the handoff.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").

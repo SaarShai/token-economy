@@ -10,62 +10,35 @@ For older Codex installs where the project-local `./te` lacks the Codex App Serv
 
 ## Protocol
 
-1. Stop new task work immediately.
-2. Split session information into two buckets:
+1. Split session information into two buckets:
    - Fresh handoff: only goal, current state, completed work, next steps, blockers, touched paths, exact errors/commands, and links needed to continue.
    - Durable wiki memory: reusable facts, decisions, source summaries, solved workflows, and lessons that may matter later but are not needed in fresh context.
-3. Treat any extra instructions after `summ` as next-session requirements. Put them in the handoff; do not execute or expand them in the old context.
-4. Spawn or route a lightweight documentation worker using `prompts/subagents/wiki-documenter.prompt.md` when durable wiki memory exists. Give it only verified evidence and repo-local wiki targets. If that file is missing, use the prompt contract inline; do not spend context searching for substitutes.
-5. Create the fresh handoff with `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`. If the generated checkpoint is generic, replace it with a specific handoff from current session facts. For manual copy-paste refresh, write repo-root `session_handoff.md`.
-6. Keep the handoff under 2000 estimated tokens. Do not paste transcript, raw logs, broad wiki pages, or docs-only discoveries.
-7. If possible, lint it with `./te context lint-handoff <handoff-file>`.
-8. Check host controls with `./te context host-controls --agent auto` and choose the returned platform strategy. Also get a successor launch command with `./te context fresh-command --agent auto --handoff <handoff-file>`.
-9. Codex current-thread clear is not solved in the tested Desktop/App Server environment. App Server `thread/compact/start` failed with `tools.defer_loading`; do not present same-thread Codex compaction as reliable. Treat `./te context codex-compact-thread` as experimental.
-10. Codex fresh-successor strategy: if a clean continuation is desired, prefer `./te context codex-fresh-thread --handoff <handoff-file> --execute` when available. This creates a persistent fresh project thread by default. Set `TOKEN_ECONOMY_CODEX_FRESH_MODEL` or pass `--model` if the host default model is unavailable. Treat it as successful only when it reports `ok: true`, `thread_persistent: true`, `thread_turns_empty: true`, `assistant_responded: true`, `thread_idle: true`, and ideally `listed_after_start: true`. This does not clear the old visible thread.
-11. Codex legacy fallback: if `host-controls`, `fresh-command`, or `codex-fresh-thread` is missing from the local `te`, do not use `./te context fresh-start` as a launcher. It only writes/prints a packet. Use the self-contained fresh-successor fallback in `prompts/summ-codex-manual.md`; it must run real `codex app-server` JSON-RPC, not merely describe it.
-12. Codex last resort: if the App Server fallback is unavailable or fails, provide a real successor command:
-    `codex fork --last -C "$PWD" "Read $PWD/start.md and $PWD/<handoff-file> only. Continue from that handoff. Do not load anything else until retrieval proves relevance. Start in plan mode."`
-    If `fork --last` is not appropriate, use:
-    `codex -C "$PWD" "Read $PWD/start.md and $PWD/<handoff-file> only. Continue from that handoff. Do not load anything else until retrieval proves relevance. Start in plan mode."`
-13. Claude strategy: prefer native `/clear` for a fresh context, then load only `start.md` plus the handoff. Use `/compact <handoff focus>` when preserving same-chat continuity matters. If a SlashCommand/SDK tool is exposed, invoke it there; otherwise ask the user/host to run it.
-14. Gemini/Cursor/generic strategy: use the host's native compress/new-chat command when available; otherwise start a fresh session manually with only `start.md` plus the handoff.
-15. Do not continue old-context work after the handoff. Prefer a fresh successor session/process when slash commands cannot be invoked directly.
-16. Tell the user exactly what command to run or paste only after automatic launch options have failed or are unavailable. Do not output a slash command expecting it to execute unless the host explicitly provides a tool for that.
-17. End the old-context response after the handoff with: `FRESH CONTEXT PACKET READY - STOP HERE`.
-18. Fresh session starts in plan mode, thinks step by step, and creates a robust plan before executing.
+2. Spawn or route a lightweight documentation worker using `prompts/subagents/wiki-documenter.prompt.md`. Give it only verified evidence and repo-local wiki targets.
+3. Create the fresh handoff with `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`. If the generated checkpoint is generic, replace it with a specific handoff from current session facts. For manual copy-paste refresh, write repo-root `session_handoff.md`.
+4. Keep the handoff under 2000 estimated tokens. Do not paste transcript, raw logs, broad wiki pages, or docs-only discoveries.
+5. Lint it with `./te context lint-handoff <handoff-file>`.
+6. Start fresh with only `start.md` plus the handoff. Use `prompts/manual-fresh-session-from-handoff.md` for manual copy-paste refresh.
+7. Fresh session starts in plan mode, thinks step by step, and creates a robust plan before executing.
 
 ## Ready Prompt
 
 ```text
 summ
 
-Refresh context now. First split this session into:
+Split this session into:
 1. a lean fresh-context handoff containing only what is needed to continue, and
 2. durable wiki memory that should be documented but not loaded into the fresh context unless needed later.
 
-Treat any instructions after this `summ` prompt as requirements for the fresh session. Put them in the handoff as next-session work. Do not execute them or expand them into a large plan in this old context.
-
-Spawn or route a lightweight documentation subagent for the durable wiki memory using `prompts/subagents/wiki-documenter.prompt.md`. It should update only the repo-local wiki/log after verified evidence and return a compact result packet. If that prompt file is missing, use this contract inline and do not search broadly for substitutes.
+Spawn or route a lightweight documentation subagent for the durable wiki memory using `prompts/subagents/wiki-documenter.prompt.md`. It should update only the repo-local wiki/log after verified evidence and return a compact result packet.
 
 Create the fresh handoff using `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`. If the generated checkpoint is generic, replace it with a specific handoff from current session facts. Keep it under 2000 estimated tokens. Preserve exact paths, commands, decisions, and errors. Exclude transcript noise, raw logs, broad wiki pages, and docs-only discoveries.
 
-Then check `./te context host-controls --agent auto` and choose the returned platform strategy. Also run `./te context fresh-command --agent auto --handoff <handoff-file>`.
+For manual copy-paste refresh, write the handoff to repo-root `session_handoff.md` and lint it with:
+`./te context lint-handoff session_handoff.md`
 
 For Codex, do not claim same-thread clearing is solved. Use a fresh successor when you want the cleanest available continuation:
 `./te context codex-fresh-thread --handoff <handoff-file> --execute`
 Success requires `ok: true`, `thread_persistent: true`, `thread_turns_empty: true`, `assistant_responded: true`, `thread_idle: true`, and ideally `listed_after_start: true`.
-
-If the local `te` is older and does not support `host-controls`, `fresh-command`, or `codex-fresh-thread`, do not use `./te context fresh-start` as a launcher. It only writes/prints a packet. For Codex, run the self-contained Python fallback from `prompts/summ-codex-manual.md` or use an equivalent direct `codex app-server` JSON-RPC script. Do not stop merely because the local `./te` lacks the new subcommands.
-
-If the direct App Server fallback is unavailable or fails, give this exact fallback command and stop:
-`codex fork --last -C "$PWD" "Read $PWD/start.md and $PWD/<handoff-file> only. Continue from that handoff. Do not load anything else until retrieval proves relevance. Start in plan mode."`
-If `fork --last` is not appropriate, use:
-`codex -C "$PWD" "Read $PWD/start.md and $PWD/<handoff-file> only. Continue from that handoff. Do not load anything else until retrieval proves relevance. Start in plan mode."`
-
-If running in Claude Code, use `/clear` or `/compact` through a real host/SlashCommand tool if one is available; otherwise ask me to run it and stop. Do not assume you can execute host slash commands from your own response. Tell me the exact command I or the host should run and exactly what to paste next. Do not load anything else until retrieval proves relevance.
-
-End your old-context response immediately after the handoff with:
-FRESH CONTEXT PACKET READY - STOP HERE
 
 In the fresh context, start in plan mode. Think step by step. Create a robust plan before executing.
 ```
