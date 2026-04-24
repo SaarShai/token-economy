@@ -9,6 +9,7 @@ Compact pointers. Fetch details on demand.
 - schema -> `schema.md`
 - wiki catalog -> `index.md`
 - log -> `log.md`
+- raw sources -> `raw/` (search only; fetch after relevance)
 - AGENT_ONBOARDING (page) -> `AGENT_ONBOARDING.md`
 - README (page) -> `README.md`
 - ROADMAP (project tags=roadmap,tracking) -> `ROADMAP.md`
@@ -19,13 +20,8 @@ Compact pointers. Fetch details on demand.
 - projects/semdiff/README (project tags=semantic-diff,ast,context-compression) -> `projects/semdiff/README.md`
 - projects/wiki-search/README (project tags=retrieval,progressive-disclosure,mcp,wiki) -> `projects/wiki-search/README.md`
 - stable/README (project tags=stable,release,curated) -> `stable/README.md`
-- HANDOFF (handoff) -> `HANDOFF.md`
+- HANDOFF (handoff tags=handoff,repo-local,startup) -> `HANDOFF.md`
 - INSTALL (page) -> `INSTALL.md`
-- adapters/README (page) -> `adapters/README.md`
-- adapters/claude/CLAUDE (page) -> `adapters/claude/CLAUDE.md`
-- adapters/codex/AGENTS (page) -> `adapters/codex/AGENTS.md`
-- adapters/gemini/GEMINI (page) -> `adapters/gemini/GEMINI.md`
-- adapters/universal/START (page) -> `adapters/universal/START.md`
 - bench/README (project tags=benchmarks,kaggle,eval-infra) -> `bench/README.md`
 - bench/notebooks/kaggle_eval_template (page) -> `bench/notebooks/kaggle_eval_template.md`
 - concepts/devices-inventory (concept tags=infra,devices,inventory,compute) -> `concepts/devices-inventory.md`
@@ -34,12 +30,8 @@ Compact pointers. Fetch details on demand.
 - concepts/turboquant-kv-cache (concept tags=turboquant,kv-cache,llama-cpp,apple-silicon,gguf-stack) -> `concepts/turboquant-kv-cache.md`
 - concepts/wiki-governance (concept tags=wiki,governance,schema) -> `concepts/wiki-governance.md`
 - extensions/README (page) -> `extensions/README.md`
-- extensions/claude-context (page) -> `extensions/claude-context.md`
-- extensions/code-review-graph (page) -> `extensions/code-review-graph.md`
-- extensions/cognee (page) -> `extensions/cognee.md`
-- extensions/context-mode (page) -> `extensions/context-mode.md`
-- extensions/omni (page) -> `extensions/omni.md`
-- extensions/qmd (page) -> `extensions/qmd.md`
-- extensions/rtk (page) -> `extensions/rtk.md`
-- extensions/token-economy-tools (page) -> `extensions/token-economy-tools.md`
-- extensions/token-savior (page) -> `extensions/token-savior.md`
+- projects/agents-triage/SKILL (page) -> `projects/agents-triage/SKILL.md`
+- projects/context-keeper/README (project tags=compaction,context-management,memory,hooks) -> `projects/context-keeper/README.md`
+- projects/skill-crystallizer/README (project tags=skill,L3-sop,automation) -> `projects/skill-crystallizer/README.md`
+- projects/write-gate/README (project tags=write-gate,memory-policy,middleware) -> `projects/write-gate/README.md`
+- stable/AGENT_PROMPT (page) -> `stable/AGENT_PROMPT.md`

@@ -48,9 +48,11 @@ Load only when triggered:
 - Prefer pointers first: index, search hits, timelines, then full pages.
 - At `20%` estimated context used, run:
   ```bash
+  ./te context status
   ./te context meter --transcript <file>
   ./te context checkpoint --handoff-template
   ```
+- If no transcript path is available, use `./te context status` and checkpoint from known goal/plan.
 - If the host cannot clear context, open a fresh session with the packet from `./te context fresh-start`.
 
 ## Wiki Rules
@@ -104,6 +106,8 @@ For personal-assistant bypass prompts, route instead of answering from the expen
 ```bash
 ./te pa --directive "/pa <prompt>"
 ```
+
+Keep normal prompt hooks quiet unless `TOKEN_ECONOMY_CLASSIFY_ALL=1` is explicitly set. Use `/pa` or `/btw` when a prompt should bypass the full-context model.
 
 Delegate only independent work. Give subagents compact briefs with exact scope, files, expected output, and budget. Ask for compact result packets, not full transcripts. Use local/cheap models for search, summaries, simple edits, extraction, lint, and classification. Use frontier models for architecture, ambiguity, high-risk reasoning, and final synthesis.
 Subagents are model-agnostic. Pick from whatever models the host has available; route by capability, cost, and context needs, not by vendor name.

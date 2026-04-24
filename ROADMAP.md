@@ -15,17 +15,17 @@ Live tracker. Directions, status, next steps. Update after every experiment.
 | 1 | ComCom (compound compression) pipeline (caveman + LLMLingua + prefix-cache + structured-out + self-verify) | 80-90% total | med | **EVAL-V3 (SQuAD, n=8): D_adaptive wins**. 44.9% savings, Δscore −0.12 [−0.38, 0.00] (CI touches 0 = quality effectively preserved). Zero REFUSE failures. Config: `compress(rate=0.5) → escalate_gen(rates=(0.5, 0.7, None))`. |
 | 2 | Semantic-diff file re-reads (AST cache per session, diff-on-reread) | 5-20x on large files | med-high | **MCP SERVER BUILT** — works with any MCP client. CC plugin wrapper included. 95.5% measured on argparse.py. See [[projects/semdiff/INSTALL]] |
 | 3 | Prefix-cache architect skill (audit prompts, maximize cacheable prefix) | 70-90% on repeated calls | low | Not started |
-| 4 | Wiki-query short-circuit (PreToolUse hook, grep vault before full research) | variable, high on repeat topics | low | Not started |
+| 4 | Wiki-query short-circuit (prompt/tool hook searches repo-local markdown wiki before full research) | variable, high on repeat topics | low | Not started |
 | 5 | Tiny-model router (0.5B classifier → local vs remote) | 50-95% on classification tasks | med | Not started |
 | 6 | Brevity-calibrated eval benchmark (arxiv 2604.00025 extension) | publishable contribution | med | Not started |
 | 7 | Skill-level prompt caching (pre-warm top-N skills at startup) | 10-30% per session | low-med | Not started |
-| 11 | **context-keeper** — structured PreCompact state preservation (files/cmds/errors/decisions/failures) | prevents info loss across compaction, reduces repeat-mistake cost | low | **PROTOTYPE WORKING** — extracts structured memory to `~/.claude/memory/sessions/`, hook ready. See [[projects/context-keeper/README]] |
+| 11 | **context-keeper** — structured PreCompact state preservation (files/cmds/errors/decisions/failures) | prevents info loss across compaction, reduces repeat-mistake cost | low | **PROTOTYPE WORKING** — extracts structured memory to repo-local `.token-economy/` paths by default. See [[projects/context-keeper/README]] |
 | 8 | Cross-session KV persistence for Ollama/llama.cpp daemon | huge on local | high | Not started |
 | 9 | Domain-aware compress grammars (math/code-specific) | +10-20% over generic | low | Idea |
 | 10 | ReAct → JSON structured tool skill | ~50% per reasoning step | low | Idea |
 
 ## Done
-- **2026-04-17**: Wiki initialized (`Token Economy/`). Caveman plugin active, superpowers loaded.
+- **2026-04-17**: Repo-local markdown wiki initialized. Caveman-style terseness active.
 - **2026-04-17**: Initial landscape research (Sonnet 4.6) → [[raw/2026-04-17-research-brief]].
 - **2026-04-17**: Semantic-diff prior-art survey → [[raw/2026-04-17-semantic-diff-survey]]. Novelty: 4/5.
 - **2026-04-17**: ComCom (compound compression) pipeline prototype built + tested on 2 samples. Measured 59-73% savings. → [[projects/compound-compression-pipeline/RESULTS]]
@@ -39,11 +39,11 @@ Live tracker. Directions, status, next steps. Update after every experiment.
 
 ### Immediate (this session or next)
 1. **Quality eval for compound pipeline.** Run compressed vs original prompts against Haiku 4.5 on a 10-task mini-benchmark (summarize, extract, code-explain). Need: accuracy delta vs token delta → isoquality point.
-2. **Long-input test.** Pipeline on a 5K-token CLAUDE.md or paper abstract; measure if savings scale.
+2. **Long-input test.** Pipeline on a 5K-token startup adapter file or paper abstract; measure if savings scale.
 3. **Add structured-output stage.** Append "respond only as {json schema}" hint, measure output-token cut on a tool-use sample.
 
 ### Short-term (next few sessions)
-4. Wrap pipeline as a Claude Code skill + optional PreToolUse hook.
+4. Wrap pipeline as a model-agnostic skill + optional project-local hook.
 5. Pick semantic-diff prototype: small Python+tree-sitter MCP tool, file-snapshot cache, re-read diff.
 6. Build prefix-cache architect as a read-only audit skill.
 

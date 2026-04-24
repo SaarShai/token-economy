@@ -11,7 +11,9 @@ import unittest
 from pathlib import Path
 
 from token_economy.cli import main
+from token_economy.config import detect_agent
 from token_economy.context import checkpoint, lint_handoff, meter
+from token_economy.docs import audit as docs_audit
 from token_economy.delegate import classify, personal_assistant_packet, strip_pa_prefix
 from token_economy.tokens import estimate_tokens
 from token_economy.wiki import WikiStore
@@ -27,8 +29,12 @@ class UniversalFrameworkTests(unittest.TestCase):
             REPO / "INSTALL.md",
             REPO / "README.md",
             REPO / "start.md",
+            REPO / "HANDOFF.md",
+            REPO / "ROADMAP.md",
+            REPO / "L0_rules.md",
             REPO / "stable/AGENT_PROMPT.md",
             REPO / "stable/INSTALL.sh",
+            REPO / "stable/README.md",
             REPO / "schema.md",
             REPO / "token_economy/wiki.py",
             REPO / "token_economy/delegate.py",
@@ -167,6 +173,16 @@ Search first, timeline second, fetch last.
         )
         self.assertIn("[token-economy:/pa]", proc.stdout)
 
+        quiet = subprocess.run(
+            ["bash", str(REPO / "hooks/user-prompt-submit.sh")],
+            input=json.dumps({"prompt": "normal prompt"}),
+            text=True,
+            cwd=REPO,
+            capture_output=True,
+            check=True,
+        )
+        self.assertEqual(quiet.stdout, "")
+
     def test_context_keeper_v2_memory_api(self):
         memory_dir = REPO / "projects" / "context-keeper-v2"
         sys.path.insert(0, str(memory_dir))
@@ -239,6 +255,16 @@ Search first, timeline second, fetch last.
                         os.environ[key] = value
             packet = checkpoint(root, goal="meter test", plan="verify", transcript=transcript)
             self.assertTrue(lint_handoff(Path(packet["path"]))["ok"])
+            try:
+                os.environ["REFRESH_AT_PCT"] = "0.20"
+                self.assertEqual(meter(transcript, model="test", max_tokens=250)["refresh_threshold"], 0.20)
+            finally:
+                if old_refresh is None:
+                    os.environ.pop("REFRESH_AT_PCT", None)
+                else:
+                    os.environ["REFRESH_AT_PCT"] = old_refresh
+            self.assertEqual(meter(model="gemini-flash")["max_tokens"], 1_000_000)
+            self.assertEqual(meter(model="claude-sonnet")["max_tokens"], 200_000)
 
     def test_delegate_plan_contract(self):
         buf = io.StringIO()
@@ -271,6 +297,26 @@ Search first, timeline second, fetch last.
         with contextlib.redirect_stdout(buf):
             self.assertEqual(main(["bench", "run", "--suite", "framework-smoke"]), 0)
         self.assertTrue(json.loads(buf.getvalue())["ok"])
+
+    def test_docs_audit_targets_startup_surface_only(self):
+        rows = docs_audit(REPO)
+        paths = {row["path"] for row in rows}
+        self.assertIn("start.md", paths)
+        self.assertIn("L1_index.md", paths)
+        self.assertNotIn("README.md", paths)
+        self.assertTrue(all(row["recommendation"] == "startup-safe" for row in rows if row["status"] == "lean"))
+
+    def test_agent_detection_ignores_provider_api_keys(self):
+        original = os.environ.copy()
+        try:
+            os.environ.clear()
+            os.environ["ANTHROPIC_API_KEY"] = "secret"
+            self.assertEqual(detect_agent(), "codex")
+            os.environ["CLAUDE_CODE_SESSION"] = "1"
+            self.assertEqual(detect_agent(), "claude")
+        finally:
+            os.environ.clear()
+            os.environ.update(original)
 
 
 if __name__ == "__main__":

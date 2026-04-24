@@ -1,12 +1,23 @@
 ---
+schema_version: 2
+title: "{{task_slug}}"
 type: handoff
+domain: framework
+tier: working
+confidence: 0.7
 from-session: "{{session_id}}"
-created: "{{iso_datetime}}"
+created: "{{date}}"
+updated: "{{date}}"
+verified: "{{date}}"
+sources: []
+supersedes: []
+superseded-by:
+tags: [handoff, context-refresh]
 context-pct-at-refresh: "{{context_pct}}"
 next-mode: plan-first
 ---
 
-# HANDOFF — {{task_slug}}
+# HANDOFF - {{task_slug}}
 
 ## 1. Current task (1-liner)
 
@@ -24,7 +35,7 @@ next-mode: plan-first
 
 - {{next}}
 
-## 5. Key files touched (paths only — do NOT re-read speculatively)
+## 5. Key files touched (paths only - do NOT re-read speculatively)
 
 - {{files_touched}}
 
@@ -42,8 +53,7 @@ next-mode: plan-first
 
 ## 9. Instructions for next agent
 
-- Enter plan-mode. Think step-by-step.
+- Start in plan mode. Think step-by-step. Create a robust plan before executing.
 - Read this handoff + `start.md` only. Do not load full wiki.
 - Build plan. Get user approval if host process requires approval. Then execute.
 - On complete: update wiki, log entry, create fresh handoff if context > 20%.
-

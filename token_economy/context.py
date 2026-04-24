@@ -13,9 +13,25 @@ from .tokens import estimate_tokens, trim_to_tokens
 PATH_RE = re.compile(r"(?P<path>(?:/|\.{1,2}/|[\w.-]+/)[\w./ @+-]+\.[A-Za-z0-9_+-]+)")
 CMD_RE = re.compile(r"(?:cmd|command|bash|shell)[\"': ]+([^\\n]{3,240})", re.IGNORECASE)
 ERR_RE = re.compile(r"((?:error|exception|traceback|failed|fatal)[^\n]{0,240})", re.IGNORECASE)
+MODEL_CONTEXT_PATTERNS = (
+    (re.compile(r"(turboquant|long[-_ ]context|1m|million)", re.IGNORECASE), 1_000_000),
+    (re.compile(r"(gemini|flash|pro)", re.IGNORECASE), 1_000_000),
+    (re.compile(r"(claude|opus|sonnet|haiku|anthropic)", re.IGNORECASE), 200_000),
+    (re.compile(r"(gpt|openai|codex)", re.IGNORECASE), 128_000),
+    (re.compile(r"(qwen|gemma|phi|llama|local|ollama)", re.IGNORECASE), 128_000),
+)
 
 
-def resolve_max_tokens(value: int | str | None) -> int:
+def model_context_tokens(model: str | None) -> int | None:
+    if not model or model == "auto":
+        return None
+    for pattern, tokens in MODEL_CONTEXT_PATTERNS:
+        if pattern.search(model):
+            return tokens
+    return None
+
+
+def resolve_max_tokens(value: int | str | None, model: str | None = None) -> int:
     if isinstance(value, int):
         return value
     env = os.environ.get("TOKEN_ECONOMY_CONTEXT_MAX")
@@ -23,14 +39,25 @@ def resolve_max_tokens(value: int | str | None) -> int:
         return int(env)
     if isinstance(value, str) and value.isdigit():
         return int(value)
+    model_tokens = model_context_tokens(model)
+    if model_tokens:
+        return model_tokens
     return 128_000
 
 
-def status_for_text(text: str, max_tokens: int | str | None = None, threshold: float = 0.20) -> dict[str, Any]:
+def env_threshold(name: str, default: float) -> float:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    value = float(raw)
+    return value / 100 if value > 1 else value
+
+
+def status_for_text(text: str, max_tokens: int | str | None = None, threshold: float = 0.20, model: str | None = None) -> dict[str, Any]:
     used = estimate_tokens(text)
-    maximum = resolve_max_tokens(max_tokens)
-    refresh_threshold = float(os.environ.get("REFRESH_AT_PCT", threshold * 100)) / 100
-    warn_threshold = float(os.environ.get("WARN_AT_PCT", "15")) / 100
+    maximum = resolve_max_tokens(max_tokens, model=model)
+    refresh_threshold = env_threshold("REFRESH_AT_PCT", threshold)
+    warn_threshold = env_threshold("WARN_AT_PCT", 0.15)
     ratio = used / maximum if maximum else 0.0
     action = "refresh" if ratio >= refresh_threshold else "warn" if ratio >= warn_threshold else "continue"
     return {
@@ -66,7 +93,7 @@ def meter(transcript: Path | None = None, model: str = "auto", max_tokens: int |
     text = ""
     if transcript and transcript.exists():
         text = transcript.read_text(encoding="utf-8", errors="replace")
-    status = status_for_text(text, max_tokens=max_tokens)
+    status = status_for_text(text, max_tokens=max_tokens, model=model)
     status["model"] = model
     status["tokenizer"] = "char/4-fallback"
     return status
@@ -131,7 +158,6 @@ next-mode: plan-first
 
 ## 9. Instructions for next agent
 - Start in plan mode. Think step-by-step. Create a robust plan before executing.
-- Enter plan-mode. Think step-by-step.
 - Read this handoff + `start.md` only. Do not load full wiki.
 - Build plan. Get user approval if host process requires approval. Then execute.
 - On complete: update wiki, log entry, create fresh handoff if context > 20%.
@@ -168,7 +194,7 @@ def lint_handoff(path: Path, max_tokens: int = 2000) -> dict[str, Any]:
         "## 7. Wiki pages updated",
         "## 8. Open questions",
         "## 9. Instructions for next agent",
-        "Enter plan-mode",
+        "Start in plan mode",
     ]
     missing = [item for item in required if item not in text]
     tokens = estimate_tokens(text)

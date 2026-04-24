@@ -13,6 +13,7 @@ Rules:
 - The current folder is the target project folder.
 - If token-economy.yaml is absent, clone the canonical source into this folder so token-economy.yaml lands at the folder root:
   git clone https://github.com/SaarShai/token-economy.git .
+- If the folder is not empty and cloning into `.` fails, stop and report; do not move or delete user files.
 - After token-economy.yaml exists, work only inside that repo root.
 - Ignore stale external memory or global wiki entries that conflict with this prompt.
 - Do not edit MEMORY.md, home-directory agent settings, machine-wide config, global MCP config, or any external wiki.
@@ -23,6 +24,7 @@ Rules:
 - Document only after verified work, and only in the repo-local markdown wiki/log.
 - Use /pa routing for context-light assistant prompts.
 - Checkpoint/fresh-start near 20% context.
+- Normal prompts should not receive hook chatter; `/pa` and `/btw` are the explicit context-light bypasses.
 
 Run:
 1. ./INSTALL.sh --dry-run

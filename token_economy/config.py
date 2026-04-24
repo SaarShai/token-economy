@@ -101,11 +101,16 @@ def load_config(repo_root: str | Path | None = None) -> Config:
 
 def detect_agent() -> str:
     env = {k.lower() for k in __import__("os").environ}
-    if any("claude" in k for k in env):
-        return "claude"
-    if any("gemini" in k for k in env):
-        return "gemini"
-    if any("cursor" in k for k in env):
-        return "cursor"
-    return "codex"
 
+    def host_key_contains(needle: str) -> bool:
+        return any(needle in k and "api" not in k and "key" not in k and "token" not in k for k in env)
+
+    if host_key_contains("codex"):
+        return "codex"
+    if host_key_contains("cursor"):
+        return "cursor"
+    if host_key_contains("gemini"):
+        return "gemini"
+    if host_key_contains("claude"):
+        return "claude"
+    return "codex"

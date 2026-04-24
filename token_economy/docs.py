@@ -6,7 +6,7 @@ from typing import Any
 from .tokens import estimate_tokens
 
 
-DEFAULT_DOC_GLOBS = ("CLAUDE.md", "AGENTS.md", "GEMINI.md", "start.md", "README.md", ".cursor/rules/*.mdc")
+DEFAULT_DOC_GLOBS = ("CLAUDE.md", "AGENTS.md", "GEMINI.md", ".cursor/rules/*.mdc", "start.md", "L0_rules.md", "L1_index.md")
 
 
 def audit(repo_root: Path, limit: int = 1500) -> list[dict[str, Any]]:
@@ -24,7 +24,7 @@ def audit(repo_root: Path, limit: int = 1500) -> list[dict[str, Any]]:
                     "path": path.relative_to(repo_root).as_posix(),
                     "tokens": tokens,
                     "status": "lean" if tokens <= limit else "split",
-                    "recommendation": "keep always-loaded" if tokens <= limit else "move details behind L1 pointer/wiki fetch",
+                    "recommendation": "startup-safe" if tokens <= limit else "move details behind L1 pointer/wiki fetch",
                 }
             )
     return rows
@@ -40,4 +40,3 @@ def split_plan(repo_root: Path, path: Path) -> dict[str, Any]:
         "l1_pointer": f"Move detailed sections into wiki pages and keep pointers in {path.name}.",
         "rule": "Always-loaded files should contain policy and pointers, not archives or examples.",
     }
-

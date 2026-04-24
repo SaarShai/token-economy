@@ -22,7 +22,7 @@ This file is the operating contract. Agents must use the wiki before reasoning a
 ---
 schema_version: 2
 title: Example
-type: entity|summary|decision|source-summary|procedure|concept|pattern|project|query|fact|sop|raw
+type: entity|summary|decision|source-summary|procedure|concept|pattern|project|query|fact|sop|raw|person|handoff
 domain: framework|tools|patterns|experiments|project
 tier: working|episodic|semantic|procedural
 confidence: 0.0

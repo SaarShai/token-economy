@@ -18,6 +18,6 @@ except Exception:
 
 if [[ "$PROMPT" =~ ^[[:space:]]*/(pa|btw)([[:space:]]|:|$) ]]; then
   "$ROOT/te" pa --directive "$PROMPT"
-else
+elif [ "${TOKEN_ECONOMY_CLASSIFY_ALL:-0}" = "1" ]; then
   "$ROOT/te" delegate classify "$PROMPT"
 fi

@@ -10,6 +10,8 @@ If the current folder does not contain `token-economy.yaml`, clone the canonical
 git clone https://github.com/SaarShai/token-economy.git .
 ```
 
+If the folder is not empty and cloning into `.` fails, stop and report. Do not move or delete user files.
+
 Then run:
 
 ```bash
@@ -30,6 +32,7 @@ Then run:
 - Retrieve before reasoning with `./te wiki search`, then `./te wiki timeline <id>`, then `./te wiki fetch <id>`.
 - Document only after verified work, and only in repo-local wiki pages and `log.md`.
 - Use `/pa` for context-light prompts.
+- Keep normal prompt hooks quiet unless `TOKEN_ECONOMY_CLASSIFY_ALL=1` is explicitly set.
 - Checkpoint or fresh-start near 20% context.
 
 ## Project-Local Adapters

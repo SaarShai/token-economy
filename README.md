@@ -37,7 +37,7 @@ Skills, prompts, hooks, configs, templates, and optional extension recipes live 
 |---|---|---|
 | [ComCom](projects/compound-compression-pipeline/) | Compound compression pipeline (caveman + LLMLingua + self-verify escalation) | **v3 eval passed**: 44.9% savings, Δquality −0.12 (CI touches 0) on SQuAD |
 | [semdiff](projects/semdiff/) | AST-node-level diff for LLM file re-reads. MCP server + CC plugin. | **Working**: 95.5% savings on argparse.py re-read; Py/JS/TS/Rust tested |
-| [context-keeper](projects/context-keeper/) | PreCompact hook that extracts structured state (files/commands/errors/decisions) to preserve facts across compaction | **Working**: registered as Claude Code skill |
+| [context-keeper](projects/context-keeper/) | PreCompact hook that extracts structured state (files/commands/errors/decisions) to preserve facts across compaction | **Working**: project-local hook recipe |
 | [bench/](bench/) | Benchmark registry + Kaggle/HF fetchers + uniform eval schema | **Working**: 7 datasets registered, 2 downloaded |
 
 See [ROADMAP.md](ROADMAP.md) for all directions, progress, next steps.
@@ -61,7 +61,7 @@ from verify import escalate_gen
 # Adaptive mode — recommended for personal use
 def my_gen(ctx):
     # your model-call wrapper; returns answer string
-    return call_claude(prompt=build_prompt(ctx, question))
+    return call_model(prompt=build_prompt(ctx, question))
 
 answer, meta = escalate_gen(question, context, my_gen,
                              rates=(0.5, 0.7, None))
@@ -73,7 +73,7 @@ answer, meta = escalate_gen(question, context, my_gen,
 MCP server, works with Claude Code, Cursor, Cline, Zed, any MCP client. See [projects/semdiff/INSTALL.md](projects/semdiff/INSTALL.md).
 
 ```bash
-# Claude Code
+# Example MCP client
 claude mcp add semdiff -- python /path/to/semdiff/semdiff_mcp/server.py
 ```
 

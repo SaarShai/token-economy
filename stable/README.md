@@ -15,7 +15,7 @@ Curated bundle of the measured, tested tools. Safe to install. Unstable/speculat
 |---|---|---|---|
 | **ComCom MCP** (`projects/compound-compression-pipeline/comcom_mcp/`) | input compression | shipped | 44.9% savings, Δq −0.12 on SQuAD n=8; 57.3% @ Δ +0.08 CI[−0.18,+0.34] on CoQA n=50 |
 | **semdiff MCP** (`projects/semdiff/semdiff_mcp/`) | output filter (file reads) | shipped | 95.5% on argparse.py re-read |
-| **context-keeper hook** (`.claude/skills/context-keeper/`) | cross-session memory (intra only) | shipped | 22 files / 21 cmds / 21 errs extracted per session |
+| **context-keeper hook** (`projects/context-keeper/`) | cross-session memory (intra only) | shipped | 22 files / 21 cmds / 21 errs extracted per session |
 | **skip_detector** (in ComCom pipeline_v2) | verification | shipped, default-on | caught 2/6 adversarial numeric items |
 | **rename_detect** (in semdiff core) | verification | shipped, auto-wired | `alpha→gamma` conf=1.0 on test |
 | **adversarial_bench.py** | measurement | shipped | CI gate working — caught regression Δ=−1.10 |
@@ -23,7 +23,7 @@ Curated bundle of the measured, tested tools. Safe to install. Unstable/speculat
 
 ## What's NOT in
 
-- context-keeper v2 (L0-L4) — spec only
+- context-keeper v2 (L0-L4) — framework-level memory tier, not part of stable measured subset
 - skill-crystallizer — spec only
 - wiki-search — spec only
 - write-gate — doc only
@@ -44,7 +44,7 @@ These live in the repo root; experiment freely.
 Two paths — see [`AGENT_PROMPT.md`](AGENT_PROMPT.md) for a ready-to-paste prompt you can give any LLM agent.
 
 - **Human CLI install:** [`INSTALL.sh`](INSTALL.sh) runs the exact commands.
-- **Agent-driven:** paste [`AGENT_PROMPT.md`](AGENT_PROMPT.md) into Claude Code, Cursor, Cline, etc.
+- **Agent-driven:** paste [`AGENT_PROMPT.md`](AGENT_PROMPT.md) into any agent with shell and file access.
 
 ## Pinned version
 

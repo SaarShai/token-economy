@@ -13,7 +13,7 @@ WIKI_DIRS = ("raw", "concepts", "patterns", "projects", "people", "queries", "L2
 SKIP_PARTS = {".git", ".token-economy", "__pycache__", ".pytest_cache"}
 WIKILINK_RE = re.compile(r"\[\[([^\]#|]+)(?:[#|][^\]]*)?\]\]")
 V2_REQUIRED = ("title", "type", "domain", "tier", "confidence", "created", "updated", "verified", "sources", "supersedes", "superseded-by", "tags")
-V2_TYPES = {"entity", "summary", "decision", "source-summary", "procedure", "concept", "pattern", "project", "query", "fact", "sop", "raw"}
+V2_TYPES = {"entity", "summary", "decision", "source-summary", "procedure", "concept", "pattern", "project", "query", "fact", "sop", "raw", "person", "handoff"}
 V2_TIERS = {"working", "episodic", "semantic", "procedural"}
 
 
@@ -32,17 +32,26 @@ Purpose: a repo-local markdown LLM wiki for durable agent memory.
 - `L3_sops/`: solved-task playbooks.
 - `L4_archive/`: cold session archives.
 
-## Required Frontmatter
+## Frontmatter v2 for new pages
 ```yaml
 ---
-type: concept|pattern|project|person|raw|query|fact|sop
-axis: input_compression|output_filter|cross_session_memory|verification|knowledge_org|measurement|skill_crystallization|meta
-tags: []
-confidence: low|med|high
-evidence_count: 0
+schema_version: 2
+title: Example
+type: entity|summary|decision|source-summary|procedure|concept|pattern|project|query|fact|sop|raw|person|handoff
+domain: framework|tools|patterns|experiments|project
+tier: working|episodic|semantic|procedural
+confidence: 0.0
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
 verified: YYYY-MM-DD
+sources: []
+supersedes: []
+superseded-by:
+tags: []
 ---
 ```
+
+Legacy v1 pages remain readable. Strict lint emits migration warnings for v1 pages and enforces v2 fields on v2/template-generated pages.
 
 ## Workflows
 - Ingest: source -> `raw/` note -> update synthesized pages -> backlinks -> `index.md`/`log.md`.
@@ -227,6 +236,7 @@ class WikiStore:
             "- schema -> `schema.md`",
             "- wiki catalog -> `index.md`",
             "- log -> `log.md`",
+            "- raw sources -> `raw/` (search only; fetch after relevance)",
         ]
         priority = {
             "start",
@@ -241,6 +251,7 @@ class WikiStore:
             "projects/compound-compression-pipeline/RESULTS",
             "projects/semdiff/README",
         }
+        l1_support_dirs = {"templates", "skills", "prompts", "hooks", "configs", "adapters"}
         ordered = sorted(pages, key=lambda p: (0 if p.id in priority else 1, p.id))
         seen_l1 = {
             "start",
@@ -250,6 +261,7 @@ class WikiStore:
             "schema",
             "wiki catalog",
             "log",
+            "raw sources",
             "L0_rules",
             "L1_index",
             "index",
@@ -261,6 +273,17 @@ class WikiStore:
             if len(l1_lines) >= 45:
                 break
             if page.id in seen_l1:
+                continue
+            parts = set(Path(page.id).parts)
+            if parts & l1_support_dirs:
+                continue
+            if page.id.startswith("extensions/") and page.id != "extensions/README":
+                continue
+            if page.id.startswith("raw/"):
+                continue
+            if page.id in {"external-adapters"}:
+                continue
+            if page.id.endswith("/INSTALL") or "/agents/" in page.id or "/kaggle_results/" in page.id:
                 continue
             tags = f" tags={','.join(page.tags)}" if page.tags else ""
             l1_lines.append(f"- {page.id} ({page.type or 'page'}{tags}) -> `{page.path.relative_to(self.root).as_posix()}`")
@@ -441,7 +464,9 @@ class WikiStore:
             value = fm.get(key, "")
             if value:
                 try:
-                    date.fromisoformat(value)
+                    parsed = date.fromisoformat(value)
+                    if key == "verified" and (date.today() - parsed).days > 180:
+                        warnings.append({"code": "stale_verified", "page": page.id, "verified": value})
                 except ValueError:
                     errors.append({"code": "invalid_date", "page": page.id, "field": key, "value": value})
         for key in ("supersedes", "superseded-by"):
@@ -503,15 +528,23 @@ class WikiStore:
         else:
             body = f"Source URL: {source}\n"
             source_ref = source
+        safe_title = note_title.replace('"', '\\"')
+        safe_source = source_ref.replace('"', '\\"')
         content = (
             "---\n"
+            "schema_version: 2\n"
+            f"title: \"{safe_title}\"\n"
             "type: raw\n"
-            "axis: knowledge_org\n"
-            "tags: [ingest]\n"
-            "confidence: med\n"
-            "evidence_count: 1\n"
+            "domain: external-source\n"
+            "tier: episodic\n"
+            "confidence: 0.6\n"
+            f"created: {today}\n"
+            f"updated: {today}\n"
             f"verified: {today}\n"
-            f"source: {source_ref}\n"
+            f"sources: [\"{safe_source}\"]\n"
+            "supersedes: []\n"
+            "superseded-by:\n"
+            "tags: [ingest, raw]\n"
             "---\n\n"
             f"# {note_title}\n\n"
             f"{body}\n"
