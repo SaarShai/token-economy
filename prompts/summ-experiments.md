@@ -78,7 +78,7 @@ Expected: reduces future context growth and improves recovery, but does not itse
 
 Expected: reliable workaround. The old transcript remains full, but the successor agent starts with fresh context containing only `start.md` plus the handoff.
 
-### G. Codex App Server Fresh Thread
+### G. Codex App Server Persistent Fresh Thread
 
 Use when Codex slash-command text does not execute and `codex app-server` is available.
 
@@ -95,7 +95,7 @@ Use when Codex slash-command text does not execute and `codex app-server` is ava
 ./te context codex-fresh-thread --handoff <handoff-file> --model gpt-5.3-codex-spark --execute
 ```
 
-Expected: App Server creates an ephemeral thread with `turns: []`, starts a turn in that thread, receives an assistant response, and returns idle. The JSON should report `ok: true`, `thread_ephemeral: true`, `thread_turns_empty: true`, `assistant_responded: true`, and `thread_idle: true`. This is a real fresh successor context, not an in-place clear of the old transcript. If it fails with "model does not exist or you do not have access," rerun with an available model or set `TOKEN_ECONOMY_CODEX_FRESH_MODEL`. Large input-token counts can come from Codex host/system/tool context; they do not by themselves prove that the old transcript was loaded.
+Expected: App Server creates a persistent thread in the same project with `turns: []`, starts a turn in that thread, receives an assistant response, returns idle, and can list it by exact cwd. The JSON should report `ok: true`, `thread_persistent: true`, `thread_turns_empty: true`, `assistant_responded: true`, `thread_idle: true`, and ideally `listed_after_start: true`. This is a real fresh successor context, not an in-place clear of the old transcript. If it fails with "model does not exist or you do not have access," rerun with an available model or set `TOKEN_ECONOMY_CODEX_FRESH_MODEL`. Large input-token counts can come from Codex host/system/tool context; they do not by themselves prove that the old transcript was loaded.
 
 Verified controlled `summ` result on 2026-04-24:
 

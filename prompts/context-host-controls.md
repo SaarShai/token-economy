@@ -10,7 +10,7 @@ Token Economy can create the handoff packet and durable memory updates. The host
 |---|---|---|---|
 | Claude Code | `/compact` | `/clear`, then paste handoff + `start.md` | `/context` or `/cost` when available |
 | Claude SDK | dispatch `/compact` | end current query and start a new one | SDK init/usage metadata |
-| Codex CLI | `/compact` | `/new` or `/clear` when host accepts it; programmatic successor via `./te context codex-fresh-thread` | `/status` |
+| Codex CLI | `/compact` | `/new` or `/clear` when host accepts it; persistent successor via `./te context codex-fresh-thread` or `codex fork --last` | `/status` |
 | Gemini CLI | `/compress` | new chat/session; `/clear` behavior varies by version | `/stats` when available |
 | Generic | host compact/compress | host new-chat/new-session | host meter |
 
@@ -41,17 +41,18 @@ Examples:
 
 ```bash
 codex -C "$PWD" "Read $PWD/start.md and <handoff-file> only. Continue from that handoff. Start in plan mode."
+codex fork --last -C "$PWD" "Read $PWD/start.md and <handoff-file> only. Continue from that handoff. Start in plan mode."
 claude --add-dir "$PWD" "Read $PWD/start.md and <handoff-file> only. Continue from that handoff. Start in plan mode."
 gemini --prompt-interactive "Read $PWD/start.md and <handoff-file> only. Continue from that handoff. Start in plan mode."
 ```
 
-For Codex hosts with App Server support, Token Economy can start a fresh ephemeral successor thread directly:
+For Codex hosts with App Server support, Token Economy can start a persistent fresh successor thread directly:
 
 ```bash
 ./te context codex-fresh-thread --handoff <handoff-file> --model gpt-5.3-codex-spark --execute
 ```
 
-Use `TOKEN_ECONOMY_CODEX_FRESH_MODEL=<model>` to change the default. Success means the command reports `ok: true`, `thread_ephemeral: true`, `thread_turns_empty: true`, `assistant_responded: true`, and `thread_idle: true`. The old host transcript is not erased; the fresh thread bypasses it. Codex may still show large input-token counts from host/system/tool context, but that is not evidence that the old transcript was loaded.
+Use `--ephemeral` only for throwaway smoke tests. Use `TOKEN_ECONOMY_CODEX_FRESH_MODEL=<model>` to change the default. Success means the command reports `ok: true`, `thread_persistent: true`, `thread_turns_empty: true`, `assistant_responded: true`, `thread_idle: true`, and ideally `listed_after_start: true`. The old host transcript is not erased; the fresh thread bypasses it. Codex may still show large input-token counts from host/system/tool context, but that is not evidence that the old transcript was loaded.
 
 Other possible but brittle workarounds:
 

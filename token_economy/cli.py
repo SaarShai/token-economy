@@ -161,9 +161,9 @@ def cmd_context(args: argparse.Namespace) -> int:
         if not handoff.is_absolute():
             handoff = cfg.repo_root / handoff
         if args.execute:
-            print_json(run_codex_fresh_thread(cfg.repo_root, handoff, model=args.model, timeout=args.timeout))
+            print_json(run_codex_fresh_thread(cfg.repo_root, handoff, model=args.model, timeout=args.timeout, ephemeral=args.ephemeral))
         else:
-            print_json(codex_fresh_thread_plan(cfg.repo_root, handoff, model=args.model))
+            print_json(codex_fresh_thread_plan(cfg.repo_root, handoff, model=args.model, ephemeral=args.ephemeral))
     return 0
 
 
@@ -315,7 +315,8 @@ def build_parser() -> argparse.ArgumentParser:
     cft = csub.add_parser("codex-fresh-thread")
     cft.add_argument("--handoff", required=True)
     cft.add_argument("--model")
-    cft.add_argument("--execute", action="store_true", help="Actually launch Codex App Server and start a fresh ephemeral thread")
+    cft.add_argument("--execute", action="store_true", help="Actually launch Codex App Server and start a fresh successor thread")
+    cft.add_argument("--ephemeral", action="store_true", help="Use an in-memory throwaway thread instead of the default persistent project thread")
     cft.add_argument("--timeout", type=int, default=120)
     cft.set_defaults(func=cmd_context)
 

@@ -129,6 +129,7 @@ def fresh_launch_commands(agent: str, repo_root: Path, handoff: Path | None = No
     commands = {
         "codex": [
             f'./te context codex-fresh-thread --handoff "{handoff_path}" --execute',
+            f'codex fork --last -C "{repo}" "{prompt}"',
             f'codex -C "{repo}" "{prompt}"',
             f'codex exec -C "{repo}" "{prompt}"',
         ],

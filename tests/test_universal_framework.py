@@ -342,6 +342,7 @@ Search first, timeline second, fetch last.
         self.assertIn("codex-fresh-thread", fresh_launch_commands("codex", REPO, REPO / "handoff.md")["preferred"])
         plan = codex_fresh_thread_plan(REPO, REPO / "handoff.md")
         self.assertEqual(plan["model"], default_codex_fresh_model())
+        self.assertEqual(plan["persistence"], "persistent")
         self.assertIn("thread/started", " ".join(plan["success_test"]))
         self.assertIn("turns: []", " ".join(plan["success_test"]))
 
@@ -359,7 +360,7 @@ Search first, timeline second, fetch last.
         with contextlib.redirect_stdout(buf):
             self.assertEqual(main(["context", "codex-fresh-thread", "--handoff", "handoff.md", "--model", "gpt-5.3-codex-spark"]), 0)
         self.assertEqual(json.loads(buf.getvalue())["mode"], "app-server-fresh-thread")
-        self.assertIn("thread_turns_empty", (REPO / "prompts/summ.md").read_text(encoding="utf-8"))
+        self.assertIn("thread_persistent", (REPO / "prompts/summ.md").read_text(encoding="utf-8"))
 
     def test_agent_detection_ignores_provider_api_keys(self):
         original = os.environ.copy()

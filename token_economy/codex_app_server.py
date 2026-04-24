@@ -25,23 +25,26 @@ def build_successor_prompt(repo_root: Path, handoff: Path) -> str:
     )
 
 
-def codex_fresh_thread_plan(repo_root: Path, handoff: Path, model: str | None = None) -> dict[str, Any]:
+def codex_fresh_thread_plan(repo_root: Path, handoff: Path, model: str | None = None, ephemeral: bool = False) -> dict[str, Any]:
     model_name = model or default_codex_fresh_model()
     prompt = build_successor_prompt(repo_root, handoff)
+    persistence = "ephemeral" if ephemeral else "persistent"
     return {
         "agent": "codex",
         "mode": "app-server-fresh-thread",
         "model": model_name,
+        "persistence": persistence,
         "repo_root": str(repo_root),
         "handoff": str(handoff),
         "prompt": prompt,
-        "command": f'./te context codex-fresh-thread --handoff "{handoff}" --model "{model_name}" --execute',
+        "command": f'./te context codex-fresh-thread --handoff "{handoff}" --model "{model_name}" --execute' + (" --ephemeral" if ephemeral else ""),
         "success_test": [
-            "App Server emits thread/started with turns: [] and the requested cwd.",
+            f"App Server emits thread/started with turns: [] and {persistence} state in the requested cwd.",
             "A turn/start succeeds in that new thread.",
             "The assistant responds from the new thread and the thread returns to idle.",
+            "For persistent mode, thread/list can find the new thread by exact cwd.",
         ],
-        "note": "This creates a fresh successor Codex thread. It does not erase the old host transcript.",
+        "note": "This creates a fresh successor Codex thread in the same project. It does not erase the old host transcript.",
     }
 
 
@@ -111,11 +114,13 @@ def _thread_started_info(events: list[dict[str, Any]], thread_id: str | None) ->
             continue
         return {
             "thread_ephemeral": bool(thread.get("ephemeral")),
+            "thread_persistent": thread.get("ephemeral") is False,
             "thread_turns_empty": thread.get("turns") == [],
             "thread_source": thread.get("source"),
             "thread_cwd": thread.get("cwd"),
+            "thread_path": thread.get("path"),
         }
-    return {"thread_ephemeral": False, "thread_turns_empty": False, "thread_source": None, "thread_cwd": None}
+    return {"thread_ephemeral": False, "thread_persistent": False, "thread_turns_empty": False, "thread_source": None, "thread_cwd": None, "thread_path": None}
 
 
 def _latest_token_usage(events: list[dict[str, Any]], thread_id: str | None) -> dict[str, Any]:
@@ -142,8 +147,15 @@ def _latest_token_usage(events: list[dict[str, Any]], thread_id: str | None) -> 
     }
 
 
-def run_codex_fresh_thread(repo_root: Path, handoff: Path, model: str | None = None, timeout: int = 120) -> dict[str, Any]:
-    plan = codex_fresh_thread_plan(repo_root, handoff, model)
+def _listed_info(events: list[dict[str, Any]], request_id: int, thread_id: str | None) -> dict[str, Any]:
+    response = _find_response(events, request_id)
+    data = ((response or {}).get("result") or {}).get("data") or []
+    ids = [thread.get("id") for thread in data if isinstance(thread, dict)]
+    return {"listed_after_start": bool(thread_id and thread_id in ids), "listed_count": len(data)}
+
+
+def run_codex_fresh_thread(repo_root: Path, handoff: Path, model: str | None = None, timeout: int = 120, ephemeral: bool = False) -> dict[str, Any]:
+    plan = codex_fresh_thread_plan(repo_root, handoff, model, ephemeral=ephemeral)
     outdir = repo_root / ".token-economy" / "checkpoints" / "codex-app-server" / datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     outdir.mkdir(parents=True, exist_ok=True)
     proc = subprocess.Popen(
@@ -180,7 +192,7 @@ def run_codex_fresh_thread(repo_root: Path, handoff: Path, model: str | None = N
                     "cwd": str(repo_root),
                     "approvalPolicy": "never",
                     "sandbox": "workspace-write",
-                    "ephemeral": True,
+                    "ephemeral": ephemeral,
                     "model": plan["model"],
                 },
             },
@@ -206,6 +218,22 @@ def run_codex_fresh_thread(repo_root: Path, handoff: Path, model: str | None = N
                 },
             )
             all_events.extend(_read_events(proc, timeout))
+            if not ephemeral:
+                _send(
+                    proc,
+                    {
+                        "id": 4,
+                        "method": "thread/list",
+                        "params": {
+                            "cwd": str(repo_root),
+                            "archived": False,
+                            "limit": 20,
+                            "sourceKinds": ["cli", "vscode", "exec", "appServer", "unknown"],
+                            "sortKey": "updated_at",
+                        },
+                    },
+                )
+                all_events.extend(_read_events(proc, 8))
     finally:
         proc.terminate()
         try:
@@ -219,14 +247,19 @@ def run_codex_fresh_thread(repo_root: Path, handoff: Path, model: str | None = N
     events_path.write_text("\n".join(json.dumps(event, sort_keys=True) for event in all_events) + "\n", encoding="utf-8")
     stderr_path = outdir / "stderr.txt"
     stderr_path.write_text(stderr_text, encoding="utf-8")
+    started_info = _thread_started_info(all_events, thread_id)
+    listed_info = _listed_info(all_events, 4, thread_id)
+    base_ok = bool(thread_id and _assistant_responded(all_events) and _thread_idle(all_events, thread_id) and started_info["thread_turns_empty"])
+    persistence_ok = bool(started_info["thread_ephemeral"]) if ephemeral else bool(started_info["thread_persistent"] and listed_info["listed_after_start"])
     summary = {
         **plan,
         "thread_id": thread_id,
-        **_thread_started_info(all_events, thread_id),
+        **started_info,
         "assistant_responded": _assistant_responded(all_events),
         "thread_idle": _thread_idle(all_events, thread_id),
+        **listed_info,
         **_latest_token_usage(all_events, thread_id),
-        "ok": bool(thread_id and _assistant_responded(all_events) and _thread_idle(all_events, thread_id)),
+        "ok": bool(base_ok and persistence_ok),
         "events": str(events_path),
         "stderr": str(stderr_path),
     }
