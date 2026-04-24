@@ -32,6 +32,10 @@ Added the `summ` manual refresh prompt, a lightweight wiki-documenter subagent p
 
 Updated `summ` so appended instructions become next-session requirements, generic checkpoints must be replaced with session-specific handoffs, missing documenter prompts use an inline fallback instead of broad searching, and old-context work stops after emitting the packet.
 
+## [2026-04-24] feature | host context controls
+
+Added host-native context control guidance for `summ`: Claude Code `/clear` and `/compact`, Codex `/new`, `/clear`, and `/compact`, Gemini `/compress`, and generic fallback to a fresh session. Added `./te context host-controls` so agents can retrieve the right command without loading broad docs.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").

@@ -21,6 +21,59 @@ MODEL_CONTEXT_PATTERNS = (
     (re.compile(r"(qwen|gemma|phi|llama|local|ollama)", re.IGNORECASE), 128_000),
 )
 
+HOST_CONTEXT_CONTROLS: dict[str, dict[str, Any]] = {
+    "claude": {
+        "compact": "/compact",
+        "clear": "/clear",
+        "fresh": "/clear, then paste only the handoff packet plus start.md",
+        "status": "/context or /cost when available",
+        "notes": [
+            "Interactive Claude Code supports /clear and /compact.",
+            "Claude SDK can dispatch /compact; for true clear, end the query and start a new one.",
+        ],
+    },
+    "codex": {
+        "compact": "/compact",
+        "clear": "/clear",
+        "fresh": "/new, or /clear then paste only the handoff packet plus start.md",
+        "status": "/status",
+        "notes": [
+            "Codex CLI supports /compact, /clear, and /new.",
+            "/clear starts a fresh chat; Ctrl+L only clears the terminal view.",
+        ],
+    },
+    "gemini": {
+        "compact": "/compress",
+        "clear": "/clear",
+        "fresh": "Use /compress for summary, or start a new chat/session with only the handoff packet plus start.md",
+        "status": "/stats when available",
+        "notes": [
+            "Gemini CLI documents /compress as replacing chat context with a summary.",
+            "/clear behavior varies by version/docs; verify whether it clears context or only screen.",
+        ],
+    },
+    "cursor": {
+        "compact": "host-specific compact/new chat command",
+        "clear": "new chat/session",
+        "fresh": "start a new chat with only the handoff packet plus start.md",
+        "status": "host-specific context/status view",
+        "notes": [
+            "Cursor behavior depends on product version and enabled agent mode.",
+            "Use MCP/hooks such as context-mode for output quarantine when available.",
+        ],
+    },
+    "generic": {
+        "compact": "host-specific compact/compress command if available",
+        "clear": "host-specific clear/new-chat command if available",
+        "fresh": "start a new session with only the handoff packet plus start.md",
+        "status": "host-specific token/context meter if available",
+        "notes": [
+            "The framework can prepare the packet; the host must perform the actual context reset.",
+            "If no native clear exists, stop old-context work and start a new session manually.",
+        ],
+    },
+}
+
 
 def model_context_tokens(model: str | None) -> int | None:
     if not model or model == "auto":
@@ -43,6 +96,18 @@ def resolve_max_tokens(value: int | str | None, model: str | None = None) -> int
     if model_tokens:
         return model_tokens
     return 128_000
+
+
+def host_context_controls(agent: str = "auto") -> dict[str, Any]:
+    key = (agent or "auto").lower()
+    if key == "auto":
+        key = "generic"
+    controls = HOST_CONTEXT_CONTROLS.get(key, HOST_CONTEXT_CONTROLS["generic"])
+    return {
+        "agent": key,
+        **controls,
+        "summ_rule": "After writing the handoff, use the host-native compact/clear/new-chat command when available; otherwise stop and start a fresh session manually.",
+    }
 
 
 def env_threshold(name: str, default: float) -> float:

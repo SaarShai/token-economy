@@ -6,7 +6,7 @@ Work only inside the repo root containing `token-economy.yaml`. Use the repo-loc
 
 ## Prime Directive
 
-Use **Caveman Ultra** by default: terse, exact, high-signal. No filler. No praise padding. Code and quoted errors stay unchanged.
+Use **Caveman Ultra**: terse, exact, high-signal. No filler/praise padding. Code and quoted errors stay unchanged.
 
 Start every non-trivial task in plan mode: first write a short step-by-step plan, then inspect reality, then execute. If your host has an explicit Plan Mode, use it. If not, write the compact plan in chat before any changes.
 
@@ -35,7 +35,7 @@ Load only when triggered:
 | Task >3 steps | `skills/plan-first-execute/SKILL.md` |
 | Need wiki memory | `skills/wiki-retrieve/SKILL.md` |
 | Writing memory | `skills/wiki-write/SKILL.md` |
-| Context warn/refresh/`summ` | `skills/context-refresh/SKILL.md` |
+| Context refresh/clear/`summ` | `skills/context-refresh/SKILL.md` |
 | Need subagents | `skills/subagent-orchestrator/SKILL.md` |
 | GitHub repo maintenance | `prompts/subagents/repo-maintainer.prompt.md` |
 | `/pa` or `/btw` prompt | `skills/personal-assistant/SKILL.md` |
@@ -53,7 +53,7 @@ Load only when triggered:
   ./te context meter --transcript <file>
   ./te context checkpoint --handoff-template
   ```
-- For manual `summ`, make the packet, stop, and continue only in fresh context.
+- For `summ`, use host-native clear/compact when available; then continue only in fresh context.
 - If the host cannot clear context, open a fresh session with only `./te context fresh-start` output + `start.md`.
 
 ## Wiki Rules

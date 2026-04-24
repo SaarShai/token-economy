@@ -12,7 +12,7 @@ from pathlib import Path
 
 from token_economy.cli import main
 from token_economy.config import detect_agent
-from token_economy.context import checkpoint, lint_handoff, meter
+from token_economy.context import checkpoint, host_context_controls, lint_handoff, meter
 from token_economy.docs import audit as docs_audit
 from token_economy.delegate import classify, personal_assistant_packet, strip_pa_prefix
 from token_economy.tokens import estimate_tokens
@@ -323,10 +323,18 @@ Search first, timeline second, fetch last.
         self.assertTrue((REPO / "prompts/subagents/wiki-documenter.prompt.md").exists())
         self.assertIn("wiki-documenter", (REPO / "skills/context-refresh/SKILL.md").read_text(encoding="utf-8"))
         summ = (REPO / "prompts/summ.md").read_text(encoding="utf-8")
-        self.assertIn("handoff packet plus `start.md`", summ)
+        self.assertIn("what to paste", summ)
         self.assertIn("Do not load anything else", summ)
         self.assertIn("STOP HERE", summ)
         self.assertIn("next-session requirements", summ)
+        self.assertIn("host-controls", summ)
+        self.assertEqual(host_context_controls("codex")["clear"], "/clear")
+        self.assertEqual(host_context_controls("gemini")["compact"], "/compress")
+
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(main(["context", "host-controls", "--agent", "claude"]), 0)
+        self.assertEqual(json.loads(buf.getvalue())["clear"], "/clear")
 
     def test_agent_detection_ignores_provider_api_keys(self):
         original = os.environ.copy()

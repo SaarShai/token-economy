@@ -9,7 +9,7 @@ from typing import Any
 
 from .config import detect_agent, load_config
 from .bench import run_framework_smoke
-from .context import checkpoint, lint_handoff, meter, status_for_files
+from .context import checkpoint, host_context_controls, lint_handoff, meter, status_for_files
 from .delegate import delegation_plan, dumps, load_models, classify, personal_assistant_directive, personal_assistant_packet
 from .docs import audit as docs_audit, split_plan
 from .hooks import doctor as hooks_doctor
@@ -146,6 +146,9 @@ def cmd_context(args: argparse.Namespace) -> int:
         print("Open a fresh session with this packet if the host cannot clear context programmatically.")
     elif args.context_cmd == "lint-handoff":
         print_json(lint_handoff(Path(args.path).expanduser(), max_tokens=args.max_tokens))
+    elif args.context_cmd == "host-controls":
+        agent = detect_agent() if args.agent == "auto" else args.agent
+        print_json(host_context_controls(agent))
     return 0
 
 
@@ -287,6 +290,9 @@ def build_parser() -> argparse.ArgumentParser:
     cl.add_argument("path")
     cl.add_argument("--max-tokens", type=int, default=2000)
     cl.set_defaults(func=cmd_context)
+    ch = csub.add_parser("host-controls")
+    ch.add_argument("--agent", choices=["auto", "claude", "codex", "gemini", "cursor", "generic"], default="auto")
+    ch.set_defaults(func=cmd_context)
 
     de = sub.add_parser("delegate")
     desub = de.add_subparsers(dest="delegate_cmd", required=True)

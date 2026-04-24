@@ -15,9 +15,11 @@ Goal: preserve continuity with the smallest useful fresh context, while a cheap 
 5. Create the fresh handoff with `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`. If the generated checkpoint is generic, replace it with a specific handoff from current session facts.
 6. Keep the handoff under 2000 estimated tokens. Do not paste transcript, raw logs, broad wiki pages, or docs-only discoveries.
 7. If possible, lint it with `./te context lint-handoff <handoff-file>`.
-8. Clear/compact the current context. If the host cannot clear context programmatically, tell the user to start a fresh session with only the handoff packet plus `start.md`.
-9. End the old-context response after the handoff with: `FRESH CONTEXT PACKET READY - STOP HERE`.
-10. Fresh session starts in plan mode, thinks step by step, and creates a robust plan before executing.
+8. Check host controls with `./te context host-controls --agent auto` or `prompts/context-host-controls.md`.
+9. Use the native host action when available: Claude `/clear` or `/compact`; Codex `/new`, `/clear`, or `/compact`; Gemini `/compress` or a new chat/session.
+10. If the agent cannot invoke the host command itself, tell the user the exact command to run and what to paste.
+11. End the old-context response after the handoff with: `FRESH CONTEXT PACKET READY - STOP HERE`.
+12. Fresh session starts in plan mode, thinks step by step, and creates a robust plan before executing.
 
 ## Ready Prompt
 
@@ -34,7 +36,7 @@ Spawn or route a lightweight documentation subagent for the durable wiki memory 
 
 Create the fresh handoff using `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`. If the generated checkpoint is generic, replace it with a specific handoff from current session facts. Keep it under 2000 estimated tokens. Preserve exact paths, commands, decisions, and errors. Exclude transcript noise, raw logs, broad wiki pages, and docs-only discoveries.
 
-Then clear/compact this context. If you cannot clear context programmatically, tell me to start a fresh session with only the handoff packet plus `start.md`. Do not load anything else until retrieval proves relevance.
+Then check `./te context host-controls --agent auto` or `prompts/context-host-controls.md`. Use the native host command when available: Claude `/clear` or `/compact`; Codex `/new`, `/clear`, or `/compact`; Gemini `/compress` or a new chat/session. If you cannot invoke the host command yourself, tell me the exact command to run and what to paste. Do not load anything else until retrieval proves relevance.
 
 End your old-context response immediately after the handoff with:
 FRESH CONTEXT PACKET READY - STOP HERE

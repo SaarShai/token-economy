@@ -18,8 +18,9 @@ Protocol:
 4. If durable memory exists, route a lightweight wiki-documenter with `prompts/subagents/wiki-documenter.prompt.md`; if missing, use the contract inline.
 5. Create handoff with `./te context checkpoint --handoff-template` or `prompts/summarize-for-handoff.md`; replace generic output with session-specific facts.
 6. Prefer cheapest summarizer worker for the handoff; it returns only the packet.
-7. Write packet before clearing/compacting, then stop old-context work.
-8. Fresh session reads handoff + `start.md` only, enters plan-first mode, then retrieves on demand.
+7. Check host controls with `./te context host-controls --agent auto` or `prompts/context-host-controls.md`.
+8. Use native clear/compact/new-chat when available; if the agent cannot invoke it, tell the user the exact command and stop old-context work.
+9. Fresh session reads handoff + `start.md` only, enters plan-first mode, then retrieves on demand.
 
 Hard rules:
 - Handoff <= 2000 estimated tokens.
