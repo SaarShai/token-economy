@@ -2,28 +2,31 @@
 
 Use during `summ`, checkpoint, or manual refresh.
 
-Token Economy can create the handoff packet and durable memory updates. The host app controls the actual context reset. Do not assume the model can execute host slash commands from its own assistant message.
+Token Economy uses one universal refresh protocol and host-specific execution profiles. The universal part is: summarize, document durable memory, write a lean handoff, then continue from only `start.md` plus that handoff. The host-specific part is how the fresh/compact context is actually created.
+
+Do not assume every model/platform can clear context the same way. The agent must pick the right profile with `./te context host-controls --agent auto`.
 
 ## Native Controls
 
-| Host | Compact summary | Fresh context | Status |
-|---|---|---|---|
-| Claude Code | `/compact` | `/clear`, then paste handoff + `start.md` | `/context` or `/cost` when available |
-| Claude SDK | dispatch `/compact` | end current query and start a new one | SDK init/usage metadata |
-| Codex CLI | `/compact` | `/new` or `/clear` when host accepts it; persistent successor via `./te context codex-fresh-thread` or `codex fork --last` | `/status` |
-| Gemini CLI | `/compress` | new chat/session; `/clear` behavior varies by version | `/stats` when available |
-| Generic | host compact/compress | host new-chat/new-session | host meter |
+| Host | Strategy | Compact summary | Fresh context | Status |
+|---|---|---|---|---|
+| Claude Code | native clear/compact | `/compact` | `/clear`, then paste handoff + `start.md` | `/context` or `/cost` when available |
+| Claude SDK | slash-command dispatch | dispatch `/compact` | dispatch `/clear` or end query and start a new one | SDK init/usage metadata |
+| Codex CLI/Desktop | persistent successor thread | `/compact` | `./te context codex-fresh-thread --execute` or `codex fork --last` | `/status` |
+| Gemini CLI | native compress/new session | `/compress` | new chat/session; `/clear` behavior varies by version | `/stats` when available |
+| Cursor | new chat with handoff | host compact if available | new chat with only handoff + `start.md` | host meter |
+| Generic | manual fresh session | host compact/compress | host new-chat/new-session | host meter |
 
 ## Rule
 
 After `summ` writes the handoff:
 
-1. Prefer host-native fresh context when available.
-2. Load only the handoff packet plus `start.md`.
-3. Do not continue old-context task work.
-4. Treat native slash commands as user/host actions unless the host exposes a real tool for invoking them.
-5. If slash commands cannot be invoked, use a fresh successor process/session. For Codex, prefer the App Server fresh-thread path.
-6. Tell the user the exact command to run and stop.
+1. Run `./te context host-controls --agent auto`.
+2. Choose the returned `strategy`, not a generic guess.
+3. Load only the handoff packet plus `start.md` in the fresh/compacted context.
+4. Do not continue old-context task work after emitting or launching the successor.
+5. Treat native slash commands as user/host actions unless the host exposes a real tool for invoking them.
+6. Tell the user the exact command to run when the host action cannot be invoked programmatically.
 
 Check current host guidance:
 
@@ -35,7 +38,7 @@ Check current host guidance:
 
 ## Workarounds
 
-Best practical workaround: launch a fresh successor session with only `start.md` and the handoff file. This does not clear the current transcript; it bypasses it.
+Best practical workaround for hosts without callable clear: launch a fresh successor session with only `start.md` and the handoff file. This does not clear the current transcript; it bypasses it.
 
 Examples:
 
@@ -53,6 +56,14 @@ For Codex hosts with App Server support, Token Economy can start a persistent fr
 ```
 
 Use `--ephemeral` only for throwaway smoke tests. Use `TOKEN_ECONOMY_CODEX_FRESH_MODEL=<model>` to change the default. Success means the command reports `ok: true`, `thread_persistent: true`, `thread_turns_empty: true`, `assistant_responded: true`, `thread_idle: true`, and ideally `listed_after_start: true`. The old host transcript is not erased; the fresh thread bypasses it. Codex may still show large input-token counts from host/system/tool context, but that is not evidence that the old transcript was loaded.
+
+For Claude Code, prefer native controls:
+
+```text
+/clear
+```
+
+Then load only the handoff plus `start.md`. Use `/compact <handoff focus>` when same-chat continuity matters more than a fully fresh context. If a SlashCommand/SDK tool is exposed, the agent may invoke the command through that tool; otherwise it must ask the user/host to run the command.
 
 Other possible but brittle workarounds:
 

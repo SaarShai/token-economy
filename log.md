@@ -60,6 +60,10 @@ Verified controlled `summ` successor run: `./te context codex-fresh-thread --han
 
 Changed `./te context codex-fresh-thread` to create a persistent same-project successor by default, with `--ephemeral` reserved for throwaway smoke tests. Verified live: `thread_id=019dbfd4-4efb-7453-84d1-b6010cc6d35a`, `ok=true`, `thread_persistent=true`, `thread_turns_empty=true`, `thread_idle=true`, and `listed_after_start=true`. This gives `summ` a durable project-thread continuation without claiming to erase the old active transcript.
 
+## [2026-04-24] clarify | platform-specific summ strategies
+
+Kept `summ` universal through summarize/document/handoff, then made execution platform-specific. `./te context host-controls --agent auto` now returns a `strategy`: Codex uses persistent same-project successor threads, Claude uses native `/clear` or `/compact`, Gemini uses `/compress` or a new session, and generic hosts use a manual fresh session with only `start.md` plus the handoff.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").

@@ -23,17 +23,19 @@ MODEL_CONTEXT_PATTERNS = (
 
 HOST_CONTEXT_CONTROLS: dict[str, dict[str, Any]] = {
     "claude": {
+        "strategy": "native-clear-or-compact",
         "compact": "/compact",
         "clear": "/clear",
         "fresh": "/clear, then paste only the handoff packet plus start.md",
         "status": "/context or /cost when available",
         "notes": [
             "Interactive Claude Code supports /clear and /compact.",
-            "Built-in host commands are user/host controls; if no tool exposes them, ask the user to run them.",
-            "Claude SDK can use lifecycle hooks around compaction; for true clear, end the query and start a new one.",
+            "If a Claude SlashCommand/SDK tool is available, invoke /clear or /compact there; otherwise ask the user to run it.",
+            "Use /clear for the cleanest fresh context, or /compact with a handoff-focused instruction when same-chat continuity matters.",
         ],
     },
     "codex": {
+        "strategy": "persistent-successor-thread",
         "compact": "/compact",
         "clear": "/clear",
         "fresh": "host /new or /clear when available; programmatic workaround: te context codex-fresh-thread",
@@ -47,6 +49,7 @@ HOST_CONTEXT_CONTROLS: dict[str, dict[str, Any]] = {
         ],
     },
     "gemini": {
+        "strategy": "native-compress-or-new-session",
         "compact": "/compress",
         "clear": "/clear",
         "fresh": "Use /compress for summary, or start a new chat/session with only the handoff packet plus start.md",
@@ -58,6 +61,7 @@ HOST_CONTEXT_CONTROLS: dict[str, dict[str, Any]] = {
         ],
     },
     "cursor": {
+        "strategy": "new-chat-with-handoff",
         "compact": "host-specific compact/new chat command",
         "clear": "new chat/session",
         "fresh": "start a new chat with only the handoff packet plus start.md",
@@ -68,6 +72,7 @@ HOST_CONTEXT_CONTROLS: dict[str, dict[str, Any]] = {
         ],
     },
     "generic": {
+        "strategy": "manual-fresh-session",
         "compact": "host-specific compact/compress command if available",
         "clear": "host-specific clear/new-chat command if available",
         "fresh": "start a new session with only the handoff packet plus start.md",
@@ -111,7 +116,8 @@ def host_context_controls(agent: str = "auto") -> dict[str, Any]:
     return {
         "agent": key,
         **controls,
-        "summ_rule": "After writing the handoff, use the host-native compact/clear/new-chat command when available; otherwise stop and start a fresh session manually.",
+        "universal_protocol": "summarize current work, document durable memory, write a lean handoff, then use the selected host strategy to continue with only start.md plus the handoff.",
+        "summ_rule": "After writing the handoff, choose the platform strategy from this profile; do not assume all hosts can clear context the same way.",
         "completion_test": "Refresh is complete only after the host-reported active context drops or a fresh conversation starts.",
     }
 
