@@ -80,6 +80,10 @@ Changed `./te context codex-fresh-thread --execute` to stop waiting as soon as t
 
 Added `./te context codex-compact-thread` for same-session Codex compaction. It uses `CODEX_THREAD_ID` or an explicit `--thread-id`, resumes the thread with a Token Economy `compact_prompt`, calls App Server `thread/compact/start`, and treats success as `resume_ok=true`, `compact_start_ok=true`, and `compacted=true`. `summ` now has two Codex paths: compact current thread when continuity matters, or launch a persistent fresh successor when bypassing the old transcript is better. Disposable live smoke passed on thread `019dbffe-65ca-7441-9c1b-2a400a4e375a` with `ok=true`, `resume_ok=true`, `compact_start_ok=true`, and `compacted=true`.
 
+## [2026-04-24] fix | manual Codex summ fallback
+
+Added `prompts/summ-codex-manual.md` because older project-local Token Economy installs may not have `codex-compact-thread` or `codex-fresh-thread`. The manual prompt now includes a self-contained Python `codex app-server` fallback so agents do not stop after reporting that local `./te` is too old.
+
 ## 2026-04-17
 
 Terminology: **ComCom** = our compound-compression project (disambiguate from Claude Code's "CC").
