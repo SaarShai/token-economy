@@ -21,11 +21,11 @@ tags: [...]
 confidence: low | med | high
 evidence_count: N            # number of distinct evidence points
 verified: YYYY-MM-DD         # last-check date
-supersedes: [[old-page]]     # optional, array
-superseded-by: [[new-page]]  # optional, null when not superseded
+supersedes: [old-page]       # optional, array
+superseded-by: new-page      # optional, null when not superseded
 relations:                    # optional, typed
-  - {type: depends_on, target: "[[X]]"}
-  - {type: contradicts, target: "[[Y]]"}
+  - {type: depends_on, target: "X"}
+  - {type: contradicts, target: "Y"}
 ---
 ```
 
@@ -67,8 +67,8 @@ grep -A3 "\[2026-04-18\]" log.md    # one day's activity
 ## Supersession protocol
 
 When a page replaces an older claim:
-1. New page gets frontmatter `supersedes: [[old-page]]`.
-2. Old page gets `superseded-by: [[new-page]]` + confidence demoted one tier.
+1. New page gets frontmatter `supersedes: [old-page]`.
+2. Old page gets `superseded-by: new-page` + confidence demoted one tier.
 3. Entry in `log.md`: `## [YYYY-MM-DD] supersede | <old> → <new>`.
 
 ## Retention decay (planned monthly lint)

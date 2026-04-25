@@ -15,6 +15,7 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 - [[prompts/delegation-matrix]] — model-agnostic delegation tiers
 - [[skills/caveman-ultra/SKILL]] — Caveman Ultra skill
 - [[skills/personal-assistant/SKILL]] — `/pa` and `/btw` bypass router for context-light prompts
+- [[skills/verification-before-completion/SKILL]] — evidence-before-claims gate
 - [[prompts/manual-summ-document-and-handoff]] — copy-paste old-session `summ` prompt that documents durable memory and writes `session_handoff.md`
 - [[prompts/manual-fresh-session-from-handoff]] — copy-paste fresh-session prompt that reads only `start.md` plus `session_handoff.md`
 - [[prompts/manual-full-summ]] — copy-paste old-project export prompt for a full migration summary
@@ -34,7 +35,7 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 
 ## Patterns
 - [[patterns/compound-compression-pipeline]] — stack 4 techniques, 80-90% total
-- [[patterns/semantic-diff-edits]] — send diff not full file
+- [[concepts/semantic-diff-edits]] — send diff not full file
 - [[patterns/wiki-query-shortcircuit]] — search repo-local wiki before re-synthesis
 - [[patterns/tiny-model-router]] — 0.5B classifier dispatches
 

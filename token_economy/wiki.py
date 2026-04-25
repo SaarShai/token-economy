@@ -11,7 +11,7 @@ from typing import Any
 
 WIKI_DIRS = ("raw", "concepts", "patterns", "projects", "people", "queries", "L2_facts", "L3_sops", "L4_archive")
 SKIP_PARTS = {".git", ".token-economy", "__pycache__", ".pytest_cache"}
-WIKILINK_RE = re.compile(r"\[\[([^\]#|]+)(?:[#|][^\]]*)?\]\]")
+WIKILINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
 V2_REQUIRED = ("title", "type", "domain", "tier", "confidence", "created", "updated", "verified", "sources", "supersedes", "superseded-by", "tags")
 V2_TYPES = {"entity", "summary", "decision", "source-summary", "procedure", "concept", "pattern", "project", "query", "fact", "sop", "raw", "person", "handoff"}
 V2_TIERS = {"working", "episodic", "semantic", "procedural"}
@@ -108,6 +108,15 @@ def parse_tags(value: str) -> list[str]:
     return [value]
 
 
+def strip_fenced_code(text: str) -> str:
+    return re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+
+
+def normalize_wikilink(inner: str) -> str:
+    target = inner.strip().split("|", 1)[0].split("#", 1)[0].strip()
+    return target.rstrip("\\").removesuffix(".md")
+
+
 def is_v2_page(fm: dict[str, str]) -> bool:
     return fm.get("schema_version") == "2" or all(key in fm for key in ("title", "domain", "tier", "sources"))
 
@@ -175,7 +184,7 @@ class WikiStore:
             if clean and not clean.startswith("#"):
                 preview = clean[:240]
                 break
-        links = [x.strip() for x in WIKILINK_RE.findall(body)]
+        links = [normalize_wikilink(x) for x in WIKILINK_RE.findall(strip_fenced_code(body))]
         return Page(
             id=page_id(self.root, path),
             path=path,

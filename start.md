@@ -39,12 +39,14 @@ Load only when triggered:
 | Need subagents | `skills/subagent-orchestrator/SKILL.md`; lifecycle: `prompts/subagents/lifecycle.prompt.md` |
 | GitHub repo maintenance | `prompts/subagents/repo-maintainer.prompt.md` |
 | `/pa` or `/btw` prompt | `skills/personal-assistant/SKILL.md` |
+| Before completion claim | `skills/verification-before-completion/SKILL.md` |
 | Delegation policy | `prompts/delegation-matrix.md` |
 | New wiki page | `templates/page.template.md` |
 
 ## Context Rules
 
 - Retrieve before reasoning about project/wiki facts.
+- Check relevant skills before action; load only matching skills.
 - Fetch all relevant information, and only relevant information.
 - Prefer pointers first: index, search hits, timelines, then full pages.
 - At `20%` estimated context used, run:

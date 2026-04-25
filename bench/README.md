@@ -57,7 +57,7 @@ python3 -c "from adapters.coqa import load; print(len(load('data/coqa/coqa-dev-v
 ## Kaggle strategy (three uses)
 
 1. **Datasets** for eval material — pulled via registry.
-2. **Kaggle Notebooks** as free T4 GPU (30h/wk) — run N=500+ evals without local laptop burn. vLLM gets ~10× throughput over our CPU-Ollama runs. See [[notebooks/kaggle_eval_template]].
+2. **Kaggle Notebooks** as free T4 GPU (30h/wk) — run N=500+ evals without local laptop burn. vLLM gets ~10× throughput over our CPU-Ollama runs. See [[bench/notebooks/kaggle_eval_template]].
 3. **Publishing** — share results as Kaggle datasets + public notebooks for peer review.
 
 ## Why this matters

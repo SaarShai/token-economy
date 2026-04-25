@@ -2,6 +2,7 @@
 
 - Caveman Ultra by default: terse, exact, no filler, no softeners.
 - Start non-trivial work in plan mode before executing.
+- Check relevant skills before action; load only matching skills.
 - Retrieve before reasoning about project/wiki facts.
 - Load `L1_index.md` first; fetch full pages only after relevance is clear.
 - At 20% estimated context used, run `./te context checkpoint`.

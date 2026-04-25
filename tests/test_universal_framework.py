@@ -114,6 +114,28 @@ Search first, timeline second, fetch last.
 """,
                 encoding="utf-8",
             )
+            alias = root / "concepts" / "alias-link.md"
+            alias.write_text(
+                """---
+type: concept
+axis: knowledge_org
+tags: [retrieval]
+confidence: med
+evidence_count: 1
+---
+
+# Alias Link
+
+Alias link to [[patterns/progressive-retrieval|progressive retrieval]].
+
+```bash
+if [[ "$path" == raw/* ]]; then
+  echo skip
+fi
+```
+""",
+                encoding="utf-8",
+            )
             result = wiki.index()
             self.assertGreaterEqual(result["indexed"], 2)
             hits = wiki.search("context refresh")
@@ -125,6 +147,7 @@ Search first, timeline second, fetch last.
             self.assertIn("20 percent context", fetched["content"])
             lint = wiki.lint()
             self.assertEqual(lint["broken_links"], [])
+            self.assertEqual(wiki.read_page(alias.resolve()).links, ["patterns/progressive-retrieval"])
 
     def test_checkpoint_packet_is_small_and_plan_mode(self):
         with tempfile.TemporaryDirectory() as td:
@@ -329,6 +352,8 @@ Search first, timeline second, fetch last.
         self.assertTrue((REPO / "prompts/manual-fresh-session-from-handoff.md").exists())
         self.assertTrue((REPO / "prompts/manual-full-summ.md").exists())
         self.assertTrue((REPO / "prompts/manual-import-full-summ.md").exists())
+        self.assertTrue((REPO / "concepts/superpowers-skills.md").exists())
+        self.assertTrue((REPO / "skills/verification-before-completion/SKILL.md").exists())
         self.assertTrue((REPO / "prompts/subagents/wiki-documenter.prompt.md").exists())
         lifecycle = (REPO / "prompts/subagents/lifecycle.prompt.md").read_text(encoding="utf-8")
         self.assertIn("Close a subagent only", lifecycle)
@@ -338,6 +363,12 @@ Search first, timeline second, fetch last.
         self.assertIn("Do not add softeners", caveman)
         self.assertIn("explicitly asks for normal prose", caveman)
         self.assertNotIn("Auto-soften", caveman)
+        superpowers = (REPO / "concepts/superpowers-skills.md").read_text(encoding="utf-8")
+        self.assertIn("mandatory skill checks before action", superpowers)
+        self.assertIn("Verification claims need fresh evidence", superpowers)
+        verify_skill = (REPO / "skills/verification-before-completion/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("evidence before claims", verify_skill)
+        self.assertIn("If verification is impossible", verify_skill)
         summ = (REPO / "prompts/summ.md").read_text(encoding="utf-8")
         self.assertIn("only `start.md` plus the handoff", summ)
         self.assertIn("codex-fresh-thread", summ)

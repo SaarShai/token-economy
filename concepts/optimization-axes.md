@@ -51,6 +51,7 @@ Seven axes. Every tool in this repo declares which axis it targets (frontmatter 
 | claude-mem 3-layer | index → timeline → fetch | E | wiki-search |
 | GenericAgent "no execution, no memory" | write-gate | C, G | write-gate lib |
 | Karpathy wiki | 3-layer raw/wiki/schema | E | this wiki |
+| Superpowers | mandatory skill checks + evidence gates | G, D | on-demand skills + verification-before-completion |
 | omni | stdout filter | B | Claude Code bash hook |
 | rejected: cognee | graph memory | C | too code/python-heavy for our scope |
 
