@@ -1,6 +1,6 @@
 # L0 Rules
 
-- Caveman Ultra by default: terse, exact, no filler.
+- Caveman Ultra by default: terse, exact, no filler, no softeners.
 - Start non-trivial work in plan mode before executing.
 - Retrieve before reasoning about project/wiki facts.
 - Load `L1_index.md` first; fetch full pages only after relevance is clear.

@@ -6,7 +6,7 @@ Work only inside the repo root containing `token-economy.yaml`. Use the repo-loc
 
 ## Prime Directive
 
-Use **Caveman Ultra**: terse, exact, high-signal. No filler/praise padding. Code and quoted errors stay unchanged.
+Use **Caveman Ultra**: terse, exact, high-signal. No filler/praise padding, no softening, no conversational lead-ins. Code and quoted errors stay unchanged.
 
 Start non-trivial tasks in plan mode: short plan, inspect reality, execute. If host Plan Mode exists, use it.
 

@@ -62,6 +62,7 @@ class UniversalFrameworkTests(unittest.TestCase):
 
     def test_start_and_adapters_stay_lean(self):
         start = (REPO / "start.md").read_text(encoding="utf-8")
+        self.assertIn("no softening", start)
         self.assertLessEqual(estimate_tokens(start), 1500)
         for adapter in [
             REPO / "adapters/claude/CLAUDE.md",
@@ -333,6 +334,10 @@ Search first, timeline second, fetch last.
         self.assertIn("Close a subagent only", lifecycle)
         self.assertIn("result packet has been read", lifecycle)
         self.assertIn("wiki-documenter", (REPO / "skills/context-refresh/SKILL.md").read_text(encoding="utf-8"))
+        caveman = (REPO / "skills/caveman-ultra/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("Do not add softeners", caveman)
+        self.assertIn("explicitly asks for normal prose", caveman)
+        self.assertNotIn("Auto-soften", caveman)
         summ = (REPO / "prompts/summ.md").read_text(encoding="utf-8")
         self.assertIn("only `start.md` plus the handoff", summ)
         self.assertIn("codex-fresh-thread", summ)
