@@ -4,7 +4,7 @@ Token Economy learns from these projects but does not vendor their code by defau
 
 ## Terminal And Tool Output
 
-- `omni`: terminal-output filtering. Useful when shell output is noisy and hooks are available.
+- `omni`: terminal-output filtering. Learned patterns now adopted natively: raw-output recovery, savings stats, custom rules, and opt-in session-aware suppression. Keep Omni external for host-specific cases.
 - `rtk`: Rust CLI proxy for common dev commands. Useful for fast command-output reduction.
 - `context-mode`: sandboxed tool output plus SQLite continuity. Useful for hook-capable platforms.
 

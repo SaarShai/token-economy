@@ -14,6 +14,8 @@ from .context import checkpoint, fresh_launch_commands, host_context_controls, l
 from .delegate import delegation_plan, dumps, load_models, classify, personal_assistant_directive, personal_assistant_packet
 from .docs import audit as docs_audit, split_plan
 from .hooks import doctor as hooks_doctor
+from .output_filter import rewind as output_filter_rewind, stats as output_filter_stats
+from .output_filter import cmd_filter as output_filter_cmd_filter, cmd_rules as output_filter_cmd_rules
 from .profile import set_profile, show as show_profile
 from .tokens import estimate_tokens
 from .wiki import WikiStore
@@ -211,6 +213,19 @@ def cmd_hooks(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_output_filter(args: argparse.Namespace) -> int:
+    cfg = load_config(args.repo)
+    if args.output_filter_cmd == "filter":
+        return output_filter_cmd_filter(args)
+    if args.output_filter_cmd == "stats":
+        print_json(output_filter_stats(cfg.repo_root, limit=args.limit))
+    elif args.output_filter_cmd == "rewind":
+        print(output_filter_rewind(cfg.repo_root, args.id), end="")
+    elif args.output_filter_cmd == "rules":
+        return output_filter_cmd_rules(args)
+    return 0
+
+
 def cmd_profile(args: argparse.Namespace) -> int:
     cfg = load_config(args.repo)
     if args.profile_cmd == "show":
@@ -355,6 +370,22 @@ def build_parser() -> argparse.ArgumentParser:
     hk = sub.add_parser("hooks")
     hksub = hk.add_subparsers(dest="hooks_cmd", required=True)
     hksub.add_parser("doctor").set_defaults(func=cmd_hooks)
+
+    of = sub.add_parser("output-filter", help="Filter noisy tool output with raw-output recovery")
+    ofsub = of.add_subparsers(dest="output_filter_cmd", required=True)
+    off = ofsub.add_parser("filter")
+    off.add_argument("--no-archive", action="store_true")
+    off.add_argument("--session-aware", action="store_true")
+    off.set_defaults(func=cmd_output_filter)
+    ofs = ofsub.add_parser("stats")
+    ofs.add_argument("--limit", type=int)
+    ofs.set_defaults(func=cmd_output_filter)
+    ofr = ofsub.add_parser("rewind")
+    ofr.add_argument("id", nargs="?", default="last")
+    ofr.set_defaults(func=cmd_output_filter)
+    ofrules = ofsub.add_parser("rules")
+    ofrules.add_argument("--init", action="store_true")
+    ofrules.set_defaults(func=cmd_output_filter)
 
     pr = sub.add_parser("profile")
     prsub = pr.add_subparsers(dest="profile_cmd", required=True)

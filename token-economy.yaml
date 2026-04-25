@@ -10,3 +10,7 @@ default_scope: project
 model_registry: ./models.yaml
 profile: ultra
 external_adapters: []
+output_filter_archive: true
+# Opt-in only: suppresses lines already seen in this TOKEN_ECONOMY_SESSION_ID.
+output_filter_session_aware: false
+output_filter_rules: .token-economy/output-filter-rules.txt

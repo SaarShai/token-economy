@@ -18,6 +18,9 @@ class Config:
     default_scope: str = "project"
     model_registry: Path | None = None
     external_adapters: list[str] | None = None
+    output_filter_archive: bool = True
+    output_filter_session_aware: bool = False
+    output_filter_rules: Path | None = None
 
 
 def find_repo_root(start: str | Path | None = None) -> Path:
@@ -87,6 +90,10 @@ def load_config(repo_root: str | Path | None = None) -> Config:
     model_registry = Path(str(model_registry_raw)).expanduser()
     if not model_registry.is_absolute():
         model_registry = root / model_registry
+    output_filter_rules_raw = raw.get("output_filter_rules", ".token-economy/output-filter-rules.txt")
+    output_filter_rules = Path(str(output_filter_rules_raw)).expanduser()
+    if not output_filter_rules.is_absolute():
+        output_filter_rules = root / output_filter_rules
     return Config(
         repo_root=root,
         wiki_root=wiki_root.resolve(),
@@ -96,6 +103,9 @@ def load_config(repo_root: str | Path | None = None) -> Config:
         default_scope=str(raw.get("default_scope", "project")),
         model_registry=model_registry,
         external_adapters=raw.get("external_adapters", []) or [],
+        output_filter_archive=bool(raw.get("output_filter_archive", True)),
+        output_filter_session_aware=bool(raw.get("output_filter_session_aware", False)),
+        output_filter_rules=output_filter_rules,
     )
 
 

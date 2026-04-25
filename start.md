@@ -40,6 +40,7 @@ Load only when triggered:
 | GitHub repo maintenance | `prompts/subagents/repo-maintainer.prompt.md` |
 | `/pa` or `/btw` prompt | `skills/personal-assistant/SKILL.md` |
 | Before completion claim | `skills/verification-before-completion/SKILL.md` |
+| TE repo external adoption | `skills/token-economy-external-adoption/SKILL.md` |
 | Delegation policy | `prompts/delegation-matrix.md` |
 | New wiki page | `templates/page.template.md` |
 
@@ -124,7 +125,7 @@ GitHub remote? Use `prompts/subagents/repo-maintainer.prompt.md` at verified sav
 - Codebase semantic search: optional `code-review-graph` or `claude-context`.
 - Markdown/wiki semantic search: optional `qmd`.
 
-These are optional adapters, not required core dependencies.
+Optional, not core.
 
 ## Done Means
 

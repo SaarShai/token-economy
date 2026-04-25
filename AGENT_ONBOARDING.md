@@ -35,6 +35,8 @@ Then run:
 - Document only after verified work, and only in repo-local wiki pages and `log.md`.
 - Use `/pa` for context-light prompts.
 - Keep normal prompt hooks quiet unless `TOKEN_ECONOMY_CLASSIFY_ALL=1` is explicitly set.
+- When maintaining this Token Economy repo and considering adoption from another repo, load `skills/token-economy-external-adoption/SKILL.md` before inspection or implementation. This workflow is project-maintenance only, not a downstream user rule.
+- For framework maintenance updates, finish with verification, a commit, and a clean working tree. If cleanup or review is useful, spawn a small subagent, then merge or fix before committing.
 - Checkpoint near 20% context. Use `summ` for manual refresh: lean handoff, durable memory to a lightweight wiki-documenter, then host-specific clear/fresh continuation. Claude can use native `/clear`. Codex current-thread clear is not solved in the tested environment; fresh successor is `./te context codex-fresh-thread --handoff <handoff-file> --execute`.
 - If the task workspace has a GitHub remote, use the lightweight repo-maintainer worker at verified save-points; otherwise skip repo maintenance.
 

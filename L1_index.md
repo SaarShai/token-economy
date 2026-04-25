@@ -33,6 +33,7 @@ Compact pointers. Fetch details on demand.
 - concepts/optimization-axes (concept tags=framework,categorization,meta) -> `concepts/optimization-axes.md`
 - concepts/superpowers-skills (concept tags=skills,superpowers,agents,workflow) -> `concepts/superpowers-skills.md`
 - skills/verification-before-completion -> `skills/verification-before-completion/SKILL.md`
+- skills/token-economy-external-adoption -> `skills/token-economy-external-adoption/SKILL.md`
 - concepts/semantic-diff-edits (concept tags=semantic-diff,ast,context-compression,code-editing) -> `concepts/semantic-diff-edits.md`
 - concepts/turboquant-kv-cache (concept tags=turboquant,kv-cache,llama-cpp,apple-silicon,gguf-stack) -> `concepts/turboquant-kv-cache.md`
 - concepts/wiki-governance (concept tags=wiki,governance,schema) -> `concepts/wiki-governance.md`

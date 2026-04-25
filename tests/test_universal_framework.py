@@ -16,6 +16,7 @@ from token_economy.codex_app_server import codex_compact_thread_plan, codex_fres
 from token_economy.context import checkpoint, fresh_launch_commands, host_context_controls, lint_handoff, meter
 from token_economy.docs import audit as docs_audit
 from token_economy.delegate import classify, personal_assistant_packet, strip_pa_prefix
+from token_economy.output_filter import filter_text, load_rules
 from token_economy.tokens import estimate_tokens
 from token_economy.wiki import WikiStore
 
@@ -37,6 +38,7 @@ class UniversalFrameworkTests(unittest.TestCase):
             REPO / "stable/INSTALL.sh",
             REPO / "stable/README.md",
             REPO / "schema.md",
+            REPO / "skills/token-economy-external-adoption/SKILL.md",
             REPO / "token_economy/wiki.py",
             REPO / "token_economy/delegate.py",
             REPO / "projects/wiki-search/README.md",
@@ -323,6 +325,107 @@ fi
         )
         self.assertIn("ERROR exact failure", proc.stdout)
         self.assertIn("deduped", proc.stdout)
+
+    def test_output_filter_archives_stats_and_rewinds(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "token-economy.yaml").write_text("wiki_root: .\noutput_filter_archive: true\n", encoding="utf-8")
+            payload = ("same\n" * 20) + "ERROR exact failure\n50%\n"
+            buf = io.StringIO()
+            old_stdin = sys.stdin
+            try:
+                sys.stdin = io.StringIO(payload)
+                with contextlib.redirect_stdout(buf):
+                    self.assertEqual(main(["--repo", str(root), "output-filter", "filter"]), 0)
+            finally:
+                sys.stdin = old_stdin
+            self.assertIn("ERROR exact failure", buf.getvalue())
+            self.assertNotIn("50%", buf.getvalue())
+
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                self.assertEqual(main(["--repo", str(root), "output-filter", "stats"]), 0)
+            stats = json.loads(buf.getvalue())
+            self.assertEqual(stats["events"], 1)
+            self.assertGreater(stats["char_savings"], 0)
+            self.assertEqual(stats["last_id"].endswith("-default"), True)
+
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                self.assertEqual(main(["--repo", str(root), "output-filter", "rewind"]), 0)
+            self.assertEqual(buf.getvalue(), payload)
+
+    def test_output_filter_custom_rules_and_session_awareness(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            rules_path = root / "rules.txt"
+            rules_path.write_text("drop:^noise$\nkeep:^noise important$\n", encoding="utf-8")
+            seen_path = root / "seen.txt"
+            rules = load_rules(rules_path)
+            first, first_stats = filter_text("noise\nnoise important\nrepeat\n", rules=rules, session_aware=True, seen_path=seen_path)
+            self.assertNotIn("noise\n", first)
+            self.assertIn("noise important", first)
+            self.assertEqual(first_stats["dropped_lines"], 1)
+            second, second_stats = filter_text("repeat\nnoise important\n", rules=rules, session_aware=True, seen_path=seen_path)
+            self.assertNotIn("repeat", second)
+            self.assertIn("noise important", second)
+            self.assertEqual(second_stats["session_suppressed_lines"], 1)
+
+    def test_token_economy_external_adoption_skill_is_project_scoped(self):
+        skill_path = REPO / "skills/token-economy-external-adoption/SKILL.md"
+        self.assertTrue(skill_path.exists())
+        skill = skill_path.read_text(encoding="utf-8")
+        start = (REPO / "start.md").read_text(encoding="utf-8")
+        onboarding = (REPO / "AGENT_ONBOARDING.md").read_text(encoding="utf-8")
+        index = (REPO / "index.md").read_text(encoding="utf-8")
+        l1 = (REPO / "L1_index.md").read_text(encoding="utf-8")
+
+        self.assertIn("TE repo external adoption", start)
+        self.assertIn("skills/token-economy-external-adoption/SKILL.md", start)
+        self.assertIn("project-maintenance only, not a downstream user rule", onboarding)
+        self.assertIn("skills/token-economy-external-adoption/SKILL", index)
+        self.assertIn("skills/token-economy-external-adoption", l1)
+        self.assertIn("finish with verification, a commit, and a clean working tree", onboarding)
+
+        required = [
+            "Token Economy framework maintenance only",
+            "not for normal framework users",
+            "Source inspection",
+            "repo URL",
+            "commit SHA or tag",
+            "license",
+            ".token-economy/external-src",
+            "docs, implementation, and tests",
+            "public interfaces",
+            "failure modes",
+            "security-sensitive behavior",
+            "repo-local operation",
+            "model-agnostic design",
+            "measured claims only",
+            "cite-only",
+            "pattern-reimplementation",
+            "native-adapter",
+            "direct-code-copy",
+            "vendored-subtree",
+            "external-dependency",
+            "compatible license",
+            "clear provenance",
+            "Contradiction and overlap check",
+            "duplicate existing tools",
+            "global agent settings",
+            "unsafe secret handling",
+            "Framework integration",
+            "provenance links from operational dependencies",
+            "Verification loop",
+            "Add local tests",
+            "./te doctor",
+            "Do not claim adoption is complete",
+            "Documentation",
+            "inspected files",
+            "residual risk",
+        ]
+        for needle in required:
+            self.assertIn(needle, skill)
 
     def test_install_dry_run_and_bench(self):
         subprocess.run(["bash", str(REPO / "INSTALL.sh"), "--dry-run"], cwd=REPO, check=True, capture_output=True, text=True)

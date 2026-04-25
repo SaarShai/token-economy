@@ -15,6 +15,8 @@ Core commands:
 ./te context codex-fresh-thread --handoff <handoff-file>
 ./te delegate classify "task"
 ./te pa --directive "/pa quick context-light request"
+./te output-filter stats
+./te output-filter rewind
 ```
 
 Config lives in [`token-economy.yaml`](token-economy.yaml). Agent-specific adapters live in [`adapters/`](adapters/).
@@ -41,6 +43,7 @@ For manual context refresh, use [`prompts/summ.md`](prompts/summ.md). Copy-paste
 | [ComCom](projects/compound-compression-pipeline/) | Compound compression pipeline (caveman + LLMLingua + self-verify escalation) | **v3 eval passed**: 44.9% savings, Δquality −0.12 (CI touches 0) on SQuAD |
 | [semdiff](projects/semdiff/) | AST-node-level diff for LLM file re-reads. MCP server + CC plugin. | **Working**: 95.5% savings on argparse.py re-read; Py/JS/TS/Rust tested |
 | [context-keeper](projects/context-keeper/) | PreCompact hook that extracts structured state (files/commands/errors/decisions) to preserve facts across compaction | **Working**: project-local hook recipe |
+| [output-filter](hooks/output-filter/) | Terminal-output filtering with raw-output recovery, savings stats, custom rules, and opt-in session suppression | **Working**: native hook + CLI |
 | [bench/](bench/) | Benchmark registry + Kaggle/HF fetchers + uniform eval schema | **Working**: 7 datasets registered, 2 downloaded |
 
 See [ROADMAP.md](ROADMAP.md) for all directions, progress, next steps.
@@ -52,6 +55,7 @@ See [ROADMAP.md](ROADMAP.md) for all directions, progress, next steps.
 - **ComCom**: 44.9% input-token cut, quality preserved (Δ score −0.12 with 95% CI touching 0). Works via 3-stage escalation: compressed → verify → retry or fall back.
 - **semdiff**: 19,280 → 859 tokens on argparse.py after 2 method edits (95.5%). 99.5% on stable re-read.
 - **context-keeper**: extracts 68 files, 21 commands, 21 errors from a 100-turn transcript into a grep-able markdown page before `/compact`.
+- **output-filter**: strips ANSI/progress noise, deduplicates adjacent lines, preserves errors, stores raw output under `.token-economy/output-filter/`, and exposes `stats`/`rewind`.
 
 ## Quick start (per tool)
 
@@ -83,6 +87,19 @@ claude mcp add semdiff -- python /path/to/semdiff/semdiff_mcp/server.py
 ### context-keeper (PreCompact memory)
 
 Context-keeper writes session memory under repo-local `.token-economy/` paths by default. Do not configure global agent settings unless a human explicitly requests machine-wide behavior outside this framework.
+
+### output-filter (terminal noise)
+
+The hook at `hooks/output-filter/filter.sh` keeps filtered terminal output short while preserving raw output locally for debugging:
+
+```bash
+some noisy command | TOKEN_ECONOMY_ROOT="$PWD" hooks/output-filter/filter.sh
+./te output-filter stats
+./te output-filter rewind
+./te output-filter rules --init
+```
+
+Custom rules live at `.token-economy/output-filter-rules.txt` by default. Use `keep:<regex>`, `drop:<regex>`, and `collapse:<regex>`. Session-aware suppression is available with `--session-aware` or `output_filter_session_aware: true`, but remains opt-in because repeated lines can be meaningful during debugging.
 
 ## Wiki
 

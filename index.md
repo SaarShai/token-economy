@@ -16,6 +16,7 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 - [[skills/caveman-ultra/SKILL]] — Caveman Ultra skill
 - [[skills/personal-assistant/SKILL]] — `/pa` and `/btw` bypass router for context-light prompts
 - [[skills/verification-before-completion/SKILL]] — evidence-before-claims gate
+- [[skills/token-economy-external-adoption/SKILL]] — project-maintenance workflow for adopting from external repos into Token Economy
 - [[prompts/manual-summ-document-and-handoff]] — copy-paste old-session `summ` prompt that documents durable memory and writes `session_handoff.md`
 - [[prompts/manual-fresh-session-from-handoff]] — copy-paste fresh-session prompt that reads only `start.md` plus `session_handoff.md`
 - [[prompts/manual-full-summ]] — copy-paste old-project export prompt for a full migration summary

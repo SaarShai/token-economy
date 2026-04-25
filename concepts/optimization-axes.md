@@ -24,7 +24,7 @@ Seven axes. Every tool in this repo declares which axis it targets (frontmatter 
 |---|---|---|
 | [[projects/compound-compression-pipeline/RESULTS\|ComCom]] | A. input_compression | eval-v3 passed |
 | [[projects/semdiff/README\|semdiff]] | B. output_filter (file reads) | MCP shipped |
-| omni (external, installed) | B. output_filter (terminal stdout) | hooks wired |
+| native output-filter hook | B. output_filter (terminal stdout) | raw recovery + stats + rules shipped |
 | [[projects/context-keeper/README\|context-keeper v1]] | C. cross_session_memory (intra-session only) | hook active |
 | [[projects/context-keeper-v2/README\|context-keeper v2]] | C. cross_session_memory (true cross-session) | skeleton |
 | skip_detector | D. verification | integrated |
@@ -52,7 +52,7 @@ Seven axes. Every tool in this repo declares which axis it targets (frontmatter 
 | GenericAgent "no execution, no memory" | write-gate | C, G | write-gate lib |
 | Karpathy wiki | 3-layer raw/wiki/schema | E | this wiki |
 | Superpowers | mandatory skill checks + evidence gates | G, D | on-demand skills + verification-before-completion |
-| omni | stdout filter | B | Claude Code bash hook |
+| omni | stdout filter, raw rewind, stats, rules | B, F | native output-filter hook |
 | rejected: cognee | graph memory | C | too code/python-heavy for our scope |
 
 ## Rules for new tools
