@@ -17,6 +17,8 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 - [[skills/personal-assistant/SKILL]] — `/pa` and `/btw` bypass router for context-light prompts
 - [[prompts/manual-summ-document-and-handoff]] — copy-paste old-session `summ` prompt that documents durable memory and writes `session_handoff.md`
 - [[prompts/manual-fresh-session-from-handoff]] — copy-paste fresh-session prompt that reads only `start.md` plus `session_handoff.md`
+- [[prompts/manual-full-summ]] — copy-paste old-project export prompt for a full migration summary
+- [[prompts/manual-import-full-summ]] — copy-paste new-folder import prompt that bootstraps Token Economy and rebuilds the wiki
 
 ## Concepts (techniques)
 - [[concepts/caveman-output-compression]] — terse output style, 65% savings

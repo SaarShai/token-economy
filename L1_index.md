@@ -25,6 +25,8 @@ Compact pointers. Fetch details on demand.
 - INSTALL (page) -> `INSTALL.md`
 - manual summ old-session prompt -> `prompts/manual-summ-document-and-handoff.md`
 - manual fresh-session prompt -> `prompts/manual-fresh-session-from-handoff.md`
+- manual full project summary prompt -> `prompts/manual-full-summ.md`
+- manual full summary import prompt -> `prompts/manual-import-full-summ.md`
 - bench/README (project tags=benchmarks,kaggle,eval-infra) -> `bench/README.md`
 - bench/notebooks/kaggle_eval_template (page) -> `bench/notebooks/kaggle_eval_template.md`
 - concepts/devices-inventory (concept tags=infra,devices,inventory,compute) -> `concepts/devices-inventory.md`
