@@ -3,8 +3,8 @@ type: concept
 axis: input_compression  # KV cache is inference-time context memory
 tags: [turboquant, kv-cache, llama-cpp, apple-silicon, gguf-stack]
 confidence: med
-evidence_count: 4
-related: [[concepts/optimization-axes]], [[raw/2026-04-20-turboquant-research]]
+evidence_count: 5
+related: [[concepts/optimization-axes]], [[raw/2026-04-20-turboquant-research]], [[raw/2026-04-25-turboquant-adoption-review]]
 ---
 
 # TurboQuant — KV-cache compression (ICLR 2026)
@@ -46,6 +46,17 @@ User's claim verified. TurboQuant compresses the *runtime* KV cache. Weight quan
 | OnlyTerp/turboquant | pip library + vLLM/SGLang PRs | pip install turboquant |
 | tonbistudio/turboquant-pytorch | PyTorch research (CUDA/Win only) | pip + CUDA |
 
+## 2026-04-25 adoption review
+
+Adoption mode: **pattern-reimplementation**. Do not vendor TurboQuant repos into Token Economy. Use TheTom/turboquant_plus and TheTom/llama-cpp-turboquant as the operational reference, then encode safe defaults and checks in our docs/scripts.
+
+Additional watchlist:
+- `quantumaikr/quant.cpp`: GGUF-first pure C engine with OpenAI-compatible server; separate engine, Qwen3.6 35B marked experimental.
+- `arozanov/turboquant-mlx`: promising MLX/Metal candidate; no clean EXO path and license needs verification.
+- `varjoranta/turboquant-vllm`, `mitkox/vllm-turboquant`: vLLM/CUDA watchlist, not Apple Silicon path.
+- `back2matching/turboquant`: HF baseline; verify license before reuse.
+- Reject direct adoption of GPL or QJL-heavy implementations such as `0xSero/turboquant`.
+
 ## Relevance to our stack (Token Economy)
 
 | our tool | interaction with TurboQuant |
@@ -60,9 +71,9 @@ User's claim verified. TurboQuant compresses the *runtime* KV cache. Weight quan
 
 | machine | decision | reason |
 |---|---|---|
-| **M2 Max (local)** | **INSTALL** (in progress) | Clean, no active downloads, 64GB headroom. llama.cpp Metal fork building. |
-| **M1 Max** | WAIT | Active Qwen3.6-35B download + 32GB RAM tight. After download done, test. |
-| **M1B Max** | NO | EXO worker. Don't disrupt cluster. |
+| **M2 Max (local)** | PRIMARY | `~/bin/llama-tq` exists; use direct llama-server when running. |
+| **M1 Max** | NO AUTO-INSTALL | 32GB + EXO/Ollama contention; install only after explicit approval and fresh machine check. |
+| **M1B Max** | NO | EXO worker. Don't disrupt cluster unless role changes. |
 
 ## Measured on M2 (2026-04-20)
 
@@ -96,6 +107,19 @@ CTX=524288 ~/bin/llama-tq start ~/Library/gguf/qwen3.6-35b-q4km.gguf   # 512K
 
 Then HTTP requests to `http://localhost:8080/v1/chat/completions` — OpenAI-compatible. Qwen3.6 is a thinking model — responses go to `reasoning_content` until thinking ends. Use `max_tokens ≥ 500`.
 
+## Smoke harness
+
+```bash
+scripts/turboquant_smoke.py --json
+scripts/turboquant_smoke.py --require-server --json
+```
+
+Checks:
+- local wrapper and `llama-server` binary paths
+- `llama-server --help` exposes `cache-type-k`, `cache-type-v`, and `turbo4`
+- `~/bin/llama-tq status`
+- `http://localhost:8080/health` when a live server is expected
+
 ### Ollama GGUF reuse
 ```bash
 # Find blob via manifest
@@ -125,3 +149,4 @@ ln -sfn <blob-path> ~/Library/gguf/<nice-name>.gguf
 - TheTom/llama-cpp-turboquant README + docs/turboquant-recommendations.md
 - Community testing across 30+ testers / multiple GPUs
 - See [[raw/2026-04-20-turboquant-research]] for full subagent survey
+- See [[raw/2026-04-25-turboquant-adoption-review]] for refreshed repo evidence and watchlist

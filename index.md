@@ -71,6 +71,7 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 - [[raw/2026-04-20-machine-baselines]] — M1/M1B/M2 tok/s, bottlenecks, tweaks
 - [[concepts/turboquant-kv-cache]] — KV-cache compression 3.8-5.1x, installed on M2 via llama.cpp fork
 - [[raw/2026-04-20-turboquant-research]] — full subagent survey
+- [[raw/2026-04-25-turboquant-adoption-review]] — refreshed TurboQuant repo adoption review and machine policy
 
 ## People
 - [[people/julius-brussee]] — caveman

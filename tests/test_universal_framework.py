@@ -371,6 +371,41 @@ fi
             self.assertIn("noise important", second)
             self.assertEqual(second_stats["session_suppressed_lines"], 1)
 
+    def test_turboquant_adoption_review_and_smoke_harness(self):
+        review = (REPO / "raw/2026-04-25-turboquant-adoption-review.md").read_text(encoding="utf-8")
+        concept = (REPO / "concepts/turboquant-kv-cache.md").read_text(encoding="utf-8")
+        agent = (REPO / "projects/agents-triage/agents/turboquant-local.md").read_text(encoding="utf-8")
+        devices = (REPO / "concepts/devices-inventory.md").read_text(encoding="utf-8")
+
+        self.assertIn("Workflow compliance", review)
+        self.assertIn("pattern-reimplementation", review)
+        self.assertIn("TheTom/llama-cpp-turboquant", review)
+        self.assertIn("quantumaikr/quant.cpp", review)
+        self.assertIn("arozanov/turboquant-mlx", review)
+        self.assertIn("Q4_K_M GGUF + `K=q8_0`, `V=turbo4`", review)
+        self.assertIn("direct `llama-server`", review)
+
+        self.assertIn("2026-04-25 adoption review", concept)
+        self.assertIn("scripts/turboquant_smoke.py --json", concept)
+        self.assertIn("NO AUTO-INSTALL", concept)
+        self.assertIn("not running", devices)
+        self.assertIn("Do not auto-install", devices)
+        self.assertIn("wrong llama-server build", agent)
+
+        with tempfile.TemporaryDirectory() as td:
+            help_file = Path(td) / "llama-help.txt"
+            help_file.write_text("--cache-type-k q8_0 --cache-type-v turbo4\n", encoding="utf-8")
+            proc = subprocess.run(
+                [sys.executable, str(REPO / "scripts/turboquant_smoke.py"), "--help-text-file", str(help_file), "--json"],
+                cwd=REPO,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            report = json.loads(proc.stdout)
+            self.assertTrue(report["cache_flags_supported"])
+            self.assertEqual(report["safe_q4km_default"], "-ctk q8_0 -ctv turbo4")
+
     def test_token_economy_external_adoption_skill_is_project_scoped(self):
         skill_path = REPO / "skills/token-economy-external-adoption/SKILL.md"
         self.assertTrue(skill_path.exists())

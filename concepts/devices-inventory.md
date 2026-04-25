@@ -5,8 +5,8 @@ domain: ai-setup
 tier: working
 confidence: 0.95
 created: 2026-04-23
-updated: 2026-04-23
-verified: 2026-04-23
+updated: 2026-04-25
+verified: 2026-04-25
 tags: [infra, devices, inventory, compute]
 ---
 
@@ -59,12 +59,14 @@ ssh -i /Users/saar/.ssh/id_ed25519 -F /dev/null -o StrictHostKeyChecking=no -o C
 
 ### TurboQuant llama-server
 
-- **Status**: Running (PID 52889, started Mon 02 PM)
+- **Status**: Installed; `~/bin/llama-tq status` reported `not running` on 2026-04-25
 - **Port**: 8080 (localhost only)
 - **Model served**: `/Users/saar/Library/gguf/qwen3.6-35b-q4km.gguf`
 - **Config**: Q8_0 KV cache, TurboQuant V4, 99 GPU layers, 262K context
 - **Binary**: `~/src/llama-cpp-turboquant/build/bin/llama-server` (13 MB, Apr 20)
 - **Wrapper**: `~/bin/llama-tq` (2.5 KB, Apr 20)
+- **Safe default**: `-ctk q8_0 -ctv turbo4 -fa 1 -ngl 99` for Q4_K_M GGUF
+- **Smoke check**: `scripts/turboquant_smoke.py --json`
 
 ### Token Economy install
 
@@ -137,6 +139,11 @@ Active watchdogs & schedulers (15 entries):
   - `caches/` (114 dirs, 3.6 KB, updated Apr 19)
 - **Last state update**: Apr 19 19:54 (5 days old)
 
+### TurboQuant
+
+- **Status**: Not installed / not built as of 2026-04-25 review
+- **Policy**: Do not auto-install. 32GB RAM, Ollama, and EXO master duties require explicit approval and fresh contention checks first.
+
 ### Farey queue & supervision
 
 - **Queue**: `~/Desktop/Farey-Local/M1MAX_QUEUE.txt` — NOT FOUND (may be inactive)
@@ -174,6 +181,7 @@ Active watchdogs & schedulers (15 entries):
 - No cron entries detected
 - No Ollama running
 - EXO worker only (no local task queue)
+- TurboQuant not installed; do not install while this remains an EXO worker.
 
 ---
 
@@ -256,6 +264,6 @@ Active watchdogs & schedulers (15 entries):
 - [ ] Verify EXO cluster online: `curl http://192.168.1.218:52415/health` (if exposed)
 - [ ] Check M1 Ollama: `curl http://192.168.1.218:11434/api/tags`
 - [ ] Confirm M1 queue intent: search `Farey-Local/M1MAX_QUEUE` or grep cron for queue-handler
-- [ ] Verify TurboQuant serving: `curl http://localhost:8080/health` (or equivalent)
+- [ ] Verify TurboQuant serving: `scripts/turboquant_smoke.py --require-server --json`
 - [ ] Confirm M5 Max status: attempt ping + SSH, or remove from supervision if retired
 - [ ] Review exo_instance_keeper restart rate (every 2 min is abnormal)

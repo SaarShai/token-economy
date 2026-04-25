@@ -23,9 +23,9 @@ You coordinate inference against a llama-server built from `TheTom/llama-cpp-tur
 
 1. **Check server alive:**
    ```bash
-   curl -s --max-time 2 http://localhost:8080/health
+   scripts/turboquant_smoke.py --json
    ```
-   If dead, try to start via `~/bin/llama-tq start` (if installed); else bail.
+   If the wrapper or binary is missing, return `llama-tq-unavailable`. If the server is down but `~/bin/llama-tq` exists, try one start via `~/bin/llama-tq start`; then run `scripts/turboquant_smoke.py --require-server --json`.
 
 2. **Build prompt** with clear "Output ONLY..." contract. Max 12K input tokens.
 
@@ -49,6 +49,8 @@ If `~/bin/llama-tq` exists, `llama-tq start <model-path>` boots the server with 
 ```
 (asymmetric K/V — safe for Q4_K_M weights)
 
+Validate any more aggressive setting with a model-specific smoke/PPL check before use. Do not use symmetric `turbo3/turbo3` on Q4_K_M GGUF without validation.
+
 ## Rules
 - One request per task unless retry needed on empty response.
 - No model swaps within a task (server startup = ~30-60s).
@@ -56,6 +58,7 @@ If `~/bin/llama-tq` exists, `llama-tq start <model-path>` boots the server with 
 
 ## Failure modes
 - `llama-server` not built → "install pending" escalation.
+- `scripts/turboquant_smoke.py --json` reports missing cache flags → "wrong llama-server build" escalation.
 - PPL collapse on Q4_K_M + symmetric turbo (Qwen2.5-7B specifically) → switch to asymmetric.
 - macOS Metal VRAM cap hit → user raises `iogpu.wired_limit_mb` manually.
 

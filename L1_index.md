@@ -36,6 +36,7 @@ Compact pointers. Fetch details on demand.
 - skills/token-economy-external-adoption -> `skills/token-economy-external-adoption/SKILL.md`
 - concepts/semantic-diff-edits (concept tags=semantic-diff,ast,context-compression,code-editing) -> `concepts/semantic-diff-edits.md`
 - concepts/turboquant-kv-cache (concept tags=turboquant,kv-cache,llama-cpp,apple-silicon,gguf-stack) -> `concepts/turboquant-kv-cache.md`
+- raw/2026-04-25-turboquant-adoption-review (raw tags=turboquant,adoption-review,kv-cache,apple-silicon,gguf-stack) -> `raw/2026-04-25-turboquant-adoption-review.md`
 - concepts/wiki-governance (concept tags=wiki,governance,schema) -> `concepts/wiki-governance.md`
 - extensions/README (page) -> `extensions/README.md`
 - projects/agents-triage/SKILL (page) -> `projects/agents-triage/SKILL.md`
