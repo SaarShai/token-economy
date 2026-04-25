@@ -6,16 +6,15 @@ Copy-paste this into the agent/session attached to the new target folder.
 Import a full project summary into a fresh Token Economy folder.
 
 Inputs:
-- Full summary file: `<FULL_SUMM_PATH>`
+- Full summary file: `full_summ.md`
 - New target folder: current working directory
 
 Setup Token Economy first:
-1. Confirm the current folder is the intended fresh target folder.
-2. If `token-economy.yaml` is absent, clear only the current folder, including hidden files and `.git`, then clone:
+1. If `token-economy.yaml` is absent, clear only the current folder, including hidden files and `.git`, then clone:
    `find . -mindepth 1 -maxdepth 1 -exec rm -rf {} +`
    `git clone https://github.com/SaarShai/token-economy.git .`
-3. Do not delete anything outside the current folder.
-4. Run:
+2. Do not delete anything outside the current folder.
+3. Run:
    `./INSTALL.sh --dry-run`
    `./INSTALL.sh --scope project --agent auto`
    `./te doctor`
@@ -27,9 +26,9 @@ Load only:
 - `L0_rules.md`
 - `L1_index.md`
 - `schema.md`
-- `<FULL_SUMM_PATH>`
+- `full_summ.md`
 
-Use `<FULL_SUMM_PATH>` as the migration source of truth. It may contain raw secrets. Do not commit `<FULL_SUMM_PATH>`, `.env`, raw secret files, credentials, or any copied secret material.
+Use `full_summ.md` as the migration source of truth. It may contain raw secrets. Do not commit `full_summ.md`, `.env`, raw secret files, credentials, or any copied secret material.
 
 Rebuild the wiki without Obsidian:
 - Put source summaries and imported source evidence under `raw/`.
@@ -53,8 +52,8 @@ Adapt to Token Economy:
 Verification:
 - Run `./te wiki lint --strict`.
 - Run `./te doctor`.
-- Run any project-specific smoke checks listed in `<FULL_SUMM_PATH>` when they are safe and do not require unavailable external services.
-- Check `git status --short` and ensure no secret files or `<FULL_SUMM_PATH>` are staged or committed.
+- Run any project-specific smoke checks listed in `full_summ.md` when they are safe and do not require unavailable external services.
+- Check `git status --short` and ensure no secret files or `full_summ.md` are staged or committed.
 
 Final handoff:
 - What was imported.

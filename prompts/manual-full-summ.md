@@ -5,19 +5,9 @@ Copy-paste this into the agent/session attached to the old Claude Code project.
 ```text
 full-summ
 
-Goal: create one complete local migration summary at `<OUTPUT_FULL_SUMM>` so a new Token Economy folder can import and adapt this project without carrying over context rot.
+Goal: create one complete local migration summary at `full_summ.md` so a new Token Economy folder can import and adapt this project without carrying over context rot.
 
-Inputs:
-- Old project root: `<OLD_PROJECT_ROOT>`
-- Obsidian/wiki root: `<OBSIDIAN_WIKI_ROOT>`
-- Output file: `<OUTPUT_FULL_SUMM>`
-
-Rules:
-- Treat `<OLD_PROJECT_ROOT>` and `<OBSIDIAN_WIKI_ROOT>` as read-only.
-- Write exactly one output file: `<OUTPUT_FULL_SUMM>`.
-- Mark the output file at the top with: `LOCAL SECRET MATERIAL - DO NOT COMMIT`.
-- Raw API keys/secrets are explicitly authorized for this local file. Put raw secret values only in the `Secrets` section.
-- After writing the file, run `chmod 600 <OUTPUT_FULL_SUMM>` when possible.
+Raw API keys/secrets are explicitly authorized for this local file. Put raw secret values only in the `Secrets` section. After writing the file, run `chmod 600 full_summ.md` when possible.
 
 Inventory thoroughly:
 - Source files, docs, configs, scripts, tests, CI, hidden project files, agent files, package manifests, lockfiles, and deployment files.
@@ -36,9 +26,9 @@ Keep:
 Drop:
 - Transcript noise, chat filler, duplicated prose, abandoned plans, obsolete wiki pages with no current warning value, one-off dead ends, raw logs, and other context rot.
 
-Write `<OUTPUT_FULL_SUMM>` with this structure:
+Write `full_summ.md` with this structure:
 
-# FULL_SUMM - <project name>
+# FULL_SUMM
 
 ## 0. Import Contract
 - Old project root:
