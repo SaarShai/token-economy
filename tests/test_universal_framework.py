@@ -58,7 +58,10 @@ class UniversalFrameworkTests(unittest.TestCase):
         text = (REPO / "stable/AGENT_PROMPT.md").read_text(encoding="utf-8")
         self.assertIn("explicit permission to clear the current folder", text)
         self.assertIn("find . -mindepth 1 -maxdepth 1 -exec rm -rf {} +", text)
-        self.assertIn("git clone https://github.com/SaarShai/token-economy.git .", text)
+        self.assertIn("git clone --depth 1 --filter=blob:none --sparse https://github.com/SaarShai/token-economy.git .", text)
+        self.assertIn("git sparse-checkout set --no-cone", text)
+        self.assertIn("rm -rf .git", text)
+        self.assertIn("git init", text)
         self.assertIn("Do not delete anything outside the current folder", text)
         self.assertNotIn("git restore --source origin/main", text)
         self.assertNotIn("git reset --hard", text)
@@ -424,15 +427,15 @@ fi
         index = (REPO / "index.md").read_text(encoding="utf-8")
         l1 = (REPO / "L1_index.md").read_text(encoding="utf-8")
 
-        self.assertIn("Default: use Token Economy for the current target project", start)
-        self.assertIn("Maintainer-only docs/skills", start)
-        self.assertIn("external-adoption skill", start)
+        self.assertIn("Default target project comes from the user prompt", start)
         self.assertNotIn("TE repo external adoption", start)
         self.assertNotIn("skills/token-economy-external-adoption/SKILL.md", start)
-        self.assertIn("project-maintenance only, not a downstream user rule", onboarding)
-        self.assertIn("skills/token-economy-external-adoption/SKILL", index)
-        self.assertIn("skills/token-economy-external-adoption", l1)
-        self.assertIn("finish with verification, a commit, and a clean working tree", onboarding)
+        self.assertNotIn("project-maintenance only, not a downstream user rule", onboarding)
+        self.assertNotIn("skills/token-economy-external-adoption/SKILL", index)
+        self.assertNotIn("skills/token-economy-external-adoption", l1)
+        self.assertNotIn("finish with verification, a commit, and a clean working tree", onboarding)
+        self.assertNotIn("ROADMAP", l1)
+        self.assertNotIn("projects/compound-compression-pipeline", l1)
 
         required = [
             "Token Economy framework maintenance only",
@@ -488,6 +491,57 @@ fi
         with contextlib.redirect_stdout(buf):
             self.assertEqual(main(["bench", "run", "--suite", "framework-smoke"]), 0)
         self.assertTrue(json.loads(buf.getvalue())["ok"])
+
+    def test_downstream_runtime_subset_installs_without_framework_projects(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            files = [
+                ".gitignore",
+                "AGENTS.md",
+                "CLAUDE.md",
+                "GEMINI.md",
+                "INSTALL.sh",
+                "L0_rules.md",
+                "L1_index.md",
+                "LICENSE",
+                "index.md",
+                "models.yaml",
+                "schema.md",
+                "start.md",
+                "te",
+                "token-economy.yaml",
+            ]
+            dirs = [
+                "token_economy",
+                "adapters",
+                "hooks",
+                "prompts",
+                "templates",
+                "skills/caveman-ultra",
+                "skills/context-refresh",
+                "skills/personal-assistant",
+                "skills/plan-first-execute",
+                "skills/subagent-orchestrator",
+                "skills/verification-before-completion",
+                "skills/wiki-retrieve",
+                "skills/wiki-write",
+            ]
+            for rel in files:
+                target = root / rel
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(REPO / rel, target)
+            for rel in dirs:
+                shutil.copytree(REPO / rel, root / rel)
+
+            subprocess.run(["bash", str(root / "INSTALL.sh"), "--scope", "project", "--agent", "auto"], cwd=root, check=True, capture_output=True, text=True)
+            doctor = subprocess.run([str(root / "te"), "doctor"], cwd=root, check=True, capture_output=True, text=True)
+            hooks = subprocess.run([str(root / "te"), "hooks", "doctor"], cwd=root, check=True, capture_output=True, text=True)
+
+            self.assertTrue(json.loads(doctor.stdout)["ok"])
+            self.assertTrue(json.loads(hooks.stdout)["ok"])
+            self.assertFalse((root / "ROADMAP.md").exists())
+            self.assertFalse((root / "projects/compound-compression-pipeline").exists())
+            self.assertFalse((root / "skills/token-economy-external-adoption").exists())
 
     def test_local_model_installers_cover_triage_context_and_semdiff(self):
         with tempfile.TemporaryDirectory() as td:
@@ -585,14 +639,30 @@ fi
         self.assertIn("Provenance", full_summ)
         import_full_summ = (REPO / "prompts/manual-import-full-summ.md").read_text(encoding="utf-8")
         self.assertIn("the uploaded file", import_full_summ)
-        self.assertIn("git clone https://github.com/SaarShai/token-economy.git .", import_full_summ)
+        self.assertIn("git clone --depth 1 --filter=blob:none --sparse https://github.com/SaarShai/token-economy.git .", import_full_summ)
+        self.assertIn("git sparse-checkout set --no-cone", import_full_summ)
+        self.assertIn("rm -rf .git", import_full_summ)
+        self.assertIn("git init", import_full_summ)
+        self.assertIn("'/token_economy/*'", import_full_summ)
+        self.assertIn("'/projects/compound-compression-pipeline/*'", import_full_summ)
+        self.assertIn("'/projects/context-keeper/*'", import_full_summ)
+        self.assertIn("'/projects/semdiff/*'", import_full_summ)
+        self.assertIn("'/stable/INSTALL.sh'", import_full_summ)
+        self.assertNotIn("ROADMAP", import_full_summ)
         self.assertIn("./INSTALL.sh --dry-run", import_full_summ)
         self.assertIn("./INSTALL.sh --scope project --agent auto", import_full_summ)
+        self.assertIn("./stable/INSTALL.sh", import_full_summ)
         self.assertIn("start.md", import_full_summ)
         self.assertIn("token-economy.yaml", import_full_summ)
         self.assertIn("Put source summaries and imported source evidence under `raw/`", import_full_summ)
         self.assertIn("Put verified durable facts under `L2_facts/`", import_full_summ)
-        self.assertIn("Do not commit the uploaded file, `.env`, raw secret files, credentials", import_full_summ)
+        self.assertIn("Create or update `README.md` for the imported target project", import_full_summ)
+        self.assertIn("The MCP install step is required, not optional", import_full_summ)
+        self.assertIn("ComCom", import_full_summ)
+        self.assertIn("semdiff", import_full_summ)
+        self.assertIn("context-keeper", import_full_summ)
+        self.assertNotIn("commit the uploaded file", import_full_summ)
+        self.assertNotIn("git status --short", import_full_summ)
         self.assertIn("./te wiki lint --strict", import_full_summ)
         self.assertIn("./te doctor", import_full_summ)
         manual_summ = (REPO / "prompts/summ-codex-manual.md").read_text(encoding="utf-8")
