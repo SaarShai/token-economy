@@ -93,6 +93,12 @@ Use for:
 - reruns and overflow from M2
 - direct local inference when the task does not justify frontier routing
 
+Measured guidance:
+
+- M1 warm-state throughput is good enough for bounded work, but cold loads dominate large-model cost.
+- `qwen3:8b` was the best low-friction M1 baseline in the local pass; `deepseek-r1:32b` worked but was expensive to load.
+- Keep M1B mirrored with M1's task-ready Ollama set before assigning bounded local tasks.
+
 How to install:
 
 ```bash
@@ -126,5 +132,6 @@ On M1B, mirror M1's live `ollama list` / `curl http://<host>:11434/api/tags` out
 ## Related
 
 - [[concepts/turboquant-kv-cache]]
+- [[concepts/framework-hardening-adoption]]
 - [[projects/context-refresh/host-context-controls]]
 - [[skills/verification-before-completion/SKILL]]

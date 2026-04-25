@@ -60,7 +60,7 @@ Continue Token Economy framework work from the new canonical local folder `/User
 
 ## 8. Open questions
 
-- Should the Codex App Server successor helper remain in the framework as an optional workaround, or be moved to experiments only?
+- Should the Codex App Server successor helper remain in the framework as a workaround, or be moved to experiments only?
 - Should `./te context codex-compact-thread` be removed, hidden, or labelled experimental because current-thread compact failed in this environment?
 
 ## 9. Instructions for next agent

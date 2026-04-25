@@ -43,21 +43,27 @@ else
 fi
 
 echo "[5/7] agents-triage"
-if [ "$DRY_RUN" = "1" ]; then
+if [ ! -f "$ROOT/projects/agents-triage/install.sh" ]; then
+  echo "skip: agents-triage files not present"
+elif [ "$DRY_RUN" = "1" ]; then
   echo "dry-run: would run bash projects/agents-triage/install.sh --project"
 else
   bash "$ROOT/projects/agents-triage/install.sh" --project
 fi
 
 echo "[6/7] context-keeper"
-if [ "$DRY_RUN" = "1" ]; then
+if [ ! -f "$ROOT/projects/context-keeper/install.sh" ]; then
+  echo "skip: context-keeper files not present"
+elif [ "$DRY_RUN" = "1" ]; then
   echo "dry-run: would run bash projects/context-keeper/install.sh --project"
 else
   bash "$ROOT/projects/context-keeper/install.sh" --project
 fi
 
 echo "[7/7] semdiff"
-if [ "$DRY_RUN" = "1" ]; then
+if [ ! -f "$ROOT/projects/semdiff/install.sh" ]; then
+  echo "skip: semdiff files not present"
+elif [ "$DRY_RUN" = "1" ]; then
   echo "dry-run: would run bash projects/semdiff/install.sh --project"
 else
   bash "$ROOT/projects/semdiff/install.sh" --project

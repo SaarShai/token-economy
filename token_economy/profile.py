@@ -8,9 +8,9 @@ from typing import Any
 PROFILES: dict[str, dict[str, Any]] = {
     "ultra": {"startup_docs": ["start.md", "L0_rules.md", "L1_index.md"], "max_search_hits": 5, "style": "caveman-ultra"},
     "lean": {"startup_docs": ["start.md", "L0_rules.md", "L1_index.md", "index.md"], "max_search_hits": 8, "style": "terse"},
-    "nav": {"startup_docs": ["start.md", "L1_index.md", "index.md", "ROADMAP.md"], "max_search_hits": 10, "style": "terse"},
-    "core": {"startup_docs": ["start.md", "README.md", "index.md", "schema.md"], "max_search_hits": 12, "style": "normal-terse"},
-    "full": {"startup_docs": ["start.md", "README.md", "AGENT_ONBOARDING.md", "schema.md"], "max_search_hits": 20, "style": "normal"},
+    "nav": {"startup_docs": ["start.md", "L1_index.md", "index.md", "schema.md"], "max_search_hits": 10, "style": "terse"},
+    "core": {"startup_docs": ["start.md", "L0_rules.md", "L1_index.md", "index.md", "schema.md"], "max_search_hits": 12, "style": "normal-terse"},
+    "full": {"startup_docs": ["start.md", "L0_rules.md", "L1_index.md", "index.md", "schema.md"], "max_search_hits": 20, "style": "normal"},
 }
 
 
@@ -36,4 +36,3 @@ def set_profile(repo_root: Path, name: str) -> dict[str, Any]:
     path = profile_path(repo_root)
     path.write_text(name + "\n", encoding="utf-8")
     return {"profile": name, "path": str(path)}
-

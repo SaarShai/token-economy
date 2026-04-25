@@ -2,7 +2,7 @@
 """Compound compression pipeline.
 
 Stages:
-  1. caveman-prose — regex rules drop filler, pleasantries, optional articles.
+  1. caveman-prose — regex rules drop filler, pleasantries, and articles that can be dropped.
   2. llmlingua-2  — token-level perplexity compression via small BERT scorer.
   3. prefix-report — identify cache-eligible static prefix (heuristic).
   4. structured-hint — append terse-output constraint.

@@ -14,7 +14,7 @@ Rule: learn deeply before adopting; adopt in the shape of this framework.
 Use this skill before any adoption work when the task mentions:
 - adopting, integrating, porting, borrowing, copying, vendoring, or learning from another repo
 - external skills, hooks, prompts, adapters, MCP servers, CLIs, docs patterns, or architecture
-- direct code copy, subtree import, package dependency, or optional external adapter
+- direct code copy, subtree import, package dependency, or external adapter
 
 ## Protocol
 

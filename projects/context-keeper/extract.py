@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """context-keeper: extract structured state from Claude Code transcript before compaction.
 
-Reads transcript JSONL, emits markdown memory page. Regex pass + optional LLM pass.
+Reads transcript JSONL, emits markdown memory page. Regex pass plus local LLM pass.
 
 Schema (stable — pre-registered):
   - files_touched    paths appearing in tool_use blocks (Read/Write/Edit/Bash)
@@ -146,7 +146,7 @@ def regex_extract(events):
 
 
 def llm_extract(events, model="gemma4:31b"):
-    """Optional LLM pass: ask local model to extract decisions + failed-attempts with rationale."""
+    """Local LLM pass: ask a model to extract decisions + failed-attempts with rationale."""
     # Take last ~50 turns of readable text (cap at ~8K tokens input)
     text_blobs = []
     for ev in events[-100:]:

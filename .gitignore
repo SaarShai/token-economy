@@ -18,6 +18,7 @@ projects/compound-compression-pipeline/eval_v*_run.out
 .token-economy/
 .token-economy-profile
 .claude/
+.mcp.json
 
 # OS
 .DS_Store

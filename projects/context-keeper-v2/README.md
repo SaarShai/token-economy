@@ -63,7 +63,7 @@ ck_recent(days=7) → recent L4 archive entries
 - `tier_manager.py` — write-gate enforcement + tier promotion.
 - `l1_indexer.py` — rebuilds L1 from L2/L3 on demand.
 - `memory_api.py` — exposes `ck_query`, `ck_fetch`, `ck_recent`.
-- `mcp_server.py` — optional MCP wrapper for those tools.
+- `mcp_server.py` — MCP wrapper for those tools.
 
 CLI-adjacent use:
 

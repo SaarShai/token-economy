@@ -1,87 +1,47 @@
-# Token Economy — Index
+# Token Economy Usage Index
 
-Catalog. Read this + schema.md first. Grep folders for topic. Load only matched pages.
+Catalog for a target project that uses Token Economy locally. Load only matched pages.
 
-Identity guard: this catalog ships with the framework. Downstream agents should use it for retrieval mechanics and framework docs only; it is not evidence that their target project is Token Economy. Framework roadmap, handoffs, maintainer skills, and framework development projects apply only when the user explicitly asks to maintain Token Economy itself.
-
-## For other agents
-- [[AGENT_ONBOARDING]] — **master install guide**: point any agent at this file
-- [[start]] — **universal agent entrypoint**: Caveman Ultra, wiki retrieval, 20% context refresh, delegation
-- [[adapters/universal/START]] — canonical startup glue used by all platform adapters
+## Startup
+- [[start]] — universal agent entrypoint: operating rules, retrieval, context refresh, delegation
 - [[L0_rules]] + [[L1_index]] — lean startup memory tiers
+- [[schema]] — repo-local markdown wiki contract
+- `token-economy.yaml` — local framework config
 
-## Framework
-- [[concepts/optimization-axes]] — 7 axes, tool mappings, gap analysis
-- [[schema]] — rigorous LLM wiki ingest/query/lint/crystallize contract
-- [[templates/page.template]] — v2 frontmatter page template
-- [[prompts/delegation-matrix]] — model-agnostic delegation tiers
-- [[skills/caveman-ultra/SKILL]] — Caveman Ultra skill
-- [[skills/personal-assistant/SKILL]] — `/pa` and `/btw` bypass router for context-light prompts
-- [[skills/verification-before-completion/SKILL]] — evidence-before-claims gate
-- [[skills/token-economy-external-adoption/SKILL]] — framework-maintainer workflow for adopting from external repos into Token Economy
-- [[prompts/manual-summ-document-and-handoff]] — copy-paste old-session `summ` prompt that documents durable memory and writes `session_handoff.md`
-- [[prompts/manual-fresh-session-from-handoff]] — copy-paste fresh-session prompt that reads only `start.md` plus `session_handoff.md`
-- [[prompts/manual-full-summ]] — copy-paste old-project export prompt for a full migration summary
-- [[prompts/manual-import-full-summ]] — copy-paste new-folder import prompt that bootstraps Token Economy and rebuilds the wiki
+## Commands
+- `./te doctor` — verify local framework health
+- `./te wiki search "topic"` — find relevant wiki pointers
+- `./te wiki timeline "<id>"` — inspect nearby context
+- `./te wiki fetch "<id>"` — load a relevant page
+- `./te wiki context "task"` — build an audited bounded context packet
+- `./te code map "symbol or path"` — inspect compact code structure before file reads
+- `./te wiki lint --strict` — validate wiki pages
+- `./te context status` — inspect context budget
+- `./te context checkpoint --handoff-template` — create a lean continuation packet
+- `./te delegate classify "task"` — classify work for delegation
+- `./te delegate document --verified ...` — route verified durable evidence to wiki-documenter
+- `./te pa --directive "/pa <prompt>"` — route context-light personal-assistant prompts
 
-## Concepts (techniques)
-- [[concepts/caveman-output-compression]] — terse output style, 65% savings
-- [[concepts/caveman-compress-session-files]] — rewrite CLAUDE.md etc, 46% avg
-- [[concepts/llmlingua]] — token-level perplexity dropping, 2-6x
-- [[concepts/prefix-caching]] — 90% cost cut on repeat
-- [[concepts/karpathy-wiki]] — offload context to structured KB
-- [[concepts/structured-outputs]] — JSON schema vs chat, 3-8x output cut
-- [[concepts/speculative-decoding]] — EAGLE-3, Medusa, 2-3x throughput
-- [[concepts/kv-cache-eviction]] — StreamingLLM, SnapKV, H2O
-- [[concepts/unsloth-distill]] — tiny specialist replaces API call
-- [[concepts/superpowers-skills]] — front-load behavior as skill.md
+## Wiki Layout
+- `raw/` — source summaries and imported evidence
+- `projects/` — active target-project state
+- `L2_facts/` — verified durable facts
+- `L3_sops/` — reusable workflows and runbooks
+- `queries/` — durable Q&A
+- `L4_archive/` — cold history kept only when useful
 
-## Patterns
-- [[patterns/compound-compression-pipeline]] — stack 4 techniques, 80-90% total
-- [[concepts/semantic-diff-edits]] — send diff not full file
-- [[patterns/wiki-query-shortcircuit]] — search repo-local wiki before re-synthesis
-- [[patterns/tiny-model-router]] — 0.5B classifier dispatches
+## Prompt Workflows
+- [[prompts/manual-full-summ]] — export an old project into `full_summ.md`
+- [[prompts/manual-import-full-summ]] — import `full_summ.md` into a new Token Economy-enabled target folder
+- [[prompts/summ]] — context refresh workflow
+- [[prompts/summarize-for-handoff]] — handoff packet template
 
-## Framework Roadmap
-- [[ROADMAP]] — live tracker: directions, status, next steps
-
-## Infrastructure
-- [[bench/README]] — **benchmark registry** (Kaggle + HF), uniform item schema, Kaggle Notebook template for free-GPU evals
-- [[concepts/local-model-setup]] — per-machine tool, skill, workflow, and harness matrix for M1/M1B/M2
-
-## Framework Development Projects
-- [[projects/compound-compression-pipeline/RESULTS]] — **ComCom** prototype, 44.5% @ ~Δ−0.25 score (SQuAD eval-v2); eval-v3 in progress
-- [[projects/semdiff/README]] — **prototype, 95.5% on large file re-read**
-- [[projects/context-keeper/README]] — **prototype, structured PreCompact memory**
-- [[projects/context-keeper-v2/README]] — **v2 retrieval API**: `ck_query`, `ck_fetch`, `ck_recent`
-- [[projects/wiki-search/README]] — **implemented v1**, progressive disclosure wiki search/timeline/fetch
-- [[projects/context-refresh/README]] — fresh-context packet workflow at 20% context
-- [[projects/context-keeper/SKILL]] — PreCompact hook helper and project-local install surface
-- [[projects/delegate-router/README]] — model-agnostic routing and subagent supervision policy
-- [[projects/agents-triage/SKILL]] — **shipped, UserPromptSubmit hook + 5 subagents (wiki-note, quick-fix, local-ollama, research-lite, kaggle-feeder)**
-
-## Universal CLI
-- `./te doctor` — verify framework health
-- `./te wiki new --template page|decision|source-summary` — create v2 wiki page
-- `./te wiki init|index|search|timeline|fetch|lint|ingest|query` — repo-local markdown wiki operations
-- `./te context status|meter|checkpoint|fresh-start|lint-handoff` — context tracking and fresh-session packets
-- `./te context codex-fresh-thread` — Codex clean-continuation successor; `codex-compact-thread` is experimental/current-thread clear unsolved
-- `./te docs audit|split|load` — always-loaded doc hygiene
-- `./te delegate models|classify|plan` — model/subagent routing
-- `./te pa --directive "/pa <prompt>"` — personal-assistant prompt bypass and minimal-context dispatch
-- `./te hooks doctor`, `./te profile show|set`, `./te bench run --suite framework-smoke` — productization checks
-
-## Infra
-- [[raw/2026-04-20-machine-baselines]] — M1/M1B/M2 tok/s, bottlenecks, tweaks
-- [[concepts/turboquant-kv-cache]] — KV-cache compression 3.8-5.1x, installed on M2 via llama.cpp fork
-- [[raw/2026-04-20-turboquant-research]] — full subagent survey
-- [[raw/2026-04-25-turboquant-adoption-review]] — refreshed TurboQuant repo adoption review and machine policy
-
-## People
-- [[people/julius-brussee]] — caveman
-- [[people/jesse-vincent]] — superpowers (obra)
-- [[people/karpathy]] — wiki pattern
-- [[people/unsloth-team]] — daniel + michael han
-
-## Raw
-- [[raw/2026-04-17-research-brief]] — initial token-efficiency landscape survey
+## Extension Points
+- [[adapters/README]] — project-local agent adapters
+- `token_economy/code_map.py` — compact structural code-map provider
+- [[concepts/framework-hardening-adoption]] — ranked adoption matrix and current hardening learnings
+- [[raw/2026-04-25-agent-memory-framework-research-rerun]] — Gemini and local Gemma research outputs
+- [[concepts/local-model-setup]] — current M1/M1B/M2 local model policy
+- [[templates/page.template]] — wiki page template
+- [[templates/source-summary.template]] — source summary template
+- [[templates/decision.template]] — decision template

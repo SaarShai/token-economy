@@ -34,7 +34,7 @@ Supplemental productization:
 ./te bench run --suite framework-smoke
 ```
 
-Skills, prompts, hooks, configs, templates, and optional extension recipes live in their matching top-level folders.
+Skills, prompts, hooks, configs, templates, and extension recipes live in their matching top-level folders.
 
 For manual context refresh, use [`prompts/summ.md`](prompts/summ.md). Copy-paste prompts are available for the old session ([`prompts/manual-summ-document-and-handoff.md`](prompts/manual-summ-document-and-handoff.md)) and fresh session ([`prompts/manual-fresh-session-from-handoff.md`](prompts/manual-fresh-session-from-handoff.md)). For full project migration, use [`prompts/manual-full-summ.md`](prompts/manual-full-summ.md) in the old project and [`prompts/manual-import-full-summ.md`](prompts/manual-import-full-summ.md) in the fresh Token Economy-enabled target project folder. In Codex, current-thread clear/compact is unsolved in the tested Desktop/App Server environment; `./te context codex-compact-thread` is experimental. Use `./te context codex-fresh-thread --handoff <handoff-file> --execute` for a persistent fresh successor thread with only `start.md` plus the handoff. This is clean continuation, not clearing the old visible thread. For older project installs that lack those subcommands, use [`prompts/summ-codex-manual.md`](prompts/summ-codex-manual.md), which skips fragile same-thread compacting and directly launches a persistent fresh successor through App Server.
 
@@ -45,7 +45,7 @@ For manual context refresh, use [`prompts/summ.md`](prompts/summ.md). Copy-paste
 | [ComCom](projects/compound-compression-pipeline/) | Compound compression pipeline (caveman + LLMLingua + self-verify escalation) | **v3 eval passed**: 44.9% savings, Δquality −0.12 (CI touches 0) on SQuAD |
 | [semdiff](projects/semdiff/) | AST-node-level diff for LLM file re-reads. MCP server + CC plugin. | **Working**: 95.5% savings on argparse.py re-read; Py/JS/TS/Rust tested |
 | [context-keeper](projects/context-keeper/) | PreCompact hook that extracts structured state (files/commands/errors/decisions) to preserve facts across compaction | **Working**: project-local hook recipe |
-| [output-filter](hooks/output-filter/) | Terminal-output filtering with raw-output recovery, savings stats, custom rules, and opt-in session suppression | **Working**: native hook + CLI |
+| [output-filter](hooks/output-filter/) | Terminal-output filtering with raw-output recovery, savings stats, custom rules, and session-aware suppression | **Working**: native hook + CLI |
 | [bench/](bench/) | Benchmark registry + Kaggle/HF fetchers + uniform eval schema | **Working**: 7 datasets registered, 2 downloaded |
 
 See [ROADMAP.md](ROADMAP.md) for all directions, progress, next steps.
@@ -101,7 +101,7 @@ some noisy command | TOKEN_ECONOMY_ROOT="$PWD" hooks/output-filter/filter.sh
 ./te output-filter rules --init
 ```
 
-Custom rules live at `.token-economy/output-filter-rules.txt` by default. Use `keep:<regex>`, `drop:<regex>`, and `collapse:<regex>`. Session-aware suppression is available with `--session-aware` or `output_filter_session_aware: true`, but remains opt-in because repeated lines can be meaningful during debugging.
+Custom rules live at `.token-economy/output-filter-rules.txt` by default. Use `keep:<regex>`, `drop:<regex>`, and `collapse:<regex>`. Session-aware suppression is available with `--session-aware` or `output_filter_session_aware: true`, but stays disabled by default because repeated lines can be meaningful during debugging.
 
 ## Wiki
 

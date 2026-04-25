@@ -75,6 +75,8 @@ Do not use external note-taking apps, home-directory agent settings, machine-wid
 Use progressive retrieval:
 
 ```bash
+./te wiki context "<task>"
+./te code map "<symbol/path>"
 ./te wiki search "<query>"
 ./te wiki timeline "<id>"
 ./te wiki fetch "<id>"

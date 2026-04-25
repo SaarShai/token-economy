@@ -12,11 +12,12 @@ import unittest
 from pathlib import Path
 
 from token_economy.cli import main
+from token_economy.code_map import code_map
 from token_economy.config import detect_agent
 from token_economy.codex_app_server import codex_compact_thread_plan, codex_fresh_thread_plan, default_codex_fresh_model
 from token_economy.context import checkpoint, fresh_launch_commands, host_context_controls, lint_handoff, meter
 from token_economy.docs import audit as docs_audit
-from token_economy.delegate import classify, personal_assistant_packet, strip_pa_prefix
+from token_economy.delegate import classify, documentation_lifecycle_packet, personal_assistant_packet, strip_pa_prefix
 from token_economy.output_filter import filter_text, load_rules
 from token_economy.tokens import estimate_tokens
 from token_economy.wiki import WikiStore
@@ -155,6 +156,178 @@ fi
             self.assertEqual(lint["broken_links"], [])
             self.assertEqual(wiki.read_page(alias.resolve()).links, ["patterns/progressive-retrieval"])
 
+    def test_wiki_context_loads_relevant_and_rejects_noise(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            wiki = WikiStore(root)
+            wiki.init()
+            (root / "concepts" / "new-retrieval.md").write_text(
+                """---
+schema_version: 2
+title: "New Retrieval"
+type: concept
+domain: framework
+tier: semantic
+confidence: 0.9
+created: 2026-04-25
+updated: 2026-04-25
+verified: 2026-04-25
+sources: ["unit-test"]
+supersedes: ["[[concepts/old-retrieval]]"]
+superseded-by:
+tags: [retrieval, context]
+---
+
+# New Retrieval
+
+Progressive retrieval loads context by search, timeline, then fetch. Related: [[schema]]
+""",
+                encoding="utf-8",
+            )
+            (root / "concepts" / "old-retrieval.md").write_text(
+                """---
+schema_version: 2
+title: "Old Retrieval"
+type: concept
+domain: framework
+tier: semantic
+confidence: 0.3
+created: 2026-01-01
+updated: 2026-01-01
+verified: 2026-01-01
+sources: ["unit-test"]
+supersedes: []
+superseded-by: [[concepts/new-retrieval]]
+tags: [retrieval, context]
+---
+
+# Old Retrieval
+
+Superseded progressive retrieval note.
+""",
+                encoding="utf-8",
+            )
+            (root / "raw" / "2026-04-25-context-dump.md").write_text(
+                """---
+schema_version: 2
+title: "Context Dump"
+type: raw
+domain: external-source
+tier: episodic
+confidence: 0.6
+created: 2026-04-25
+updated: 2026-04-25
+verified: 2026-04-25
+sources: ["unit-test"]
+supersedes: []
+superseded-by:
+tags: [retrieval, context]
+---
+
+# Context Dump
+
+Raw context retrieval archive distractor.
+""",
+                encoding="utf-8",
+            )
+            wiki.index()
+            packet = wiki.context("progressive retrieval context", max_pages=5, max_tokens=1200)
+            self.assertIn("concepts/new-retrieval", packet["fetch_plan"])
+            self.assertLessEqual(len(packet["loaded"]), 5)
+            self.assertLessEqual(packet["token_estimate"], 1200)
+            self.assertNotIn("raw/2026-04-25-context-dump", packet["fetch_plan"])
+            rejected = {row["id"]: row for row in packet["rejected"]}
+            self.assertEqual(rejected["concepts/old-retrieval"]["reason"], "superseded")
+
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                self.assertEqual(main(["--repo", str(root), "wiki", "context", "progressive retrieval context", "--max-pages", "5", "--max-tokens", "1200"]), 0)
+            cli_packet = json.loads(buf.getvalue())
+            self.assertEqual(cli_packet["fetch_plan"], packet["fetch_plan"])
+
+    def test_wiki_lint_warns_on_stale_index_and_quality_gaps(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            wiki = WikiStore(root)
+            wiki.init()
+            page = root / "concepts" / "quality-gap.md"
+            page.write_text(
+                """---
+schema_version: 2
+title: "Quality Gap"
+type: concept
+domain: framework
+tier: semantic
+confidence: 0.5
+created: 2026-04-25
+updated: 2026-04-25
+verified: 2026-04-25
+sources: []
+supersedes: []
+superseded-by:
+tags: [quality]
+---
+
+# Quality Gap
+
+Missing provenance and backlinks on purpose.
+""",
+                encoding="utf-8",
+            )
+            wiki.index()
+            index_mtime = (root / "L1_index.md").stat().st_mtime
+            os.utime(page, (index_mtime + 3, index_mtime + 3))
+            lint = wiki.lint_pages(strict=True)
+            self.assertIn("L1_index.md", lint["stale_indexes"])
+            self.assertIn("concepts/quality-gap", lint["missing_provenance"])
+            self.assertIn("concepts/quality-gap", lint["missing_backlinks"])
+            self.assertEqual(lint["errors"], [])
+
+    def test_code_map_extracts_compact_symbols_and_cli(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            package = root / "pkg"
+            package.mkdir()
+            (root / "token-economy.yaml").write_text("wiki_root: .\n", encoding="utf-8")
+            (package / "worker.py").write_text(
+                """import json
+from pathlib import Path
+
+
+class Worker:
+    def run(self, path: Path):
+        return json.dumps({"path": str(path)})
+
+
+def helper(value):
+    return value
+""",
+                encoding="utf-8",
+            )
+            (package / "ui.ts").write_text(
+                """import { readFileSync } from "fs";
+
+export function renderPanel() {
+  return readFileSync("x", "utf8");
+}
+""",
+                encoding="utf-8",
+            )
+            mapped = code_map(root, query="worker run", max_files=5, max_symbols=20)
+            self.assertEqual(mapped["matched_files"], 1)
+            self.assertEqual(mapped["files"][0]["path"], "pkg/worker.py")
+            names = {symbol["name"] for symbol in mapped["files"][0]["symbols"]}
+            self.assertIn("Worker", names)
+            self.assertIn("run", names)
+            self.assertIn("json", mapped["files"][0]["imports"])
+
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                self.assertEqual(main(["--repo", str(root), "code", "map", "renderPanel"]), 0)
+            cli_map = json.loads(buf.getvalue())
+            self.assertEqual(cli_map["files"][0]["path"], "pkg/ui.ts")
+            self.assertEqual(cli_map["files"][0]["symbols"][0]["name"], "renderPanel")
+
     def test_checkpoint_packet_is_small_and_plan_mode(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -173,11 +346,26 @@ fi
         route = classify("summarize this markdown wiki note and document the result")
         self.assertEqual(route.tier, "simple")
         self.assertEqual(route.model_class, "lightweight")
-        self.assertEqual(route.worker, "wiki-worker")
+        self.assertEqual(route.worker, "wiki-documenter")
 
         repo_route = classify("commit and push verified changes to the GitHub repo")
         self.assertEqual(repo_route.model_class, "lightweight")
         self.assertEqual(repo_route.worker, "repo-maintainer")
+
+    def test_documentation_lifecycle_routes_only_verified_evidence(self):
+        routed = documentation_lifecycle_packet(
+            "document important wiki results",
+            "pytest tests/test_universal_framework.py passed; updated token_economy/wiki.py",
+            verified=True,
+        )
+        self.assertEqual(routed["action"], "route")
+        self.assertEqual(routed["worker"], "wiki-documenter")
+        self.assertEqual(routed["model_class"], "lightweight")
+        self.assertIn("verified evidence", routed["context_policy"])
+
+        skipped = documentation_lifecycle_packet("document plan", "planned but not executed", verified=False)
+        self.assertEqual(skipped["action"], "skip")
+        self.assertFalse(skipped["persist"])
 
     def test_personal_assistant_prompt_bypass(self):
         invoked, clean = strip_pa_prefix("/pa summarize this wiki note")
@@ -247,6 +435,31 @@ fi
                 self.assertTrue(ck_recent(root=root))
         finally:
             sys.path.remove(str(memory_dir))
+
+    def test_skill_crystallizer_v1_writes_sop_only_after_verified_work(self):
+        skill_dir = REPO / "projects" / "skill-crystallizer"
+        sys.path.insert(0, str(skill_dir))
+        try:
+            from detector import crystallize_task
+
+            with tempfile.TemporaryDirectory() as td:
+                root = Path(td)
+                events = [
+                    "User asked to harden wiki context retrieval",
+                    "apply_patch updated token_economy/wiki.py",
+                    "apply_patch updated tests/test_universal_framework.py",
+                    "python3 -m unittest tests.test_universal_framework passed OK",
+                    "done",
+                ]
+                result = crystallize_task(events, root=root, task="Harden wiki context retrieval")
+                self.assertEqual(result["action"], "created")
+                self.assertTrue((root / result["path"]).exists())
+                self.assertTrue((root / "L1_index.md").exists())
+
+                skipped = crystallize_task(["read start.md", "looked at index"], root=root, task="Read docs")
+                self.assertEqual(skipped["action"], "skip")
+        finally:
+            sys.path.remove(str(skill_dir))
 
     def test_cli_wiki_init_and_delegate(self):
         with tempfile.TemporaryDirectory() as td:
@@ -631,11 +844,12 @@ fi
         self.assertIn("retrieval is needed", fresh_manual)
         self.assertIn("Start in plan mode", fresh_manual)
         full_summ = (REPO / "prompts/manual-full-summ.md").read_text(encoding="utf-8")
-        self.assertIn("full_summ.md", full_summ)
+        self.assertIn("[project-name]_full_summ.md", full_summ)
         self.assertIn("Obsidian/wiki pages", full_summ)
         self.assertIn("Raw API keys/secrets are explicitly authorized", full_summ)
         self.assertIn("context rot", full_summ)
-        self.assertIn("Write `full_summ.md`", full_summ)
+        self.assertIn("Think carefully, step by step, and devise a plan for the following, then execute the plan:", full_summ)
+        self.assertIn("Write `[project-name]_full_summ.md`", full_summ)
         self.assertIn("Provenance", full_summ)
         import_full_summ = (REPO / "prompts/manual-import-full-summ.md").read_text(encoding="utf-8")
         self.assertIn("the uploaded file", import_full_summ)

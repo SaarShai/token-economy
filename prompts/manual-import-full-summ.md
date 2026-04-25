@@ -1,10 +1,20 @@
 # Manual import full-summ
 
+/plan think carefully, step by step, to create a plan to import a full project summary into a target working folder that will use Token Economy as local scaffolding. Treat this folder as the active workspace, not the Token Economy source repository.
+
 Import a full project summary into a target working folder that will use Token Economy as local scaffolding. Treat this folder as the active workspace, not the Token Economy source repository.
 
 Inputs:
 - Full summary file: the uploaded file
 - New target folder: current working directory
+
+Working rules:
+- Set everything you need in this working folder, and nothing you do not need.
+- Clone and/or import any file or information from referenced or linked folders that is needed to make the working folder self-sufficient.
+- Exclude anything that is not relevant to the task.
+- After cloning and/or importing, you may forget the references or links because you will have everything you need in this working folder.
+- Actively learn from the uploaded file and adapt the information to the Token Economy setup in this working folder.
+- Understand the processes and systems described or implied in the uploaded file, then create a similar system for yourself that is adapted to the way you work.
 
 Bootstrap Token Economy runtime files in the current folder:
 1. Clear only the current folder, including hidden files and `.git`.

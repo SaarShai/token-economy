@@ -14,9 +14,8 @@ Default `/compact` runs an LLM summarizer → generic prose → loses file paths
 Before compaction (PreCompact hook):
 1. Parse current transcript JSONL.
 2. Regex-extract: `user_goals`, `files_created`, `files_touched`, `commands_run`, `errors_seen`, `numbers`, `urls`, `failed_attempts`.
-3. Optional LLM pass (local Ollama, e.g. `gemma4:31b`): decisions/rationale, failed-attempts, next-steps → JSON.
-4. Write markdown memory page: `.token-economy/sessions/YYYY-MM-DD-HHMM-<sid8>.md`.
-5. stdout = terse pointer. PreCompact hook injects it into compaction context → summarizer includes pointer. Agent can read file post-compact.
+3. Write markdown memory page: `.token-economy/sessions/YYYY-MM-DD-HHMM-<sid8>.md`.
+4. stdout = terse pointer. PreCompact hook injects it into compaction context → summarizer includes pointer. Agent can read file post-compact.
 
 ## Files
 ```
@@ -54,10 +53,6 @@ If you need to chain it manually, project-local `.claude/settings.json` can add 
 }]
 ```
 
-Optional env vars:
-- `CONTEXT_KEEPER_LLM=gemma4:31b` — enable LLM decision extraction
-- `CONTEXT_KEEPER_OUT_DIR=~/path/to/wiki/sessions` — custom output dir
-
 ## First-run measurement
 
 Ran on current session transcript (9277ec1e, ~150 assistant turns):
@@ -73,13 +68,12 @@ Ran on current session transcript (9277ec1e, ~150 assistant turns):
 - `pre-compact.js` stub: logs timestamp. **No content.**
 - Anthropic `/compact`: LLM prose summary. **Loses structured facts.**
 
-Unique: schema-stable regex extraction + optional local-LLM pass + markdown output that survives compaction, coupled with a pointer injected into compaction context.
+Unique: schema-stable regex extraction + markdown output that survives compaction, coupled with a pointer injected into compaction context.
 
 ## Caveats
 - Transcript format changes could break parsing (Anthropic-internal). Extract uses `ev.message.content` fallback to `ev.content`.
 - Regex path filter requires file extension; may miss some paths.
-- `failed_attempts` regex is heuristic; LLM pass recommended for rationale.
-- LLM pass adds latency (~5-30s on gemma4:31b via Ollama).
+- `failed_attempts` regex is heuristic; capture rationale in the handoff or wiki page when you need it.
 
 ## Next
 - Add `decisions` extraction from `<thinking>` blocks (currently skipped — encrypted signature).

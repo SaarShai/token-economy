@@ -8,27 +8,27 @@ evidence_count: 0
 
 # skill-crystallizer — auto-convert solved tasks → reusable L3 SOPs
 
-**Status: SPEC / SKELETON.** Detects completed tasks in a Claude Code session and writes them as L3 SOPs (context-keeper-v2 tier).
+**Status: IMPLEMENTED v1 DETECTOR.** Detects verified completed tasks and writes conservative repo-local `L3_sops/` candidates with wiki log/index refresh.
 
 ## When a task is "solved"
 
 Heuristic signals (need ≥2 to fire):
 1. User ended with positive close: "done", "works", "ship it", "good", ✓.
-2. Final tool call was a successful test/verify/build.
+2. Recent test/verify/build command succeeded.
 3. Recent git commit with non-trivial diff.
 4. No open TodoWrite items flagged incomplete.
 5. `verify` or `test` tool returned grounded=true within last 5 turns.
 
 ## Extraction
 
-1. Walk transcript backwards from close-signal to find task-start.
-2. Extract: user goal (first imperative), tool sequence, files touched, key decisions, failed attempts avoided.
-3. Pass to LLM (local gemma/qwen or Anthropic Haiku) → structured SOP markdown.
-4. Save via `tier_manager.record_task_completion(slug, steps, outcome)`.
+1. Detect verified completion from recent events.
+2. Extract task title, reusable command/tool steps, changed files, and compact evidence.
+3. Write a v2 `L3_sops/<slug>.md` page only when verified and non-trivial.
+4. Append `log.md` and rebuild the wiki index.
 
 ## Hook
 
-`SessionEnd` hook runs the detector. Slow OK (seconds not milliseconds).
+`detector.crystallize_task(events, root, task)` is the v1 entrypoint. A future `SessionEnd` hook can call it with host transcript events.
 
 ## Non-goals
 
@@ -37,9 +37,9 @@ Heuristic signals (need ≥2 to fire):
 - Not overwriting existing SOPs (manual merge if pattern repeats).
 
 ## Not implemented yet
-- `detector.py` — finds solved-task windows in transcript.
-- `extractor.py` — LLM-based structured extraction.
-- `hook.sh` — SessionEnd entry.
+- Host-specific `SessionEnd` hook wiring.
+- Optional LLM extraction/merge for repeated SOPs.
+- Lifecycle status routing for richer task state.
 
 ## Borrowed from
 

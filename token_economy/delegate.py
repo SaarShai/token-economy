@@ -30,6 +30,7 @@ WIKI_CONTEXT_RE = re.compile(r"\b(wiki|markdown|note|memory|document|ingest|proj
 FILE_CONTEXT_RE = re.compile(r"\b(file|path|code|test|bug|diff|function|class|module|script)\b", re.IGNORECASE)
 WEB_CONTEXT_RE = re.compile(r"\b(web|online|latest|current|url|http|research|survey|compare|source)\b", re.IGNORECASE)
 PATH_RE = re.compile(r"(?<![\w.-])(?:\.{0,2}/|/|[A-Za-z0-9_.-]+/)[^\s,;:]+")
+DOCUMENTATION_RE = re.compile(r"\b(durable|verified|wiki-documenter|documenter|document important|document (?:the )?result|document results|record memory|write memory|l3 sop|sop)\b", re.IGNORECASE)
 
 
 @dataclass
@@ -79,6 +80,8 @@ def classify(task: str, registry: dict[str, list[str]] | None = None) -> Route:
     wiki = bool(re.search(r"\b(wiki|markdown|note|memory|document|ingest|l[0-4])\b", text))
     parallel = bool(re.search(r"\b(parallel|independent|separate|each of|split)\b", text)) or task.count("\n- ") >= 2
 
+    if DOCUMENTATION_RE.search(task) and wiki:
+        return Route("simple", "lightweight", models["lightweight"][0], "wiki-documenter", 0.88, False, "use compact verified evidence only; update wiki/log/index after retrieval", "durable wiki documentation task")
     if high_risk or hard:
         return Route("hard", "reasoning_top", models["reasoning_top"][0], "main-orchestrator", 0.86, parallel, "retrieve exact relevant context first", "high-risk or architectural task")
     if research:
@@ -130,6 +133,44 @@ def delegation_plan(task: str, registry: dict[str, list[str]] | None = None) -> 
         "orchestrator_rule": "Orchestrator does not delegate final synthesis.",
         "brief": brief,
         "steps": steps,
+    }
+
+
+def documentation_lifecycle_packet(task: str, evidence: str, verified: bool, registry: dict[str, list[str]] | None = None) -> dict[str, Any]:
+    models = registry or DEFAULT_MODELS
+    clean_evidence = evidence.strip()
+    if not verified:
+        return {
+            "mode": "documentation_lifecycle",
+            "action": "skip",
+            "persist": False,
+            "reason": "unverified evidence must not become durable memory",
+            "task": task,
+            "evidence": clean_evidence[:900],
+        }
+    if not clean_evidence:
+        return {
+            "mode": "documentation_lifecycle",
+            "action": "skip",
+            "persist": False,
+            "reason": "no evidence supplied",
+            "task": task,
+            "evidence": "",
+        }
+    model = (models.get("lightweight") or DEFAULT_MODELS["lightweight"])[0]
+    return {
+        "mode": "documentation_lifecycle",
+        "action": "route",
+        "persist": True,
+        "task": task,
+        "worker": "wiki-documenter",
+        "model_class": "lightweight",
+        "suggested_model": model,
+        "prompt": "prompts/subagents/wiki-documenter.prompt.md",
+        "context_policy": "send only verified evidence, exact paths/commands/results, and candidate wiki targets; never send full transcript",
+        "evidence_packet": clean_evidence[:1800],
+        "result_contract": ["created", "updated", "evidence_used", "skipped_as_non_durable", "follow_up_risk"],
+        "main_model_instruction": "Route this packet to a lightweight wiki-documenter after meaningful verified work; final synthesis stays with the main agent.",
     }
 
 

@@ -2,9 +2,11 @@
 
 full-summ
 
-Goal: create one complete local migration summary at `full_summ.md` so a new Token Economy-enabled target working folder can import and adapt this project without carrying over context rot.
+Goal: create one complete local migration summary at `[project-name]_full_summ.md` so a new Token Economy-enabled target working folder can import and adapt this project without carrying over context rot, including all necessary and important information for another agent to carry on the work without losing context.
 
-Raw API keys/secrets are explicitly authorized for this local file. Put raw secret values only in the `Secrets` section. After writing the file, run `chmod 600 full_summ.md` when possible.
+Think carefully, step by step, and devise a plan for the following, then execute the plan:
+
+Raw API keys/secrets are explicitly authorized for this local file. Put raw secret values only in the `Secrets` section. After writing the file, run `chmod 600 [project-name]_full_summ.md` when possible.
 
 Inventory thoroughly:
 - Source files, docs, configs, scripts, tests, CI, hidden project files, agent files, package manifests, lockfiles, and deployment files.
@@ -23,7 +25,7 @@ Keep:
 Drop:
 - Transcript noise, chat filler, duplicated prose, abandoned plans, obsolete wiki pages with no current warning value, one-off dead ends, raw logs, and other context rot.
 
-Write `full_summ.md` with this structure:
+Write `[project-name]_full_summ.md` with this structure:
 
 # FULL_SUMM
 

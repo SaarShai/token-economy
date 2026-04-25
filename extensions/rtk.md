@@ -1,8 +1,7 @@
 # RTK Extension
 
-Optional command-output filter. Use for noisy shell/test/git/tree output.
+Command-output filter. Use for noisy shell/test/git/tree output.
 
 Reference config: `configs/rtk.config.toml`.
 
 Install from upstream project, then measure local reduction before enabling globally. Preserve exact error lines.
-

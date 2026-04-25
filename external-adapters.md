@@ -1,10 +1,10 @@
-# Optional External Adapters
+# External Adapters
 
 Token Economy learns from these projects but does not vendor their code by default.
 
 ## Terminal And Tool Output
 
-- `omni`: terminal-output filtering. Learned patterns now adopted natively: raw-output recovery, savings stats, custom rules, and opt-in session-aware suppression. Keep Omni external for host-specific cases.
+- `omni`: terminal-output filtering. Learned patterns now adopted natively: raw-output recovery, savings stats, custom rules, and session-aware suppression. Keep Omni external for host-specific cases.
 - `rtk`: Rust CLI proxy for common dev commands. Useful for fast command-output reduction.
 - `context-mode`: sandboxed tool output plus SQLite continuity. Useful for hook-capable platforms.
 
@@ -20,5 +20,5 @@ Token Economy learns from these projects but does not vendor their code by defau
 ## Policy
 
 - Install only when `./te doctor` shows a matching pain.
-- Keep `start.md` and adapters lean; document optional installs here.
+- Keep `start.md` and adapters lean; document external installs here.
 - Do not vendor third-party code unless a future review explicitly approves license, maintenance, and security tradeoffs.

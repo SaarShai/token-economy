@@ -1,6 +1,5 @@
 # Code-Review-Graph Extension
 
-Optional tree-sitter/code-graph workflow for code review. Use for symbol-aware review on larger codebases.
+Tree-sitter/code-graph workflow for code review. Use for symbol-aware review on larger codebases.
 
 Do not replace semdiff for repeated file reads.
-

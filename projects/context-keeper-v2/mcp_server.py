@@ -6,7 +6,7 @@ from memory_api import ck_fetch, ck_query, ck_recent
 
 try:
     from mcp.server.fastmcp import FastMCP
-except Exception as exc:  # pragma: no cover - optional runtime dependency
+except Exception as exc:  # pragma: no cover - runtime dependency
     raise SystemExit(f"mcp package unavailable: {exc}")
 
 
@@ -33,4 +33,3 @@ def ck_recent_tool(days: int = 7) -> list[dict]:
 
 if __name__ == "__main__":
     mcp.run()
-

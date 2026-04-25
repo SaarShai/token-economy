@@ -1,5 +1,9 @@
 # Log
 
+## [2026-04-25] compile | framework hardening and adoption learnings
+
+Added a compact synthesis page and raw research note for the latest hardening/adoption pass, including Gemini ecosystem research, local M1 Gemma/Ollama research, Gemini cache guidance, local M1/M1B Ollama results, a ranked adoption matrix, implemented retrieval and lifecycle routing, the current skill-crystallizer and code-map layers, and deferred graph-memory/alias/SessionEnd ideas.
+
 ## [2026-04-25] update | local model setup matrix
 
 Added a task-capable local-model setup matrix and updated the device inventory so M1B is no longer documented as worker-only. The matrix covers shared Token Economy tools, skills, workflows, and harnesses for M1/M1B/M2.

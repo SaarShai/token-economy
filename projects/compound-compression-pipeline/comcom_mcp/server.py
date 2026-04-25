@@ -31,7 +31,7 @@ mcp = FastMCP("comcom")
 
 @mcp.tool()
 def comcom_compress(context: str, question: str | None = None, rate: float = 0.5) -> str:
-    """Compress a context while preserving code/URLs/paths and (optionally) question-relevant sentences.
+    """Compress a context while preserving code/URLs/paths and question-relevant sentences when provided.
 
     Use before sending long context to an expensive LLM. Expected savings: 40-55%
     at rate=0.5 with question-aware protection. Quality hit is small when paired
@@ -39,8 +39,8 @@ def comcom_compress(context: str, question: str | None = None, rate: float = 0.5
 
     Args:
       context: the long text to compress.
-      question: optional — if provided, sentences containing question keywords
-        plus factual-pattern sentences (numbers/dates/versions/paths) are preserved
+      question: if provided, sentences containing question keywords plus
+        factual-pattern sentences (numbers/dates/versions/paths) are preserved
         verbatim. Strongly recommended for QA tasks.
       rate: LLMLingua-2 keep rate in (0, 1]. 0.5 = aggressive, 0.7 = gentle,
         1.0 = skip LLMLingua (caveman regex only).

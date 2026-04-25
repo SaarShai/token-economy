@@ -9,9 +9,10 @@ from typing import Any
 
 from .config import detect_agent, load_config
 from .bench import run_framework_smoke
+from .code_map import code_map
 from .codex_app_server import codex_compact_thread_plan, codex_fresh_thread_plan, run_codex_compact_thread, run_codex_fresh_thread
 from .context import checkpoint, fresh_launch_commands, host_context_controls, lint_handoff, meter, status_for_files
-from .delegate import delegation_plan, dumps, load_models, classify, personal_assistant_directive, personal_assistant_packet
+from .delegate import delegation_plan, documentation_lifecycle_packet, dumps, load_models, classify, personal_assistant_directive, personal_assistant_packet
 from .docs import audit as docs_audit, split_plan
 from .hooks import doctor as hooks_doctor
 from .output_filter import rewind as output_filter_rewind, stats as output_filter_stats
@@ -27,6 +28,11 @@ def print_json(obj: Any) -> None:
 
 def cmd_doctor(args: argparse.Namespace) -> int:
     cfg = load_config(args.repo)
+    required = {
+        "config",
+        "start_md",
+        "wiki_root_exists",
+    }
     checks = {
         "repo_root": str(cfg.repo_root),
         "config": (cfg.repo_root / "token-economy.yaml").exists(),
@@ -39,7 +45,12 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         "context_keeper": (cfg.repo_root / "projects/context-keeper").exists(),
         "python": sys.version.split()[0],
     }
-    checks["ok"] = all(v for k, v in checks.items() if k not in {"repo_root", "wiki_root", "refresh_threshold", "python"})
+    checks["ok"] = all(bool(checks[k]) for k in required)
+    checks["extensions"] = {
+        "comcom_mcp": checks["comcom_mcp"],
+        "semdiff_mcp": checks["semdiff_mcp"],
+        "context_keeper": checks["context_keeper"],
+    }
     print_json(checks)
     return 0 if checks["ok"] else 1
 
@@ -88,6 +99,8 @@ def cmd_wiki(args: argparse.Namespace) -> int:
         print_json(wiki.fetch(args.id))
     elif args.wiki_cmd == "timeline":
         print_json(wiki.timeline(args.id, args.window))
+    elif args.wiki_cmd == "context":
+        print_json(wiki.context(args.task, max_pages=args.max_pages, max_tokens=args.max_tokens, k=args.k))
     elif args.wiki_cmd == "lint":
         result = wiki.lint_pages(strict=args.strict)
         print_json(result)
@@ -118,6 +131,13 @@ def cmd_docs(args: argparse.Namespace) -> int:
             path = cfg.repo_root / path
         text = path.read_text(encoding="utf-8", errors="replace")
         print(text)
+    return 0
+
+
+def cmd_code(args: argparse.Namespace) -> int:
+    cfg = load_config(args.repo)
+    if args.code_cmd == "map":
+        print_json(code_map(cfg.repo_root, query=args.query or "", max_files=args.max_files, max_symbols=args.max_symbols))
     return 0
 
 
@@ -187,6 +207,8 @@ def cmd_delegate(args: argparse.Namespace) -> int:
         print(dumps(classify(args.task, registry).as_dict()))
     elif args.delegate_cmd == "plan":
         print_json(delegation_plan(args.task, registry))
+    elif args.delegate_cmd == "document":
+        print_json(documentation_lifecycle_packet(args.task, args.evidence, args.verified, registry))
     return 0
 
 
@@ -274,6 +296,12 @@ def build_parser() -> argparse.ArgumentParser:
     wt.add_argument("id")
     wt.add_argument("--window", type=int, default=3)
     wt.set_defaults(func=cmd_wiki)
+    wc = wsub.add_parser("context", help="Plan and load bounded task context from the wiki")
+    wc.add_argument("task")
+    wc.add_argument("--max-pages", type=int, default=5)
+    wc.add_argument("--max-tokens", type=int, default=4000)
+    wc.add_argument("-k", type=int, default=12)
+    wc.set_defaults(func=cmd_wiki)
     wl = wsub.add_parser("lint")
     wl.add_argument("--strict", action="store_true")
     wl.add_argument("--fail-on-error", action="store_true")
@@ -304,6 +332,14 @@ def build_parser() -> argparse.ArgumentParser:
     dl = dsub.add_parser("load")
     dl.add_argument("path")
     dl.set_defaults(func=cmd_docs)
+
+    code = sub.add_parser("code")
+    codesub = code.add_subparsers(dest="code_cmd", required=True)
+    cdm = codesub.add_parser("map", help="Build a compact structural code map")
+    cdm.add_argument("query", nargs="?", default="")
+    cdm.add_argument("--max-files", type=int, default=20)
+    cdm.add_argument("--max-symbols", type=int, default=200)
+    cdm.set_defaults(func=cmd_code)
 
     ctx = sub.add_parser("context")
     csub = ctx.add_subparsers(dest="context_cmd", required=True)
@@ -361,6 +397,11 @@ def build_parser() -> argparse.ArgumentParser:
     dp = desub.add_parser("plan")
     dp.add_argument("task")
     dp.set_defaults(func=cmd_delegate)
+    dd = desub.add_parser("document", help="Route verified durable evidence to a lightweight wiki-documenter")
+    dd.add_argument("--task", required=True)
+    dd.add_argument("--evidence", required=True)
+    dd.add_argument("--verified", action="store_true")
+    dd.set_defaults(func=cmd_delegate)
 
     pa = sub.add_parser("pa", help="Route /pa or /btw prompts through the personal-assistant router")
     pa.add_argument("--directive", action="store_true", help="Print hook-friendly routing instructions")

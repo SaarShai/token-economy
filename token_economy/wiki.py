@@ -5,6 +5,7 @@ import re
 import sqlite3
 from dataclasses import dataclass
 from datetime import date
+from math import ceil
 from pathlib import Path
 from typing import Any
 
@@ -19,11 +20,11 @@ V2_TIERS = {"working", "episodic", "semantic", "procedural"}
 
 DEFAULT_SCHEMA = """# Token Economy Wiki Schema
 
-Purpose: a repo-local markdown LLM wiki for durable agent memory.
+Purpose: a repo-local markdown LLM wiki for durable agent memory in the current target project.
 
 ## Layers
 - `raw/`: immutable sources. Never rewrite.
-- `concepts/`, `patterns/`, `projects/`, `people/`, `queries/`: synthesized pages.
+- `concepts/`, `patterns/`, `projects/`, `people/`, `queries/`: synthesized target-project pages.
 - `index.md`: compact catalog. Read first.
 - `log.md`: append-only operation timeline.
 - `L0_rules.md`: stable rules loaded at startup.
@@ -55,7 +56,7 @@ Legacy v1 pages remain readable. Strict lint emits migration warnings for v1 pag
 
 ## Workflows
 - Ingest: source -> `raw/` note -> update synthesized pages -> backlinks -> `index.md`/`log.md`.
-- Query: search -> timeline -> fetch only relevant pages -> cite paths -> optionally file answer in `queries/`.
+- Query: search -> timeline -> fetch only relevant pages -> cite paths -> file answer in `queries/` when it will be reused.
 - Lint: stale claims, orphan pages, broken links, contradictions, supersession candidates.
 - Crystallize: successful verified work -> `L3_sops/` and durable lessons.
 """
@@ -127,6 +128,26 @@ def confidence_value(value: str) -> float | None:
     except (TypeError, ValueError):
         legacy = {"low": 0.25, "med": 0.6, "medium": 0.6, "high": 0.9}
         return legacy.get(str(value).strip().lower())
+
+
+def estimate_tokens(text: str) -> int:
+    if not text:
+        return 0
+    return max(1, ceil(len(text) / 4) + text.count("\n"))
+
+
+def query_tokens(query: str) -> list[str]:
+    stop = {"the", "and", "for", "with", "into", "from", "that", "this", "when", "what", "need", "needs", "task"}
+    tokens = []
+    for token in re.findall(r"[A-Za-z0-9_/-]+", query.lower()):
+        if len(token) > 1 and token not in stop:
+            tokens.append(token)
+    return tokens
+
+
+def listish_has_value(value: str) -> bool:
+    clean = str(value or "").strip()
+    return bool(clean and clean not in {"[]", "null", "None"})
 
 
 def render_template(text: str, values: dict[str, str]) -> str:
@@ -249,18 +270,44 @@ class WikiStore:
         ]
         priority = {
             "start",
-            "README",
-            "AGENT_ONBOARDING",
-            "ROADMAP",
-            "stable/README",
-            "projects/wiki-search/README",
-            "projects/context-refresh/README",
-            "projects/context-keeper-v2/README",
-            "projects/delegate-router/README",
-            "projects/compound-compression-pipeline/RESULTS",
-            "projects/semdiff/README",
         }
-        l1_support_dirs = {"templates", "skills", "prompts", "hooks", "configs", "adapters"}
+        bundled_framework_pages = {
+            "AGENT_ONBOARDING",
+            "HANDOFF",
+            "HANDOFF_NEXT_AGENT",
+            "README",
+            "ROADMAP",
+            "bench/README",
+            "projects/agents-triage/SKILL",
+            "projects/compound-compression-pipeline/RESULTS",
+            "projects/context-keeper/README",
+            "projects/context-keeper/SKILL",
+            "projects/context-keeper-v2/README",
+            "projects/context-refresh/README",
+            "projects/context-refresh/host-context-controls",
+            "projects/delegate-router/README",
+            "projects/semdiff/README",
+            "projects/skill-crystallizer/README",
+            "projects/wiki-search/README",
+            "projects/write-gate/README",
+            "skills/token-economy-external-adoption/SKILL",
+            "stable/AGENT_PROMPT",
+            "stable/README",
+        }
+        l1_support_dirs = {
+            "adapters",
+            "bench",
+            "concepts",
+            "configs",
+            "extensions",
+            "hooks",
+            "patterns",
+            "people",
+            "prompts",
+            "skills",
+            "stable",
+            "templates",
+        }
         ordered = sorted(pages, key=lambda p: (0 if p.id in priority else 1, p.id))
         seen_l1 = {
             "start",
@@ -283,6 +330,10 @@ class WikiStore:
                 break
             if page.id in seen_l1:
                 continue
+            if page.id == "INSTALL":
+                continue
+            if page.id in bundled_framework_pages:
+                continue
             parts = set(Path(page.id).parts)
             if parts & l1_support_dirs:
                 continue
@@ -303,47 +354,174 @@ class WikiStore:
     def _ensure_db(self) -> None:
         if not self.db_path.exists():
             self.index()
+            return
+        try:
+            db_mtime = self.db_path.stat().st_mtime
+            newest_md = max((path.stat().st_mtime for path in self.iter_markdown()), default=0)
+        except OSError:
+            newest_md = 0
+            db_mtime = 0
+        if newest_md > db_mtime:
+            self.index()
 
     def search(self, query: str, k: int = 10) -> list[dict[str, Any]]:
         self._ensure_db()
-        tokens = re.findall(r"[A-Za-z0-9_/-]+", query)
-        fts_query = " OR ".join(tokens) if tokens else query
-        rows: list[tuple[Any, ...]]
-        with sqlite3.connect(self.db_path) as conn:
-            conn.row_factory = sqlite3.Row
-            try:
-                rows = conn.execute(
-                    """
-                    SELECT docs.id, docs.path, docs.title, docs.type, docs.tags, docs.preview, bm25(docs_fts) AS score
-                    FROM docs_fts JOIN docs ON docs_fts.id = docs.id
-                    WHERE docs_fts MATCH ?
-                    ORDER BY score LIMIT ?
-                    """,
-                    (fts_query, k),
-                ).fetchall()
-            except sqlite3.Error:
-                like = f"%{query}%"
-                rows = conn.execute(
-                    """
-                    SELECT id, path, title, type, tags, preview, 0 AS score
-                    FROM docs
-                    WHERE title LIKE ? OR body LIKE ? OR tags LIKE ?
-                    LIMIT ?
-                    """,
-                    (like, like, like, k),
-                ).fetchall()
-        return [
-            {
-                "id": row["id"],
-                "path": row["path"],
-                "title": row["title"],
-                "type": row["type"],
-                "tags": [x for x in str(row["tags"]).split(",") if x],
-                "preview": row["preview"],
-                "score": row["score"],
-            }
-            for row in rows
-        ]
+        return [self._search_hit(page, score, reasons) for page, score, reasons in self._rank_pages(query)[:k]]
+
+    def _search_hit(self, page: Page, score: float, reasons: list[str]) -> dict[str, Any]:
+        return {
+            "id": page.id,
+            "path": page.path.relative_to(self.root).as_posix(),
+            "title": page.title,
+            "type": page.type,
+            "tags": page.tags,
+            "preview": page.preview,
+            "score": round(score, 3),
+            "reasons": reasons[:6],
+            "superseded_by": page.frontmatter.get("superseded-by", ""),
+        }
+
+    def _rank_pages(self, query: str) -> list[tuple[Page, float, list[str]]]:
+        tokens = query_tokens(query)
+        raw_requested = bool(re.search(r"\b(raw|source|archive|transcript|full)\b", query, re.IGNORECASE))
+        pages = self.pages()
+        incoming = self._incoming_counts(pages)
+        ranked: list[tuple[Page, float, list[str]]] = []
+        newest_mtime = max((p.path.stat().st_mtime for p in pages), default=0)
+        for page in pages:
+            text = f"{page.title} {page.type} {' '.join(page.tags)} {page.path.as_posix()} {page.preview} {page.body}".lower()
+            title_text = page.title.lower()
+            tag_text = " ".join(page.tags).lower()
+            path_text = page.path.relative_to(self.root).as_posix().lower()
+            token_hits = [token for token in tokens if token in text]
+            if not token_hits:
+                continue
+            score = float(len(token_hits))
+            reasons = [f"matched:{','.join(token_hits[:5])}"]
+            title_hits = [token for token in tokens if token in title_text]
+            tag_hits = [token for token in tokens if token in tag_text]
+            path_hits = [token for token in tokens if token in path_text]
+            if title_hits:
+                score += 3.0 + len(title_hits)
+                reasons.append("title")
+            if tag_hits:
+                score += 2.0 + len(tag_hits)
+                reasons.append("tags")
+            if path_hits:
+                score += 1.0
+                reasons.append("path")
+            tier_bonus = self._tier_weight(page)
+            score += tier_bonus
+            if tier_bonus:
+                reasons.append(f"tier:{round(tier_bonus, 2)}")
+            conf = confidence_value(page.frontmatter.get("confidence", ""))
+            if conf is not None:
+                score += conf
+                reasons.append(f"confidence:{round(conf, 2)}")
+            link_bonus = min(1.5, incoming.get(page.id, 0) * 0.25)
+            if link_bonus:
+                score += link_bonus
+                reasons.append("backlinked")
+            if newest_mtime:
+                age_gap = max(0.0, newest_mtime - page.path.stat().st_mtime)
+                recency = max(0.0, 0.5 - (age_gap / (86400 * 60)))
+                if recency:
+                    score += recency
+                    reasons.append("recent")
+            if page.id.startswith("raw/") and not raw_requested:
+                score -= 3.0
+                reasons.append("raw-downranked")
+            if listish_has_value(page.frontmatter.get("superseded-by", "")):
+                score -= 5.0
+                reasons.append("superseded")
+            if score > 0:
+                ranked.append((page, score, reasons))
+        ranked.sort(key=lambda item: (-item[1], item[0].id))
+        return ranked
+
+    def _tier_weight(self, page: Page) -> float:
+        if page.id.startswith("L2_facts/"):
+            return 2.0
+        if page.id.startswith("L3_sops/"):
+            return 1.8
+        if page.id.startswith(("concepts/", "patterns/", "projects/", "queries/")):
+            return 1.0
+        if page.id.startswith("people/"):
+            return 0.5
+        if page.id.startswith(("skills/", "prompts/")):
+            return 0.35
+        if page.id.startswith("raw/"):
+            return -0.5
+        return 0.0
+
+    def _incoming_counts(self, pages: list[Page]) -> dict[str, int]:
+        ids = {p.id for p in pages}
+        stems = {Path(p.id).name: p.id for p in pages}
+        incoming = {p.id: 0 for p in pages}
+        for page in pages:
+            for link in page.links:
+                target = link.removesuffix(".md")
+                if target in ids:
+                    incoming[target] += 1
+                elif Path(target).name in stems:
+                    incoming[stems[Path(target).name]] += 1
+        return incoming
+
+    def context(self, task: str, max_pages: int = 5, max_tokens: int = 4000, k: int = 12) -> dict[str, Any]:
+        """Plan and load a bounded, auditable context packet for a task."""
+        self._ensure_db()
+        raw_requested = bool(re.search(r"\b(raw|source|archive|transcript|full)\b", task, re.IGNORECASE))
+        ranked = self._rank_pages(task)
+        loaded: list[dict[str, Any]] = []
+        rejected: list[dict[str, Any]] = []
+        uncertain: list[dict[str, Any]] = []
+        token_total = 0
+        for page, score, reasons in ranked[: max(k, max_pages)]:
+            hit = self._search_hit(page, score, reasons)
+            page_tokens = estimate_tokens(page.body)
+            superseded = listish_has_value(page.frontmatter.get("superseded-by", ""))
+            if page.id.startswith("raw/") and not raw_requested:
+                hit["decision"] = "rejected"
+                hit["reason"] = "raw-requires-explicit-request"
+                rejected.append(hit)
+                continue
+            if superseded:
+                hit["decision"] = "rejected"
+                hit["reason"] = "superseded"
+                rejected.append(hit)
+                continue
+            if score >= 3.0 and len(loaded) < max_pages and token_total + page_tokens <= max_tokens:
+                fetched = self.fetch(page.id)
+                hit["decision"] = "loaded"
+                hit["tokens"] = page_tokens
+                hit["timeline"] = self.timeline(page.id)
+                hit["content"] = fetched["content"]
+                loaded.append(hit)
+                token_total += page_tokens
+            elif score >= 2.0:
+                hit["decision"] = "uncertain"
+                hit["tokens"] = page_tokens
+                hit["reason"] = "budget-or-page-limit" if len(loaded) >= max_pages or token_total + page_tokens > max_tokens else "borderline-score"
+                uncertain.append(hit)
+            else:
+                hit["decision"] = "rejected"
+                hit["reason"] = "low-score"
+                rejected.append(hit)
+        return {
+            "task": task,
+            "max_pages": max_pages,
+            "max_tokens": max_tokens,
+            "token_estimate": token_total,
+            "loaded": loaded,
+            "fetch_plan": [item["id"] for item in loaded],
+            "uncertain": uncertain[: max(0, k - len(loaded))],
+            "rejected": rejected[:k],
+            "citations": {
+                "loaded": [item["path"] for item in loaded],
+                "uncertain": [item["path"] for item in uncertain[: max(0, k - len(loaded))]],
+                "rejected": [item["path"] for item in rejected[:k]],
+            },
+        }
 
     def fetch(self, item_id: str) -> dict[str, Any]:
         self._ensure_db()
@@ -401,8 +579,36 @@ class WikiStore:
         broken = []
         missing_frontmatter = []
         supersession = []
+        stale_indexes = []
+        duplicate_titles = []
+        missing_provenance = []
+        missing_backlinks = []
         errors = []
         warnings = []
+        title_seen: dict[str, str] = {}
+        for p in pages:
+            title_key = p.title.strip().lower()
+            if title_key and title_key in title_seen and p.path.name not in {"index.md", "log.md", "L1_index.md"}:
+                duplicate_titles.append({"title": p.title, "first": title_seen[title_key], "duplicate": p.id})
+                if strict:
+                    warnings.append({"code": "duplicate_title", "title": p.title, "first": title_seen[title_key], "duplicate": p.id})
+            elif title_key:
+                title_seen[title_key] = p.id
+        if strict:
+            material_pages = [
+                p
+                for p in pages
+                if p.path.name not in {"index.md", "log.md", "L0_rules.md", "L1_index.md"}
+                and not p.id.startswith(("raw/m5-outputs-",))
+                and not (set(p.path.relative_to(self.root).parts) & {"templates", "hooks", "configs", "adapters"})
+            ]
+            for rel in ("L1_index.md", "index.md"):
+                index_path = self.root / rel
+                if index_path.exists() and material_pages:
+                    newest = max(p.path.stat().st_mtime for p in material_pages)
+                    if newest > index_path.stat().st_mtime + 1:
+                        stale_indexes.append(rel)
+                        warnings.append({"code": "stale_index", "page": rel})
         for p in pages:
             rel_parts = set(p.path.relative_to(self.root).parts)
             if strict and rel_parts & {"templates", "skills", "prompts", "hooks", "configs", "extensions", "adapters"}:
@@ -416,6 +622,18 @@ class WikiStore:
             if strict:
                 if is_v2_page(p.frontmatter):
                     self._lint_v2_page(p, ids, stems, errors, warnings)
+                    if p.frontmatter.get("type") not in {"raw", "source-summary", "handoff"} and not listish_has_value(p.frontmatter.get("sources", "")):
+                        missing_provenance.append(p.id)
+                        warnings.append({"code": "missing_provenance", "page": p.id})
+                    if p.path.name not in {"index.md", "log.md", "schema.md", "L0_rules.md", "L1_index.md"} and not p.links:
+                        missing_backlinks.append(p.id)
+                        warnings.append({"code": "missing_backlinks", "page": p.id})
+                    superseded_by = p.frontmatter.get("superseded-by", "")
+                    for target in re.findall(r"\[\[([^\]]+)\]\]", superseded_by):
+                        target_id = target.removesuffix(".md")
+                        candidate = next((page for page in pages if page.id == target_id or Path(page.id).name == Path(target_id).name), None)
+                        if candidate and p.id not in candidate.frontmatter.get("supersedes", ""):
+                            warnings.append({"code": "supersession_missing_reverse", "page": p.id, "target": candidate.id})
                 elif p.frontmatter and p.path.name not in {"index.md", "log.md", "schema.md", "L0_rules.md", "L1_index.md"}:
                     warnings.append({"code": "legacy_frontmatter_v1", "page": p.id})
                 if p.id.startswith("raw/") and p.frontmatter.get("type") not in {"raw", "source-summary"}:
@@ -449,6 +667,10 @@ class WikiStore:
             "broken_links": broken,
             "orphans": orphans,
             "supersession_candidates": supersession,
+            "stale_indexes": stale_indexes,
+            "duplicate_titles": duplicate_titles,
+            "missing_provenance": missing_provenance,
+            "missing_backlinks": missing_backlinks,
         }
         if strict:
             result["strict"] = True

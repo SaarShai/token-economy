@@ -6,7 +6,7 @@ Requires Python ≥ 3.10.
 
 ```bash
 pip install mcp tiktoken llmlingua
-# Optional: pip install anthropic  (for Anthropic verify backend)
+# Additional verify backend: pip install anthropic  (for Anthropic verify backend)
 git clone https://github.com/SaarShai/token-economy
 ```
 

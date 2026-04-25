@@ -1,6 +1,6 @@
 # Token Economy Wiki — Schema
 
-Purpose: persistent, contextual, inter-linked long-term memory for AI agents building tools that reduce LLM token/compute consumption. Karpathy 3-layer (raw/wiki/schema) + git-wiki immutability + progressive retrieval.
+Purpose: persistent, contextual, inter-linked long-term memory for AI agents working in the current target project. Karpathy 3-layer (raw/wiki/schema) + git-wiki immutability + progressive retrieval.
 
 This file is the operating contract. Agents must use the wiki before reasoning about stored project facts, and must document durable discoveries after verified execution.
 
@@ -8,7 +8,7 @@ This file is the operating contract. Agents must use the wiki before reasoning a
 - `raw/` immutable sources (papers, repos, gists). Filename: `YYYY-MM-DD-slug.md`.
 - `concepts/` atomic ideas (one technique per page).
 - `patterns/` reusable workflows, recipes.
-- `projects/` active builds (our tools).
+- `projects/` active target-project state.
 - `people/` humans (authors, collaborators).
 - `queries/` durable Q&A.
 - `L0_rules.md` stable behavior rules loaded at startup.
@@ -40,7 +40,7 @@ Legacy v1 pages remain readable. `./te wiki lint --strict` emits migration warni
 
 ## Ops
 - **Ingest**: source -> `raw/`, update relevant concepts/projects/patterns, add backlinks, append `log.md`, update `index.md`/`L1_index.md`.
-- **Query**: `wiki search` -> inspect compact hits -> `timeline` for relevant hits -> `fetch` only pages needed -> answer with path citations -> optionally file useful synthesis in `queries/`.
+- **Query**: `wiki context` for audited bounded task context, or `wiki search` -> inspect compact hits -> `timeline` -> `fetch` only pages needed -> answer with path citations -> file useful synthesis in `queries/` when reused.
 - **New concept**: full frontmatter, link related, add to index.
 - **Evidence up**: bump `evidence_count`, recalibrate confidence.
 - **Contradiction**: flag both pages, prefer newer/stronger evidence, downgrade confidence, log.
@@ -56,10 +56,14 @@ Default command sequence:
 ./te wiki fetch "<id>"
 ```
 
+Use `./te wiki context "<task/topic>"` when an agent needs one audited packet listing loaded, uncertain, and rejected wiki citations.
+Use `./te code map "<symbol/path/topic>"` before loading broad source files for code tasks.
+
 Rules:
 - Load `L1_index.md` first, never the whole wiki.
 - Search before full fetch.
 - Fetch all relevant pages, and only relevant pages.
+- Treat `raw/` pages as search-visible but not auto-loaded unless raw/source/archive context is explicitly requested.
 - Stop fetching when additional pages would not change the plan or answer.
 - Cite page IDs or paths in answers and durable notes.
 - If search finds nothing, say so and use `rg`/filesystem search before inventing.
