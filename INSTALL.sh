@@ -22,24 +22,45 @@ fi
 
 export TOKEN_ECONOMY_ROOT="$ROOT"
 
-echo "[1/4] doctor"
+echo "[1/7] doctor"
 "$ROOT/te" doctor
 
-echo "[2/4] hooks"
+echo "[2/7] hooks"
 "$ROOT/te" hooks doctor
 
-echo "[3/4] wiki index"
+echo "[3/7] wiki index"
 if [ "$DRY_RUN" = "1" ]; then
   echo "dry-run: would run ./te wiki index"
 else
   "$ROOT/te" wiki index
 fi
 
-echo "[4/4] adapter"
+echo "[4/7] adapter"
 if [ "$DRY_RUN" = "1" ]; then
   echo "dry-run: would run ./te start --agent $AGENT --scope $SCOPE"
 else
   "$ROOT/te" start --agent "$AGENT" --scope "$SCOPE"
+fi
+
+echo "[5/7] agents-triage"
+if [ "$DRY_RUN" = "1" ]; then
+  echo "dry-run: would run bash projects/agents-triage/install.sh --project"
+else
+  bash "$ROOT/projects/agents-triage/install.sh" --project
+fi
+
+echo "[6/7] context-keeper"
+if [ "$DRY_RUN" = "1" ]; then
+  echo "dry-run: would run bash projects/context-keeper/install.sh --project"
+else
+  bash "$ROOT/projects/context-keeper/install.sh" --project
+fi
+
+echo "[7/7] semdiff"
+if [ "$DRY_RUN" = "1" ]; then
+  echo "dry-run: would run bash projects/semdiff/install.sh --project"
+else
+  bash "$ROOT/projects/semdiff/install.sh" --project
 fi
 
 echo "Install check complete."

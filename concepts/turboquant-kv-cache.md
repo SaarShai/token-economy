@@ -73,7 +73,7 @@ Additional watchlist:
 |---|---|---|
 | **M2 Max (local)** | PRIMARY | `~/bin/llama-tq` exists; use direct llama-server when running. |
 | **M1 Max** | NO AUTO-INSTALL | 32GB + EXO/Ollama contention; install only after explicit approval and fresh machine check. |
-| **M1B Max** | NO | EXO worker. Don't disrupt cluster unless role changes. |
+| **M1B Max** | NO AUTO-INSTALL | task-capable EXO peer. Same contention profile as M1; don't auto-install without fresh approval. |
 
 ## Measured on M2 (2026-04-20)
 

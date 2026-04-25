@@ -1,5 +1,9 @@
 # Log
 
+## [2026-04-25] update | local model setup matrix
+
+Added a task-capable local-model setup matrix and updated the device inventory so M1B is no longer documented as worker-only. The matrix covers shared Token Economy tools, skills, workflows, and harnesses for M1/M1B/M2.
+
 ## [2026-04-24] ship | universal agent framework v1
 
 Added `start.md`, `token-economy.yaml`, the `te` CLI, lean agent adapters, L0/L1 memory files, wiki-search v1, context-refresh, delegate-router, and context-keeper v2 retrieval tools. Verified with `bash scripts/run_all_tests.sh`.
@@ -132,3 +136,8 @@ Terminology: **ComCom** = our compound-compression project (disambiguate from Cl
 ## [2026-04-20 22:36 BST] download-complete | Qwen3.6-35B-A3B-5bit | M1B all 5 shards verified (24.73 GB) via LAN HTTP server; shard1 required fresh download after dual-curl corruption; see /tmp/resume_qwen36_report.md
 ## [2026-04-20] download-finish | Qwen3.6-35B-A3B-5bit | M1=complete, M1B=complete (LAN transfer from M1:8888, all 5 shards verified, ~23GB, completed ~14:36 PDT)
 ## [2026-04-21] download-finish | Qwen3.6-35B-A3B-5bit | M1=complete, M1B=complete
+## [2026-04-25 10:03 BST] install-verify | Qwen3.6-35B-A3B-5bit | M2 TurboQuant server running on /Users/saar/Library/gguf/qwen3.6-35b-q4km.gguf at CTX=524288; loaded via llama-server with -ctk q8_0 -ctv turbo4 on 127.0.0.1:8080
+## [2026-04-25 10:03 BST] download-start | DeepSeek-R1-Distill-Llama-70B-Q4_K_M.gguf | M2 resumed from bartowski/DeepSeek-R1-Distill-Llama-70B-GGUF into ~/.cache/huggingface; transfer in progress, not yet installed
+## [2026-04-25 10:33 BST] download-resume | DeepSeek-R1-Distill-Llama-70B-Q4_K_M.gguf | M2 background curl resumed /Users/saar/Library/gguf/DeepSeek-R1-Distill-Llama-70B-Q4_K_M.gguf.part from byte 75337728; lower-context install still in progress
+## [2026-04-25 10:40 BST] download-progress | DeepSeek-R1-Distill-Llama-70B-Q4_K_M.gguf | M2 detached curl PID 5088 writing /Users/saar/Library/gguf/DeepSeek-R1-Distill-Llama-70B-Q4_K_M.gguf.part; partial file advanced to 100425728 bytes
+## [2026-04-25 10:53 BST] exo-cleanup | M1/M1B | Removed EXO app bundles, ~/.exo state, EXO launch agents, and the M1 m1_local_watchdog cron entry; no residual EXO processes remain, Ollama jobs left running

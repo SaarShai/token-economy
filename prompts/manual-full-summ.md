@@ -1,11 +1,8 @@
 # Manual full-summ: old project export
 
-Copy-paste this into the agent/session attached to the old Claude Code project.
-
-```text
 full-summ
 
-Goal: create one complete local migration summary at `full_summ.md` so a new Token Economy folder can import and adapt this project without carrying over context rot.
+Goal: create one complete local migration summary at `full_summ.md` so a new Token Economy-enabled target project folder can import and adapt this project without carrying over context rot.
 
 Raw API keys/secrets are explicitly authorized for this local file. Put raw secret values only in the `Secrets` section. After writing the file, run `chmod 600 full_summ.md` when possible.
 
@@ -36,7 +33,7 @@ Write `full_summ.md` with this structure:
 - Output file:
 - Date/time:
 - Summary author/session:
-- Required new-folder goal:
+- Required target-project goal:
 
 ## 1. Project Overview
 - What this project is.
@@ -111,4 +108,3 @@ For each raw secret/API key include:
 - Commands run and important outputs.
 - Git refs/commits checked.
 - Known gaps in the inventory.
-```

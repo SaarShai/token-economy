@@ -6,6 +6,8 @@ A repo-local framework for reducing LLM token/compute consumption while preservi
 
 Give any AI agent [`start.md`](start.md). It provides the lean operating contract: Caveman Ultra, repo-local markdown wiki memory, progressive retrieval, 20% context refresh, and model-aware delegation.
 
+Important: downstream agents use Token Economy for their own target project. They are not working on this framework unless the user explicitly asks them to maintain Token Economy itself. Bundled framework docs, roadmap items, handoffs, and `projects/` pages are not downstream project goals.
+
 Core commands:
 
 ```bash
@@ -34,9 +36,9 @@ Supplemental productization:
 
 Skills, prompts, hooks, configs, templates, and optional extension recipes live in their matching top-level folders.
 
-For manual context refresh, use [`prompts/summ.md`](prompts/summ.md). Copy-paste prompts are available for the old session ([`prompts/manual-summ-document-and-handoff.md`](prompts/manual-summ-document-and-handoff.md)) and fresh session ([`prompts/manual-fresh-session-from-handoff.md`](prompts/manual-fresh-session-from-handoff.md)). For full project migration, use [`prompts/manual-full-summ.md`](prompts/manual-full-summ.md) in the old project and [`prompts/manual-import-full-summ.md`](prompts/manual-import-full-summ.md) in the fresh Token Economy folder. In Codex, current-thread clear/compact is unsolved in the tested Desktop/App Server environment; `./te context codex-compact-thread` is experimental. Use `./te context codex-fresh-thread --handoff <handoff-file> --execute` for a persistent fresh successor thread with only `start.md` plus the handoff. This is clean continuation, not clearing the old visible thread. For older project installs that lack those subcommands, use [`prompts/summ-codex-manual.md`](prompts/summ-codex-manual.md), which skips fragile same-thread compacting and directly launches a persistent fresh successor through App Server.
+For manual context refresh, use [`prompts/summ.md`](prompts/summ.md). Copy-paste prompts are available for the old session ([`prompts/manual-summ-document-and-handoff.md`](prompts/manual-summ-document-and-handoff.md)) and fresh session ([`prompts/manual-fresh-session-from-handoff.md`](prompts/manual-fresh-session-from-handoff.md)). For full project migration, use [`prompts/manual-full-summ.md`](prompts/manual-full-summ.md) in the old project and [`prompts/manual-import-full-summ.md`](prompts/manual-import-full-summ.md) in the fresh Token Economy-enabled target project folder. In Codex, current-thread clear/compact is unsolved in the tested Desktop/App Server environment; `./te context codex-compact-thread` is experimental. Use `./te context codex-fresh-thread --handoff <handoff-file> --execute` for a persistent fresh successor thread with only `start.md` plus the handoff. This is clean continuation, not clearing the old visible thread. For older project installs that lack those subcommands, use [`prompts/summ-codex-manual.md`](prompts/summ-codex-manual.md), which skips fragile same-thread compacting and directly launches a persistent fresh successor through App Server.
 
-**Active projects:**
+**Framework development projects, not downstream goals:**
 
 | project | what | status |
 |---|---|---|
@@ -108,7 +110,7 @@ The `Token Economy` folder doubles as a repo-local markdown LLM wiki. See [index
 Folders:
 - `concepts/` — atomic technique pages
 - `patterns/` — reusable workflows
-- `projects/` — our builds
+- `projects/` — target-project pages and framework component docs
 - `raw/` — immutable source material (research notes, surveys)
 - `people/` — referenced humans
 - `queries/` — durable Q&A

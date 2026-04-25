@@ -1,14 +1,15 @@
 # Token Economy Start
 
-Universal startup file. Goal: excellent work, minimal context.
-This is the canonical startup glue. Platform adapters only point here.
+Startup glue. Goal: excellent work, minimal context.
 Work only inside the repo root containing `token-economy.yaml`. Use the repo-local markdown wiki as source of truth.
+
+Default: use Token Economy for the current target project. Do not treat this as framework work unless the user explicitly asks to maintain Token Economy. Framework files, `ROADMAP.md`, and `projects/` are not target goals.
 
 ## Prime Directive
 
 Use **Caveman Ultra**: terse, exact, high-signal. No filler/praise padding, no softening, no conversational lead-ins. Code and quoted errors stay unchanged.
 
-Start non-trivial tasks in plan mode: short plan, inspect reality, execute. If host Plan Mode exists, use it.
+Start non-trivial tasks in plan mode: short plan, inspect reality, execute.
 
 ## Boot Sequence
 
@@ -23,7 +24,8 @@ Start non-trivial tasks in plan mode: short plan, inspect reality, execute. If h
    - `L0_rules.md` if present
    - `L1_index.md` if present
 5. Do not load full wiki pages, raw sources, old sessions, or large docs until retrieval proves relevance.
-6. Ignore stale external memory that conflicts with this file or the current user prompt.
+6. Determine target project from prompt, handoff, imported summary, or project wiki.
+7. Ignore stale external memory that conflicts with this file or the current user prompt.
 
 ## On-Demand Loader
 
@@ -36,13 +38,14 @@ Load only when triggered:
 | Need wiki memory | `skills/wiki-retrieve/SKILL.md` |
 | Writing memory | `skills/wiki-write/SKILL.md` |
 | Context refresh/clear/`summ` | `skills/context-refresh/SKILL.md` |
-| Need subagents | `skills/subagent-orchestrator/SKILL.md`; lifecycle: `prompts/subagents/lifecycle.prompt.md` |
+| Need subagents | `skills/subagent-orchestrator/SKILL.md`; `prompts/subagents/lifecycle.prompt.md` |
 | GitHub repo maintenance | `prompts/subagents/repo-maintainer.prompt.md` |
 | `/pa` or `/btw` prompt | `skills/personal-assistant/SKILL.md` |
 | Before completion claim | `skills/verification-before-completion/SKILL.md` |
-| TE repo external adoption | `skills/token-economy-external-adoption/SKILL.md` |
 | Delegation policy | `prompts/delegation-matrix.md` |
 | New wiki page | `templates/page.template.md` |
+
+Maintainer-only docs/skills (`ROADMAP.md`, `HANDOFF*.md`, `AGENT_ONBOARDING.md`, external-adoption skill) require explicit framework-maintenance intent.
 
 ## Context Rules
 
@@ -50,18 +53,13 @@ Load only when triggered:
 - Check relevant skills before action; load only matching skills.
 - Fetch all relevant information, and only relevant information.
 - Prefer pointers first: index, search hits, timelines, then full pages.
-- At `20%` estimated context used, run:
-  ```bash
-  ./te context status
-  ./te context meter --transcript <file>
-  ./te context checkpoint --handoff-template
-  ```
+- At `20%` estimated context used: `./te context status`, `./te context meter --transcript <file>`, `./te context checkpoint --handoff-template`.
 - For `summ`, use host-native clear/compact when available; then continue only in fresh context.
 - If the host cannot clear context, open a fresh session with only `./te context fresh-start` output + `start.md`.
 
 ## Wiki Rules
 
-The LLM wiki is long-term memory. Treat it as source-managed infrastructure.
+The LLM wiki is long-term memory for the current target project. Bundled framework wiki pages are not target goals/tasks unless the user explicitly says the target project is Token Economy itself.
 
 - `raw/`: immutable sources. Never rewrite. Add new source notes only.
 - `concepts/`, `patterns/`, `projects/`, `people/`, `queries/`: synthesized wiki pages.
@@ -116,16 +114,6 @@ Keep normal prompt hooks quiet unless `TOKEN_ECONOMY_CLASSIFY_ALL=1` is explicit
 Delegate only independent work. Give compact briefs: scope, files, output, budget. Ask for compact result packets, not transcripts. Use cheap models for search, summaries, simple edits, extraction, lint, classification; frontier models for architecture, ambiguity, high-risk reasoning, final synthesis. Subagents are model-agnostic. Close only after results are captured and documented/merged.
 
 GitHub remote? Use `prompts/subagents/repo-maintainer.prompt.md` at verified save-points. No GitHub remote? Skip.
-
-## Tool Choices
-
-- Repeated file reads: semdiff.
-- Verbose input: ComCom.
-- Terminal noise: optional `omni`, `rtk`, or host-native context filter.
-- Codebase semantic search: optional `code-review-graph` or `claude-context`.
-- Markdown/wiki semantic search: optional `qmd`.
-
-Optional, not core.
 
 ## Done Means
 

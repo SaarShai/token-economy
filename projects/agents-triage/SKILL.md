@@ -27,11 +27,12 @@ Opus reads `⚡ [agents-triage] ...` block → emits `Task(subagent_type, model,
 Full opus bypass isn't possible (CC always routes through main model), but the directive keeps opus' thinking budget near zero on simple tasks.
 
 ### Layer 3: specialized subagents
-Four bundled agents, each minimal-context:
+Five bundled agents, each minimal-context:
 - **wiki-note** (haiku) — repo-local wiki edits only. Read+Write+Glob+Grep, no Bash.
 - **quick-fix** (haiku) — small scoped edits, one `Bash` verify max.
 - **local-ollama** (haiku coordinator) — shells out to local Ollama models, zero API cost for the actual work.
 - **research-lite** (haiku) — ≤5 web calls, ≤800-word output.
+- **kaggle-feeder** (haiku) — archived Kaggle eval pipeline maintainer for queued notebook runs.
 
 ## Install
 
@@ -42,7 +43,7 @@ bash projects/agents-triage/install.sh
 
 This:
 1. Symlinks skill -> `.claude/skills/agents-triage/`.
-2. Copies agent definitions -> `.claude/agents/`.
+2. Copies agent definitions -> `.claude/agents/` including `kaggle-feeder`.
 3. Adds `UserPromptSubmit` hook to `.claude/settings.json` when project settings are supported.
 
 Project-scoped variant:
@@ -89,5 +90,6 @@ projects/agents-triage/
     ├── wiki-note.md
     ├── quick-fix.md
     ├── local-ollama.md
-    └── research-lite.md
+    ├── research-lite.md
+    └── kaggle-feeder.md
 ```

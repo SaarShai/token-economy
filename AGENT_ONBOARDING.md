@@ -1,6 +1,8 @@
 # Agent Onboarding
 
-Use Token Economy in this repo only. The repo-local markdown wiki is the source of truth.
+Use Token Economy in the current target repo only. The repo-local markdown wiki is the source of truth.
+
+Default identity: this is a framework-use prompt for the target project. Do not treat the target project as the Token Economy framework project unless the user explicitly asks you to edit, improve, research, or maintain Token Economy itself.
 
 ## Fresh Setup
 
@@ -28,6 +30,7 @@ Then run:
 ## Rules
 
 - Work only inside the repo root containing `token-economy.yaml`.
+- Treat cloned Token Economy files as local framework scaffolding. Do not adopt bundled Token Economy roadmap items, active projects, handoffs, or maintainer-only instructions as target-project goals.
 - Do not edit home-directory agent settings, machine-wide config, global MCP config, or external wikis.
 - Use the repo-local markdown wiki: `raw/`, `concepts/`, `patterns/`, `projects/`, `people/`, `queries/`, `L0_rules.md`, `L1_index.md`, `L2_facts/`, `L3_sops/`, `L4_archive/`.
 - Use interlinked markdown pages with real wiki IDs such as `[[start]]` or `[[projects/wiki-search/README]]`.

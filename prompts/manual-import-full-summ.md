@@ -1,15 +1,18 @@
 # Manual import full-summ
 
-Copy-paste this into the agent/session attached to the new target folder.
-
-```text
-Import a full project summary into a fresh Token Economy folder.
+Import a full project summary into a fresh Token Economy-enabled target project folder.
 
 Inputs:
 - Full summary file: the uploaded file
 - New target folder: current working directory
 
-Setup Token Economy first:
+Identity rule:
+- This is a target project that will use Token Economy as a local framework.
+- The agent is not part of the Token Economy framework project unless the user explicitly asks to edit, improve, research, or maintain Token Economy itself.
+- Do not import goals, tasks, roadmaps, active projects, handoffs, or maintainer-only instructions from the Token Economy framework repository.
+- After setup, define the active project only from the uploaded summary and the user's current instructions.
+
+Set up Token Economy first:
 1. If `token-economy.yaml` is absent, clear only the current folder, including hidden files and `.git`, then clone:
    `find . -mindepth 1 -maxdepth 1 -exec rm -rf {} +`
    `git clone https://github.com/SaarShai/token-economy.git .`
@@ -44,7 +47,8 @@ Adapt to Token Economy:
 - Convert Obsidian links/naming into repo-local markdown wikilinks such as `[[projects/example/README]]`.
 - Preserve provenance from the full summary in every material page.
 - Split large notes into focused pages only when that improves retrieval.
-- Keep startup context lean; do not move broad project details into `start.md`, `L0_rules.md`, or `L1_index.md`.
+- Keep startup context lean; do not move broad target-project details into `start.md`, `L0_rules.md`, or `L1_index.md`.
+- Do not edit framework-maintainer docs such as `ROADMAP.md`, `HANDOFF*.md`, or Token Economy maintainer-only skills unless the user explicitly asks for framework maintenance.
 - Import raw secrets into local config/env files only as appropriate for the project. Keep secret files untracked.
 - Preserve working commands, exact paths, setup steps, and known failure fixes.
 - Discard context rot listed in the summary unless it is useful as a warning.
@@ -62,4 +66,3 @@ Final handoff:
 - Wiki pages created/updated.
 - Verification results.
 - Remaining gaps and next actions.
-```

@@ -92,3 +92,13 @@ Or publish via a plugin marketplace. After install, `/plugin list` shows semdiff
 and the MCP tools become available automatically.
 
 The plugin `.mcp.json` launches `semdiff_mcp/server.py` via Python. Requires Python ≥ 3.10 and `pip install mcp 'tree-sitter<0.22' tree-sitter-languages` on the user's system.
+
+## Project-local installer
+
+Use the bundled helper to print or apply the relevant install path:
+
+```bash
+bash projects/semdiff/install.sh --project
+```
+
+It prefers the plugin path when `claude` is available and falls back to the MCP server command.

@@ -5,6 +5,7 @@ import io
 import json
 import os
 import subprocess
+import shutil
 import sys
 import tempfile
 import unittest
@@ -374,6 +375,7 @@ fi
     def test_turboquant_adoption_review_and_smoke_harness(self):
         review = (REPO / "raw/2026-04-25-turboquant-adoption-review.md").read_text(encoding="utf-8")
         concept = (REPO / "concepts/turboquant-kv-cache.md").read_text(encoding="utf-8")
+        local_setup = (REPO / "concepts/local-model-setup.md").read_text(encoding="utf-8")
         agent = (REPO / "projects/agents-triage/agents/turboquant-local.md").read_text(encoding="utf-8")
         devices = (REPO / "concepts/devices-inventory.md").read_text(encoding="utf-8")
 
@@ -390,6 +392,13 @@ fi
         self.assertIn("NO AUTO-INSTALL", concept)
         self.assertIn("not running", devices)
         self.assertIn("Do not auto-install", devices)
+        self.assertIn("task-capable peer", devices)
+        self.assertIn("same models as M1", devices)
+        self.assertIn("M1B should not be treated as worker-only", local_setup)
+        self.assertIn("./te bench run --suite framework-smoke", local_setup)
+        self.assertIn("./INSTALL.sh --scope project", local_setup)
+        self.assertIn("launchctl setenv OLLAMA_KEEP_ALIVE 24h", local_setup)
+        self.assertIn("ollama pull qwen3.5:35b", local_setup)
         self.assertIn("wrong llama-server build", agent)
 
         with tempfile.TemporaryDirectory() as td:
@@ -415,8 +424,11 @@ fi
         index = (REPO / "index.md").read_text(encoding="utf-8")
         l1 = (REPO / "L1_index.md").read_text(encoding="utf-8")
 
-        self.assertIn("TE repo external adoption", start)
-        self.assertIn("skills/token-economy-external-adoption/SKILL.md", start)
+        self.assertIn("Default: use Token Economy for the current target project", start)
+        self.assertIn("Maintainer-only docs/skills", start)
+        self.assertIn("external-adoption skill", start)
+        self.assertNotIn("TE repo external adoption", start)
+        self.assertNotIn("skills/token-economy-external-adoption/SKILL.md", start)
         self.assertIn("project-maintenance only, not a downstream user rule", onboarding)
         self.assertIn("skills/token-economy-external-adoption/SKILL", index)
         self.assertIn("skills/token-economy-external-adoption", l1)
@@ -463,7 +475,10 @@ fi
             self.assertIn(needle, skill)
 
     def test_install_dry_run_and_bench(self):
-        subprocess.run(["bash", str(REPO / "INSTALL.sh"), "--dry-run"], cwd=REPO, check=True, capture_output=True, text=True)
+        proc = subprocess.run(["bash", str(REPO / "INSTALL.sh"), "--dry-run"], cwd=REPO, check=True, capture_output=True, text=True)
+        self.assertIn("[5/7] agents-triage", proc.stdout)
+        self.assertIn("[6/7] context-keeper", proc.stdout)
+        self.assertIn("[7/7] semdiff", proc.stdout)
         blocked = subprocess.run(["bash", str(REPO / "INSTALL.sh"), "--scope", "user", "--dry-run"], cwd=REPO, capture_output=True, text=True)
         self.assertNotEqual(blocked.returncode, 0)
         with contextlib.redirect_stderr(io.StringIO()):
@@ -473,6 +488,34 @@ fi
         with contextlib.redirect_stdout(buf):
             self.assertEqual(main(["bench", "run", "--suite", "framework-smoke"]), 0)
         self.assertTrue(json.loads(buf.getvalue())["ok"])
+
+    def test_local_model_installers_cover_triage_context_and_semdiff(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            shutil.copytree(REPO / "projects/agents-triage", root / "projects/agents-triage")
+            shutil.copytree(REPO / "projects/context-keeper", root / "projects/context-keeper")
+            shutil.copytree(REPO / "projects/semdiff", root / "projects/semdiff")
+            (root / ".claude").mkdir()
+            (root / ".claude/settings.json").write_text(
+                json.dumps({"hooks": {"UserPromptSubmit": [{"matcher": "existing", "hooks": [{"type": "command", "command": "echo keep"}]}]}}),
+                encoding="utf-8",
+            )
+
+            subprocess.run(["bash", str(root / "projects/agents-triage/install.sh"), "--project"], cwd=root, check=True, capture_output=True, text=True)
+            subprocess.run(["bash", str(root / "projects/context-keeper/install.sh"), "--project"], cwd=root, check=True, capture_output=True, text=True)
+            semdiff = subprocess.run(["bash", str(root / "projects/semdiff/install.sh"), "--dry-run"], cwd=root, check=True, capture_output=True, text=True)
+
+            self.assertTrue((root / ".claude/agents/kaggle-feeder.md").exists())
+            self.assertTrue((root / ".claude/skills/context-keeper").is_symlink())
+
+            settings = json.loads((root / ".claude/settings.json").read_text(encoding="utf-8"))
+            user_submit = settings["hooks"]["UserPromptSubmit"]
+            precompact = settings["hooks"]["PreCompact"]
+            self.assertTrue(any(rule["matcher"] == "existing" for rule in user_submit))
+            self.assertTrue(any("bash" in hook["command"] and "agents-triage/hook.sh" in hook["command"] for rule in user_submit for hook in rule["hooks"]))
+            self.assertTrue(any(hook["command"] == "bash ./.claude/skills/context-keeper/hook.sh" for rule in precompact for hook in rule["hooks"]))
+            self.assertIn("claude plugin install", semdiff.stdout)
+            self.assertIn("claude mcp add semdiff", semdiff.stdout)
 
     def test_docs_audit_targets_startup_surface_only(self):
         rows = docs_audit(REPO)
@@ -493,10 +536,15 @@ fi
         self.assertTrue((REPO / "concepts/superpowers-skills.md").exists())
         self.assertTrue((REPO / "skills/verification-before-completion/SKILL.md").exists())
         self.assertTrue((REPO / "prompts/subagents/wiki-documenter.prompt.md").exists())
+        self.assertTrue((REPO / "projects/context-keeper/SKILL.md").exists())
+        self.assertTrue((REPO / "projects/context-keeper/install.sh").exists())
+        self.assertTrue((REPO / "projects/context-keeper/hook.sh").exists())
+        self.assertTrue((REPO / "projects/semdiff/install.sh").exists())
         lifecycle = (REPO / "prompts/subagents/lifecycle.prompt.md").read_text(encoding="utf-8")
         self.assertIn("Close a subagent only", lifecycle)
         self.assertIn("result packet has been read", lifecycle)
         self.assertIn("wiki-documenter", (REPO / "skills/context-refresh/SKILL.md").read_text(encoding="utf-8"))
+        self.assertIn("kaggle-feeder", (REPO / "projects/agents-triage/SKILL.md").read_text(encoding="utf-8"))
         caveman = (REPO / "skills/caveman-ultra/SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Do not add softeners", caveman)
         self.assertIn("explicitly asks for normal prose", caveman)

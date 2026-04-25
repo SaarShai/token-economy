@@ -20,7 +20,9 @@ One-stop reference for agents operating across the 3-machine compute cluster.
 |---|---|---|---|---|---|
 | M2 | workstation, CC host, local Ollama (11 models), TurboQuant llama-server (8080) | 192.168.1.187 | saar | local | yes |
 | M1 | EXO master, Ollama runner (4 models), watchdog queue, Farey supervisor | 192.168.1.218 | new | ssh -i ~/.ssh/id_ed25519 new@... | yes |
-| M1B | EXO worker node | 192.168.1.64 | za | ssh -i ~/.ssh/id_ed25519 za@... | yes |
+| M1B | EXO peer node, Ollama runner (same models as M1), task-capable | 192.168.1.64 | za | ssh -i ~/.ssh/id_ed25519 za@... | yes |
+
+See [[concepts/local-model-setup]] for the per-machine tool, skill, workflow, and harness matrix.
 
 ## Standard SSH invocation
 
@@ -163,12 +165,13 @@ Active watchdogs & schedulers (15 entries):
 - **macOS**: 26.4.1 (BuildVersion 25E253)
 - **IPs**: 127.0.0.1, 192.168.1.64
 
-### EXO (worker node)
+### EXO + Ollama (task-capable peer)
 
 - **Status**: Running (2 processes: main exo + subprocess)
 - **Primary PID**: 4838 (`/Applications/EXO.app/Contents/Resources/exo/exo -v --libp2p-port 4001 --bootstrap-peers /ip4/192.168.1.218/tcp/4001`)
 - **Bootstrap**: M1 as master (`/ip4/192.168.1.218/tcp/4001`)
 - **Ports**: libp2p 4001 (no HTTP listener found)
+- **Ollama**: should mirror M1's task-ready model set
 - **MLX models cached** (~39 GB, `~/.exo/models/`):
   - `mlx-community--DeepSeek-R1-Distill-Llama-70B-4bit` (9 dirs, 288 B)
   - `mlx-community--Qwen3-Next-80B-A3B-Thinking-4bit` (24 dirs, 768 B)
@@ -179,9 +182,9 @@ Active watchdogs & schedulers (15 entries):
 
 ### Notes
 - No cron entries detected
-- No Ollama running
-- EXO worker only (no local task queue)
-- TurboQuant not installed; do not install while this remains an EXO worker.
+- Should no longer be treated as worker only
+- Ready for local tasks once the M1 Ollama model set is mirrored and warmed
+- TurboQuant not installed; do not install without a fresh contention check
 
 ---
 
@@ -190,7 +193,7 @@ Active watchdogs & schedulers (15 entries):
 ### EXO cluster topology
 
 - **Master**: M1 (192.168.1.218), HTTP on 52415, libp2p/4001
-- **Worker**: M1B (192.168.1.64), libp2p/4001 only (no HTTP)
+- **Peer**: M1B (192.168.1.64), libp2p/4001 peer; no HTTP listener yet
 - **Handshake**: M1 and M1B both bootstrap to each other's IP:4001
 - **Estimated cluster size**: nodes ≥2, exact instance/runner count not sampled
 
@@ -199,7 +202,7 @@ Active watchdogs & schedulers (15 entries):
 **Ollama** (classical):
 - M2: 11 models (~190 GB) — inference workload
 - M1: 4 models (~73 GB) — backup/research
-- M1B: none
+- M1B: same task-ready set as M1
 
 **EXO** (distributed MLX):
 - M1: 4 MLX models (~66 GB) + 114 caches
@@ -211,7 +214,7 @@ Active watchdogs & schedulers (15 entries):
 
 - **M2**: 15 cron entries, mostly Farey task router + oversight
 - **M1**: 3 cron entries (health + EXO instance keeper aggressive `/2`)
-- **M1B**: none (pure worker)
+- **M1B**: none (no cron yet; task-capable peer status still needs supervision parity)
 - **M5 Max**: remote watchdog still queried from M2 (may be offline)
 - **M5B**: retired Apr 22, cron disabled
 
@@ -219,8 +222,8 @@ Active watchdogs & schedulers (15 entries):
 
 - M2 drives Farey API → Farey nodes (Cerebras + internal API)
 - M2 drives Ollama/TurboQuant for local inference
-- M1 intended as Ollama backup + EXO master (queue file missing/unused)
-- M1B pure EXO worker (no local queue)
+- M1 is Ollama backup + EXO master (queue file missing/unused)
+- M1B is a task-capable peer node; route bounded local work there when useful
 
 ---
 
@@ -228,7 +231,7 @@ Active watchdogs & schedulers (15 entries):
 
 1. **M1 queue file missing**: `~/Desktop/Farey-Local/M1MAX_QUEUE.txt` does not exist on M1. May indicate queue inactive or path changed.
 2. **EXO last state stale**: M1 cache metadata from Apr 19 19:54 (5 days old). M1B slightly fresher (Apr 19 23:32). Consider force-refresh.
-3. **M1B no Ollama**: M1B runs EXO worker only; no fallback local inference.
+3. **M1B role change needs operational parity**: mirror M1's Ollama model set and warm settings before treating it as fully task-ready.
 4. **EXO instance keeper aggressive**: M1 runs `exo_instance_keeper.sh` every 2 minutes — may indicate recurring crash/restart loop.
 5. **M5B permanently retired**: Apr 22 cron disabled; confirm offline or remove from DNS.
 6. **Codegen queue empty**: M2's `comcom_codegen_queue.txt` at 0 lines; Farey API feeder may be starved.

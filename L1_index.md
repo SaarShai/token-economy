@@ -2,6 +2,8 @@
 
 Compact pointers. Fetch details on demand.
 
+Default identity guard: this index ships with the framework. It is not a task list for downstream users. Treat Token Economy roadmap, handoff, active-project, and maintainer-skill entries as framework-maintainer material only when the user explicitly asks to work on Token Economy itself.
+
 - start -> `start.md`
 - config -> `token-economy.yaml`
 - model registry -> `models.yaml`
@@ -12,16 +14,17 @@ Compact pointers. Fetch details on demand.
 - raw sources -> `raw/` (search only; fetch after relevance)
 - AGENT_ONBOARDING (page) -> `AGENT_ONBOARDING.md`
 - README (page) -> `README.md`
-- ROADMAP (project tags=roadmap,tracking) -> `ROADMAP.md`
+- ROADMAP (framework-maintainer tags=roadmap,tracking) -> `ROADMAP.md`
 - projects/compound-compression-pipeline/RESULTS (project tags=compression,measured) -> `projects/compound-compression-pipeline/RESULTS.md`
 - projects/context-keeper-v2/README (project tags=context-keeper,v2,L0-L4,spec) -> `projects/context-keeper-v2/README.md`
 - projects/context-refresh/README (project tags=context-refresh,checkpoint,compaction) -> `projects/context-refresh/README.md`
+- projects/context-keeper/SKILL (project tags=context-keeper,precompact,hook,install) -> `projects/context-keeper/SKILL.md`
 - projects/delegate-router/README (project tags=delegation,routing,subagents,models) -> `projects/delegate-router/README.md`
 - projects/semdiff/README (project tags=semantic-diff,ast,context-compression) -> `projects/semdiff/README.md`
 - projects/wiki-search/README (project tags=retrieval,progressive-disclosure,mcp,wiki) -> `projects/wiki-search/README.md`
 - stable/README (project tags=stable,release,curated) -> `stable/README.md`
-- HANDOFF (handoff tags=handoff,repo-local,startup) -> `HANDOFF.md`
-- HANDOFF_NEXT_AGENT (handoff) -> `HANDOFF_NEXT_AGENT.md`
+- HANDOFF (framework-maintainer handoff tags=handoff,repo-local,startup) -> `HANDOFF.md`
+- HANDOFF_NEXT_AGENT (framework-maintainer handoff) -> `HANDOFF_NEXT_AGENT.md`
 - INSTALL (page) -> `INSTALL.md`
 - manual summ old-session prompt -> `prompts/manual-summ-document-and-handoff.md`
 - manual fresh-session prompt -> `prompts/manual-fresh-session-from-handoff.md`
@@ -30,10 +33,11 @@ Compact pointers. Fetch details on demand.
 - bench/README (project tags=benchmarks,kaggle,eval-infra) -> `bench/README.md`
 - bench/notebooks/kaggle_eval_template (page) -> `bench/notebooks/kaggle_eval_template.md`
 - concepts/devices-inventory (concept tags=infra,devices,inventory,compute) -> `concepts/devices-inventory.md`
+- concepts/local-model-setup (concept tags=infra,devices,models,routing,harnesses) -> `concepts/local-model-setup.md`
 - concepts/optimization-axes (concept tags=framework,categorization,meta) -> `concepts/optimization-axes.md`
 - concepts/superpowers-skills (concept tags=skills,superpowers,agents,workflow) -> `concepts/superpowers-skills.md`
 - skills/verification-before-completion -> `skills/verification-before-completion/SKILL.md`
-- skills/token-economy-external-adoption -> `skills/token-economy-external-adoption/SKILL.md`
+- skills/token-economy-external-adoption (framework-maintainer only) -> `skills/token-economy-external-adoption/SKILL.md`
 - concepts/semantic-diff-edits (concept tags=semantic-diff,ast,context-compression,code-editing) -> `concepts/semantic-diff-edits.md`
 - concepts/turboquant-kv-cache (concept tags=turboquant,kv-cache,llama-cpp,apple-silicon,gguf-stack) -> `concepts/turboquant-kv-cache.md`
 - raw/2026-04-25-turboquant-adoption-review (raw tags=turboquant,adoption-review,kv-cache,apple-silicon,gguf-stack) -> `raw/2026-04-25-turboquant-adoption-review.md`

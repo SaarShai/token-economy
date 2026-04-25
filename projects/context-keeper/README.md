@@ -21,13 +21,20 @@ Before compaction (PreCompact hook):
 ## Files
 ```
 projects/context-keeper/extract.py   # the work
-.claude/skills/context-keeper/SKILL.md
-.claude/skills/context-keeper/hook.sh
+projects/context-keeper/SKILL.md
+projects/context-keeper/hook.sh
+projects/context-keeper/install.sh
 ```
 
-## Activation (manual step — don't overwrite existing pre-compact hook)
+## Activation
 
-Project-local `.claude/settings.json` can chain a PreCompact hook when the host supports project settings:
+Project-local install helper:
+
+```bash
+bash projects/context-keeper/install.sh --project
+```
+
+If you need to chain it manually, project-local `.claude/settings.json` can add a PreCompact hook when the host supports project settings:
 
 **Option A — replace** (lose timestamp log):
 ```json

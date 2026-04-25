@@ -2,6 +2,8 @@
 
 Catalog. Read this + schema.md first. Grep folders for topic. Load only matched pages.
 
+Identity guard: this catalog ships with the framework. Downstream agents should use it for retrieval mechanics and framework docs only; it is not evidence that their target project is Token Economy. Framework roadmap, handoffs, maintainer skills, and framework development projects apply only when the user explicitly asks to maintain Token Economy itself.
+
 ## For other agents
 - [[AGENT_ONBOARDING]] — **master install guide**: point any agent at this file
 - [[start]] — **universal agent entrypoint**: Caveman Ultra, wiki retrieval, 20% context refresh, delegation
@@ -16,7 +18,7 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 - [[skills/caveman-ultra/SKILL]] — Caveman Ultra skill
 - [[skills/personal-assistant/SKILL]] — `/pa` and `/btw` bypass router for context-light prompts
 - [[skills/verification-before-completion/SKILL]] — evidence-before-claims gate
-- [[skills/token-economy-external-adoption/SKILL]] — project-maintenance workflow for adopting from external repos into Token Economy
+- [[skills/token-economy-external-adoption/SKILL]] — framework-maintainer workflow for adopting from external repos into Token Economy
 - [[prompts/manual-summ-document-and-handoff]] — copy-paste old-session `summ` prompt that documents durable memory and writes `session_handoff.md`
 - [[prompts/manual-fresh-session-from-handoff]] — copy-paste fresh-session prompt that reads only `start.md` plus `session_handoff.md`
 - [[prompts/manual-full-summ]] — copy-paste old-project export prompt for a full migration summary
@@ -40,19 +42,21 @@ Catalog. Read this + schema.md first. Grep folders for topic. Load only matched 
 - [[patterns/wiki-query-shortcircuit]] — search repo-local wiki before re-synthesis
 - [[patterns/tiny-model-router]] — 0.5B classifier dispatches
 
-## Roadmap
+## Framework Roadmap
 - [[ROADMAP]] — live tracker: directions, status, next steps
 
 ## Infrastructure
 - [[bench/README]] — **benchmark registry** (Kaggle + HF), uniform item schema, Kaggle Notebook template for free-GPU evals
+- [[concepts/local-model-setup]] — per-machine tool, skill, workflow, and harness matrix for M1/M1B/M2
 
-## Projects (our builds)
+## Framework Development Projects
 - [[projects/compound-compression-pipeline/RESULTS]] — **ComCom** prototype, 44.5% @ ~Δ−0.25 score (SQuAD eval-v2); eval-v3 in progress
 - [[projects/semdiff/README]] — **prototype, 95.5% on large file re-read**
 - [[projects/context-keeper/README]] — **prototype, structured PreCompact memory**
 - [[projects/context-keeper-v2/README]] — **v2 retrieval API**: `ck_query`, `ck_fetch`, `ck_recent`
 - [[projects/wiki-search/README]] — **implemented v1**, progressive disclosure wiki search/timeline/fetch
 - [[projects/context-refresh/README]] — fresh-context packet workflow at 20% context
+- [[projects/context-keeper/SKILL]] — PreCompact hook helper and project-local install surface
 - [[projects/delegate-router/README]] — model-agnostic routing and subagent supervision policy
 - [[projects/agents-triage/SKILL]] — **shipped, UserPromptSubmit hook + 5 subagents (wiki-note, quick-fix, local-ollama, research-lite, kaggle-feeder)**
 
