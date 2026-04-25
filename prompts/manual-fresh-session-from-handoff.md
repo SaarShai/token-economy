@@ -3,11 +3,11 @@
 Copy-paste this into the fresh/new session after `session_handoff.md` has been created.
 
 ```text
-Read only `start.md` and `session_handoff.md` from the repo root containing `token-economy.yaml`.
+Read only `start.md` and `session_handoff.md` from the current working folder that was set up for the active project.
 
 Follow `start.md` exactly:
 - run `./te doctor`
-- read `token-economy.yaml`
+- read `token-economy.yaml` from the current working folder
 - load `L0_rules.md` and `L1_index.md` only through the normal startup path
 - use progressive retrieval only when needed
 

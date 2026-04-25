@@ -2,15 +2,25 @@
 
 Use Token Economy in the current target repo only. The repo-local markdown wiki is the source of truth.
 
-Default identity: this is a framework-use prompt for the target project. Do not treat the target project as the Token Economy framework project unless the user explicitly asks you to edit, improve, research, or maintain Token Economy itself.
-
 ## Fresh Setup
 
-If the current folder does not contain `token-economy.yaml`, the setup prompt authorizes a fresh install by clearing the current folder only, including hidden files and `.git`, then cloning the canonical source:
+For a fresh target folder, clear the current folder only, including hidden files and `.git`, then retrieve the downstream runtime/framework files:
 
 ```bash
 find . -mindepth 1 -maxdepth 1 -exec rm -rf {} +
-git clone https://github.com/SaarShai/token-economy.git .
+git clone --depth 1 --filter=blob:none --sparse https://github.com/SaarShai/token-economy.git .
+git sparse-checkout set --no-cone \
+  '/.gitignore' '/AGENTS.md' '/CLAUDE.md' '/GEMINI.md' '/INSTALL.sh' \
+  '/L0_rules.md' '/L1_index.md' '/LICENSE' '/index.md' '/models.yaml' \
+  '/schema.md' '/start.md' '/te' '/token-economy.yaml' \
+  '/token_economy/*' '/adapters/*' '/hooks/*' '/hooks/output-filter/*' \
+  '/prompts/*.md' '/prompts/subagents/*' \
+  '/skills/caveman-ultra/*' '/skills/context-refresh/*' \
+  '/skills/personal-assistant/*' '/skills/plan-first-execute/*' \
+  '/skills/subagent-orchestrator/*' '/skills/verification-before-completion/*' \
+  '/skills/wiki-retrieve/*' '/skills/wiki-write/*' '/templates/*'
+rm -rf .git
+git init
 ```
 
 Do not delete anything outside the current folder.
@@ -29,17 +39,14 @@ Then run:
 
 ## Rules
 
-- Work only inside the repo root containing `token-economy.yaml`.
-- Treat cloned Token Economy files as local framework scaffolding. Do not adopt bundled Token Economy roadmap items, active projects, handoffs, or maintainer-only instructions as target-project goals.
+- Work only inside the current working folder for the active project. If this framework is being bootstrapped into a new folder, that folder is the workspace.
 - Do not edit home-directory agent settings, machine-wide config, global MCP config, or external wikis.
 - Use the repo-local markdown wiki: `raw/`, `concepts/`, `patterns/`, `projects/`, `people/`, `queries/`, `L0_rules.md`, `L1_index.md`, `L2_facts/`, `L3_sops/`, `L4_archive/`.
-- Use interlinked markdown pages with real wiki IDs such as `[[start]]` or `[[projects/wiki-search/README]]`.
+- Use interlinked markdown pages with real wiki IDs such as `[[start]]` or `[[projects/example/README]]`.
 - Retrieve before reasoning with `./te wiki search`, then `./te wiki timeline <id>`, then `./te wiki fetch <id>`.
 - Document only after verified work, and only in repo-local wiki pages and `log.md`.
 - Use `/pa` for context-light prompts.
 - Keep normal prompt hooks quiet unless `TOKEN_ECONOMY_CLASSIFY_ALL=1` is explicitly set.
-- When maintaining this Token Economy repo and considering adoption from another repo, load `skills/token-economy-external-adoption/SKILL.md` before inspection or implementation. This workflow is project-maintenance only, not a downstream user rule.
-- For framework maintenance updates, finish with verification, a commit, and a clean working tree. If cleanup or review is useful, spawn a small subagent, then merge or fix before committing.
 - Checkpoint near 20% context. Use `summ` for manual refresh: lean handoff, durable memory to a lightweight wiki-documenter, then host-specific clear/fresh continuation. Claude can use native `/clear`. Codex current-thread clear is not solved in the tested environment; fresh successor is `./te context codex-fresh-thread --handoff <handoff-file> --execute`.
 - If the task workspace has a GitHub remote, use the lightweight repo-maintainer worker at verified save-points; otherwise skip repo maintenance.
 

@@ -2,7 +2,7 @@
 
 full-summ
 
-Goal: create one complete local migration summary at `full_summ.md` so a new Token Economy-enabled target project folder can import and adapt this project without carrying over context rot.
+Goal: create one complete local migration summary at `full_summ.md` so a new Token Economy-enabled target working folder can import and adapt this project without carrying over context rot.
 
 Raw API keys/secrets are explicitly authorized for this local file. Put raw secret values only in the `Secrets` section. After writing the file, run `chmod 600 full_summ.md` when possible.
 

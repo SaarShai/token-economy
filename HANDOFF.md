@@ -22,7 +22,7 @@ Token Economy is a repo-local, model-agnostic agent framework. The source of tru
 
 ## Active Setup
 
-- Current local working folder: `/Users/saar/token-economy`
+- Current local working folder: the active project workspace
 - Canonical repo: `https://github.com/SaarShai/token-economy.git`
 - Config: `token-economy.yaml`
 - Startup glue: `start.md`
@@ -33,7 +33,7 @@ Token Economy is a repo-local, model-agnostic agent framework. The source of tru
 
 ## Non-Negotiables
 
-- Work inside the repo root containing `token-economy.yaml`.
+- Work inside the current working folder for the active project, not the template repo checkout.
 - Do not edit home-directory agent settings, machine-wide config, global MCP config, or external wikis unless the user explicitly requests work outside this framework.
 - Use repo-local markdown wiki pages and real wikilinks such as `[[start]]` or `[[projects/wiki-search/README]]`.
 - Keep always-loaded files tiny. Put details behind `L1_index.md`, skills, prompts, templates, or wiki pages.

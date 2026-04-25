@@ -1,6 +1,6 @@
 # Manual import full-summ
 
-Import a full project summary into a target project folder that will use Token Economy as local scaffolding.
+Import a full project summary into a target working folder that will use Token Economy as local scaffolding. Treat this folder as the active workspace, not the Token Economy source repository.
 
 Inputs:
 - Full summary file: the uploaded file
@@ -44,7 +44,7 @@ Load only:
 - `schema.md`
 - the uploaded file
 
-After setup, define the active project only from the uploaded summary and the user's current instructions.
+After setup, define the active project only from the uploaded summary and the user's current instructions. Keep operating in this working folder.
 
 Use the uploaded file as the migration source of truth. It may contain raw secrets. Keep the uploaded file, `.env`, raw secret files, credentials, and any copied secret material out of the wiki and local config.
 

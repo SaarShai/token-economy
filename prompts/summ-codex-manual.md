@@ -22,7 +22,7 @@ If available, lint it:
 
 Do not attempt same-thread compaction. Do not inspect App Server schemas. Do not use `./te context fresh-start` as a launcher. Do not stop because local `./te` lacks `codex-compact-thread` or `codex-fresh-thread`.
 
-After the handoff is ready, replace `<handoff-file>` below with the actual handoff path and run this exact fresh-successor launcher from the repo root:
+After the handoff is ready, replace `<handoff-file>` below with the actual handoff path and run this exact fresh-successor launcher from the current workspace root:
 
 HANDOFF="<handoff-file>" python3 - <<'PY'
 import json, os, select, subprocess, time

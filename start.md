@@ -1,9 +1,9 @@
 # Token Economy Start
 
 Startup glue. Goal: excellent work, minimal context.
-Work only inside the repo root containing `token-economy.yaml`. Use the repo-local markdown wiki as source of truth.
+Work only inside the current working folder for the active project. If this framework is being bootstrapped into a new folder, that new folder becomes the working root. Use the repo-local markdown wiki in that folder as source of truth.
 
-Default: use Token Economy for the current target project. Do not treat this as framework work unless the user explicitly asks to maintain Token Economy. Framework files, `ROADMAP.md`, and `projects/` are not target goals.
+Default target project comes from the user prompt, handoff, imported summary, or project wiki. Use Token Economy as the local operating framework for that project.
 
 ## Prime Directive
 
@@ -13,7 +13,7 @@ Start non-trivial tasks in plan mode: short plan, inspect reality, execute.
 
 ## Boot Sequence
 
-1. Find repo root containing `token-economy.yaml`.
+1. Identify the active working folder / target project root.
 2. Run:
    ```bash
    ./te doctor
@@ -45,8 +45,6 @@ Load only when triggered:
 | Delegation policy | `prompts/delegation-matrix.md` |
 | New wiki page | `templates/page.template.md` |
 
-Maintainer-only docs/skills (`ROADMAP.md`, `HANDOFF*.md`, `AGENT_ONBOARDING.md`, external-adoption skill) require explicit framework-maintenance intent.
-
 ## Context Rules
 
 - Retrieve before reasoning about project/wiki facts.
@@ -59,7 +57,7 @@ Maintainer-only docs/skills (`ROADMAP.md`, `HANDOFF*.md`, `AGENT_ONBOARDING.md`,
 
 ## Wiki Rules
 
-The LLM wiki is long-term memory for the current target project. Bundled framework wiki pages are not target goals/tasks unless the user explicitly says the target project is Token Economy itself.
+The LLM wiki is long-term memory for the current target project.
 
 - `raw/`: immutable sources. Never rewrite. Add new source notes only.
 - `concepts/`, `patterns/`, `projects/`, `people/`, `queries/`: synthesized wiki pages.
