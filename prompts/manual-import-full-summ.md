@@ -6,7 +6,7 @@ Copy-paste this into the agent/session attached to the new target folder.
 Import a full project summary into a fresh Token Economy folder.
 
 Inputs:
-- Full summary file: `full_summ.md`
+- Full summary file: the uploaded file
 - New target folder: current working directory
 
 Setup Token Economy first:
@@ -26,9 +26,9 @@ Load only:
 - `L0_rules.md`
 - `L1_index.md`
 - `schema.md`
-- `full_summ.md`
+- the uploaded file
 
-Use `full_summ.md` as the migration source of truth. It may contain raw secrets. Do not commit `full_summ.md`, `.env`, raw secret files, credentials, or any copied secret material.
+Use the uploaded file as the migration source of truth. It may contain raw secrets. Do not commit the uploaded file, `.env`, raw secret files, credentials, or any copied secret material.
 
 Rebuild the wiki without Obsidian:
 - Put source summaries and imported source evidence under `raw/`.
@@ -52,8 +52,8 @@ Adapt to Token Economy:
 Verification:
 - Run `./te wiki lint --strict`.
 - Run `./te doctor`.
-- Run any project-specific smoke checks listed in `full_summ.md` when they are safe and do not require unavailable external services.
-- Check `git status --short` and ensure no secret files or `full_summ.md` are staged or committed.
+- Run any project-specific smoke checks listed in the uploaded file when they are safe and do not require unavailable external services.
+- Check `git status --short` and ensure no secret files or the uploaded file are staged or committed.
 
 Final handoff:
 - What was imported.
