@@ -5,7 +5,7 @@
 Import a complete-migrate export into the current new working folder. The result must be self-contained: after import, all operational project files, local wiki pages, instructions, skills/adapters, config templates, and runbooks needed to continue the project must live in this folder, except external tools/services/models/APIs that intentionally remain outside the project folder.
 
 Inputs:
-- Complete-migrate export file: the uploaded file, usually `[project-name]_complete_migrate_export.md`
+- Complete-migrate export file: the uploaded file, usually `[project-name]_complete_migrate_export dot md`
 - New target folder: current working directory
 
 Working rules:
@@ -36,7 +36,7 @@ Each worker must return a compact result packet with:
 - Confidence.
 - Gaps and risks.
 
-Use `prompts/subagents/lifecycle.prompt.md` when supervising workers. Close a subagent only after its result packet has been read, useful results have been merged into the import, and durable gaps/follow-ups have been captured. Do not delegate final synthesis.
+Use `prompts/subagents/lifecycle.prompt dot md` when supervising workers. Close a subagent only after its result packet has been read, useful results have been merged into the import, and durable gaps/follow-ups have been captured. Do not delegate final synthesis.
 
 ## Bootstrap Token Economy runtime files in the current folder
 
@@ -102,7 +102,7 @@ Create or update local setup files, config templates, project-specific instructi
 
 This is a wiki transplant, not a pointer back to the source wiki:
 - Treat the original wiki as source evidence only. After import, project facts must come from this working folder's repo-local wiki.
-- Create `raw/YYYY-MM-DD-import-manifest.md` from `templates/import-manifest.template.md`.
+- Create `raw/YYYY-MM-DD-import-manifest dot md` from `templates/import-manifest.template dot md`.
 - The import manifest must cover every original wiki item listed in the uploaded file: original page/path, summary, target local page, status (`adapted`, `archived`, or `discarded`), rationale, and provenance.
 - Put source summaries and imported source evidence under `raw/`.
 - Put active project state under `projects/`.
@@ -130,7 +130,7 @@ This is a wiki transplant, not a pointer back to the source wiki:
 ## Verification
 
 - Run `./te wiki lint --strict --fail-on-error`.
-- Run `./te wiki import-audit --manifest raw/YYYY-MM-DD-import-manifest.md`.
+- Run `./te wiki import-audit --manifest raw/YYYY-MM-DD-import-manifest dot md`.
 - Run `./te doctor`.
 - Run any project-specific smoke checks listed in the uploaded file when they are safe and do not require unavailable external services.
 - Run `rg` checks for the old project root and old source-wiki root.

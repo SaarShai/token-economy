@@ -2,11 +2,11 @@
 
 complete-migrate-export
 
-Goal: create one complete local migration export at `[project-name]_complete_migrate_export.md` so a new Token Economy-enabled target working folder can import, adapt, and continue this project without carrying over context rot or depending operationally on the old folder.
+Goal: create one complete local migration export at `[project-name]_complete_migrate_export dot md` so a new Token Economy-enabled target working folder can import, adapt, and continue this project without carrying over context rot or depending operationally on the old folder.
 
 Think carefully, step by step, and devise a plan for the following, then execute the plan.
 
-Raw API keys/secrets are explicitly authorized for this local file. Put raw secret values only in the `Secrets` section. After writing the file, run `chmod 600 [project-name]_complete_migrate_export.md` when possible.
+Raw API keys/secrets are explicitly authorized for this local file. Put raw secret values only in the `Secrets` section. After writing the file, run `chmod 600 [project-name]_complete_migrate_export dot md` when possible.
 
 ## Subagent orchestration
 
@@ -27,7 +27,7 @@ Each worker must return a compact result packet with:
 - Confidence.
 - Gaps and risks.
 
-Use `prompts/subagents/lifecycle.prompt.md` when supervising workers. Close a subagent only after its result packet has been read, useful results have been merged into this export, and durable gaps/follow-ups have been captured. Do not delegate final synthesis.
+Use `prompts/subagents/lifecycle.prompt dot md` when supervising workers. Close a subagent only after its result packet has been read, useful results have been merged into this export, and durable gaps/follow-ups have been captured. Do not delegate final synthesis.
 
 ## Inventory rules
 
@@ -50,7 +50,7 @@ Keep:
 Drop:
 - Transcript noise, chat filler, duplicated prose, abandoned plans, obsolete wiki pages with no current warning value, one-off dead ends, raw logs, and other context rot.
 
-Write `[project-name]_complete_migrate_export.md` with this structure:
+Write `[project-name]_complete_migrate_export dot md` with this structure:
 
 # COMPLETE_MIGRATE_EXPORT
 
