@@ -483,12 +483,105 @@ export function renderPanel() {
             wiki.init()
             # Copy templates into temp wiki to emulate repo install.
             (root / "templates").mkdir(exist_ok=True)
-            for name in ("page.template.md", "decision.template.md", "source-summary.template.md"):
+            for name in ("page.template.md", "decision.template.md", "source-summary.template.md", "import-manifest.template.md"):
                 (root / "templates" / name).write_text((REPO / "templates" / name).read_text(encoding="utf-8"), encoding="utf-8")
             created = wiki.new_page("page", "Progressive Retrieval", "framework")
             self.assertTrue((root / created["created"]).exists())
+            manifest = wiki.new_page("import-manifest", "Import Manifest", "project")
+            self.assertTrue((root / manifest["created"]).exists())
             lint = wiki.lint_pages(strict=True)
             self.assertEqual(lint["errors"], [])
+
+    def test_wiki_import_audit_validates_self_contained_manifest(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            wiki = WikiStore(root)
+            wiki.init()
+            project = root / "projects" / "example.md"
+            project.write_text(
+                """---
+schema_version: 2
+title: "Example Project"
+type: project
+domain: project
+tier: working
+confidence: 0.8
+created: 2026-04-26
+updated: 2026-04-26
+verified: 2026-04-26
+sources: ["[[raw/2026-04-26-import-manifest]]"]
+supersedes: []
+superseded-by:
+tags: [imported]
+---
+
+# Example Project
+
+Local rewritten project facts. Related: [[index]].
+""",
+                encoding="utf-8",
+            )
+            sop = root / "L3_sops" / "runbook.md"
+            sop.write_text(
+                """---
+schema_version: 2
+title: "Runbook"
+type: sop
+domain: project
+tier: procedural
+confidence: 0.8
+created: 2026-04-26
+updated: 2026-04-26
+verified: 2026-04-26
+sources: ["[[raw/2026-04-26-import-manifest]]"]
+supersedes: []
+superseded-by:
+tags: [runbook]
+---
+
+# Runbook
+
+Run the local smoke test. Related: [[projects/example]].
+""",
+                encoding="utf-8",
+            )
+            manifest = root / "raw" / "2026-04-26-import-manifest.md"
+            manifest.write_text(
+                """# Import Manifest
+
+Source provenance may mention the original wiki and absolute paths here.
+
+| Original page/path | Summary | Target local page | Status | Rationale | Provenance |
+|---|---|---|---|---|---|
+| /Users/saar/OldWiki/Home.md | Project state | projects/example.md | adapted | Rewritten into local project page | full_summ section 4 |
+| /Users/saar/OldWiki/Runbook.md | Runbook | L3_sops/runbook.md | adapted | Rewritten as local SOP | full_summ section 4 |
+| /Users/saar/OldWiki/Noise.md | Duplicate chatter |  | discarded | Duplicative transcript noise | full_summ section 10 |
+""",
+                encoding="utf-8",
+            )
+            (root / "index.md").write_text("- [[projects/example]]\n", encoding="utf-8")
+            (root / "L1_index.md").write_text("- projects/example -> `projects/example.md`\n", encoding="utf-8")
+
+            audit = wiki.import_audit("raw/2026-04-26-import-manifest.md")
+            self.assertTrue(audit["ok"], audit)
+            self.assertEqual(audit["rows"], 3)
+
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                self.assertEqual(main(["--repo", str(root), "wiki", "import-audit", "--manifest", "raw/2026-04-26-import-manifest.md"]), 0)
+            self.assertTrue(json.loads(buf.getvalue())["ok"])
+
+            missing = manifest.read_text(encoding="utf-8").replace("L3_sops/runbook.md", "L3_sops/missing.md")
+            manifest.write_text(missing, encoding="utf-8")
+            audit = wiki.import_audit(manifest)
+            self.assertFalse(audit["ok"])
+            self.assertIn("target_page_missing", {error["code"] for error in audit["errors"]})
+
+            manifest.write_text(missing.replace("L3_sops/missing.md", "L3_sops/runbook.md"), encoding="utf-8")
+            project.write_text(project.read_text(encoding="utf-8") + "\nUse the original wiki for details.\n", encoding="utf-8")
+            audit = wiki.import_audit(manifest)
+            self.assertFalse(audit["ok"])
+            self.assertIn("forbidden_external_wiki_reference", {error["code"] for error in audit["errors"]})
 
     def test_context_meter_env_threshold_and_handoff_lint(self):
         with tempfile.TemporaryDirectory() as td:
@@ -800,6 +893,7 @@ export function renderPanel() {
         self.assertTrue((REPO / "prompts/manual-fresh-session-from-handoff.md").exists())
         self.assertTrue((REPO / "prompts/manual-full-summ.md").exists())
         self.assertTrue((REPO / "prompts/manual-import-full-summ.md").exists())
+        self.assertTrue((REPO / "templates/import-manifest.template.md").exists())
         self.assertTrue((REPO / "concepts/superpowers-skills.md").exists())
         self.assertTrue((REPO / "skills/verification-before-completion/SKILL.md").exists())
         self.assertTrue((REPO / "prompts/subagents/wiki-documenter.prompt.md").exists())
@@ -851,6 +945,8 @@ export function renderPanel() {
         self.assertIn("Think carefully, step by step, and devise a plan for the following, then execute the plan:", full_summ)
         self.assertIn("Write `[project-name]_full_summ.md`", full_summ)
         self.assertIn("Provenance", full_summ)
+        self.assertIn("complete original-wiki coverage map", full_summ)
+        self.assertIn("target Token Economy category", full_summ)
         import_full_summ = (REPO / "prompts/manual-import-full-summ.md").read_text(encoding="utf-8")
         self.assertIn("the uploaded file", import_full_summ)
         self.assertIn("git clone --depth 1 --filter=blob:none --sparse https://github.com/SaarShai/token-economy.git .", import_full_summ)
@@ -870,6 +966,12 @@ export function renderPanel() {
         self.assertIn("token-economy.yaml", import_full_summ)
         self.assertIn("Put source summaries and imported source evidence under `raw/`", import_full_summ)
         self.assertIn("Put verified durable facts under `L2_facts/`", import_full_summ)
+        self.assertIn("wiki transplant", import_full_summ)
+        self.assertIn("raw/YYYY-MM-DD-import-manifest.md", import_full_summ)
+        self.assertIn("cover every original wiki item", import_full_summ)
+        self.assertIn("source evidence only", import_full_summ)
+        self.assertIn("Never leave synthesized pages", import_full_summ)
+        self.assertIn("./te wiki import-audit --manifest raw/YYYY-MM-DD-import-manifest.md", import_full_summ)
         self.assertIn("Create or update `README.md` for the imported target project", import_full_summ)
         self.assertIn("The MCP install step is required, not optional", import_full_summ)
         self.assertIn("ComCom", import_full_summ)

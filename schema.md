@@ -46,6 +46,17 @@ Legacy v1 pages remain readable. `./te wiki lint --strict` emits migration warni
 - **Contradiction**: flag both pages, prefer newer/stronger evidence, downgrade confidence, log.
 - **Crystallize**: after successful verified work, write an L3 SOP if the workflow is reusable.
 
+## Imported Wiki Completeness
+
+Imported projects must be self-contained in the new working folder.
+
+- Treat any source project wiki as evidence to adapt, not as a dependency to keep using.
+- Recreate all useful source-wiki information in repo-local Token Economy pages.
+- Track every source-wiki item in `raw/YYYY-MM-DD-import-manifest.md` with status `adapted`, `archived`, or `discarded`.
+- `index.md` and `L1_index.md` must point to local wiki pages and local commands only.
+- Agents must not use home-directory rules, external wikis, or source-wiki paths for project facts after import.
+- Validate imports with `./te wiki lint --strict --fail-on-error` and `./te wiki import-audit --manifest raw/YYYY-MM-DD-import-manifest.md`.
+
 ## Retrieval Discipline
 
 Default command sequence:

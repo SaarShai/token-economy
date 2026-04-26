@@ -13,6 +13,8 @@ Inventory thoroughly:
 - `.env*`, local config files, provider/model settings, API usage patterns, service credentials, and integration wiring.
 - Git remotes, current branch, recent commits, tags if relevant, uncommitted work, ignored files that matter, and active branches.
 - Obsidian/wiki pages, indexes, project notes, SOPs, decisions, source summaries, stale/conflicting notes, and backlinks that explain current behavior.
+- For every original wiki item, capture: page/path, title, one-line summary, backlinks/outlinks when useful, current/stale status, target Token Economy category, and whether it should be adapted, archived, or discarded.
+- Capture wiki naming conventions, folder conventions, aliases, recurring tags, project-specific rules, and any external/home-directory rules the old project depended on so the importer can replace them with repo-local Token Economy pages.
 - Local runbooks, working commands, recurring failures, best practices, architectural decisions, constraints, active tasks, open questions, and known dead ends.
 
 Keep:
@@ -51,6 +53,7 @@ Write `[project-name]_full_summ.md` with this structure:
 - What must become decisions.
 - What must become queries/answers.
 - What should be archived or discarded.
+- A complete original-wiki coverage map: each original wiki page/path -> target Token Economy page type/path -> import status (`adapted`, `archived`, or `discarded`) -> rationale.
 
 ## 3. Architecture + Code Inventory
 - Important files/directories and why they matter.
@@ -60,9 +63,11 @@ Write `[project-name]_full_summ.md` with this structure:
 
 ## 4. Wiki + Knowledge Inventory
 - Obsidian/wiki structure.
-- Pages to preserve and their target Token Economy page types.
+- Complete page inventory, including indexes, project pages, facts, SOPs/runbooks, decisions, source summaries, queries/answers, stale/conflicting notes, and hidden or home-directory agent rules that influenced behavior.
+- Pages to preserve and their target Token Economy page types/paths.
 - Pages to archive/discard and why.
-- Important backlinks, indexes, and naming conventions to translate.
+- Important backlinks, outlinks, aliases, tags, indexes, folder conventions, and naming conventions to translate.
+- Information that must be rewritten so the new working folder is self-contained and does not refer agents back to the source wiki.
 
 ## 5. Secrets
 For each raw secret/API key include:

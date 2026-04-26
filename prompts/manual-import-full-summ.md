@@ -58,7 +58,10 @@ After setup, define the active project only from the uploaded summary and the us
 
 Use the uploaded file as the migration source of truth. It may contain raw secrets. Keep the uploaded file, `.env`, raw secret files, credentials, and any copied secret material out of the wiki and local config.
 
-Rebuild the wiki directly in repo-local markdown:
+Rebuild the wiki directly in repo-local markdown. This is a wiki transplant, not a pointer back to the source wiki:
+- Treat the original wiki as source evidence only. After import, project facts must come from this working folder's repo-local wiki.
+- Create `raw/YYYY-MM-DD-import-manifest.md` from `templates/import-manifest.template.md`.
+- The import manifest must cover every original wiki item listed in the uploaded file: original page/path, summary, target local page, status (`adapted`, `archived`, or `discarded`), rationale, and provenance.
 - Put source summaries and imported source evidence under `raw/`.
 - Put active project state under `projects/`.
 - Put verified durable facts under `L2_facts/`.
@@ -69,24 +72,30 @@ Rebuild the wiki directly in repo-local markdown:
 - Create or update `README.md` for the imported target project from the uploaded summary.
 - Update `index.md`, `L1_index.md`, and `log.md`.
 
-Adapt to Token Economy:
+Adapt the source wiki to Token Economy:
 - Convert existing wiki links/naming into repo-local markdown wikilinks such as `[[projects/example/README]]`.
+- Rewrite source-wiki information into better organized Token Economy pages instead of copying a flat dump.
 - Preserve provenance from the full summary in every material page.
-- Split large notes into focused pages only when that improves retrieval.
+- Split large notes into focused pages when that improves retrieval and combine tiny duplicates when that improves access.
 - Keep startup context lean; do not move broad target-project details into `start.md`, `L0_rules.md`, or `L1_index.md`.
 - Import raw secrets into local config/env files only as appropriate for the project. Keep secret files local and out of the wiki.
-- Preserve working commands, exact paths, setup steps, and known failure fixes.
-- Discard context rot listed in the summary unless it is useful as a warning.
+- Preserve working commands, exact paths, setup steps, known failure fixes, durable decisions, facts, SOPs, and reusable lessons.
+- Discard context rot listed in the summary only when the import manifest records why; archive stale material only when it is useful as a warning.
+- Never leave synthesized pages that tell the next agent to "see the old wiki", "use the original wiki", or follow external/home-directory wiki rules.
+- Original wiki paths may appear only as sealed provenance in `raw/` source notes or the import manifest, not as operational instructions.
 
 Verification:
-- Run `./te wiki lint --strict`.
+- Run `./te wiki lint --strict --fail-on-error`.
+- Run `./te wiki import-audit --manifest raw/YYYY-MM-DD-import-manifest.md`.
 - Run `./te doctor`.
 - Run any project-specific smoke checks listed in the uploaded file when they are safe and do not require unavailable external services.
 - Confirm no secret files or the uploaded file were written into the wiki or local config files.
+- Confirm `index.md` and `L1_index.md` point to the new local wiki only.
 
 Final handoff:
 - What was imported.
 - What was intentionally discarded.
+- Import manifest path and coverage count.
 - Where secrets now live locally.
 - Wiki pages created/updated.
 - Verification results.

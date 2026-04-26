@@ -106,6 +106,10 @@ def cmd_wiki(args: argparse.Namespace) -> int:
         print_json(result)
         if args.fail_on_error and result.get("errors"):
             return 1
+    elif args.wiki_cmd == "import-audit":
+        result = wiki.import_audit(args.manifest)
+        print_json(result)
+        return 0 if result["ok"] else 1
     elif args.wiki_cmd == "ingest":
         print_json(wiki.ingest(args.source, args.title))
     elif args.wiki_cmd == "new":
@@ -306,12 +310,15 @@ def build_parser() -> argparse.ArgumentParser:
     wl.add_argument("--strict", action="store_true")
     wl.add_argument("--fail-on-error", action="store_true")
     wl.set_defaults(func=cmd_wiki)
+    wa = wsub.add_parser("import-audit", help="Validate self-contained wiki import coverage")
+    wa.add_argument("--manifest", required=True)
+    wa.set_defaults(func=cmd_wiki)
     wi = wsub.add_parser("ingest")
     wi.add_argument("source")
     wi.add_argument("--title")
     wi.set_defaults(func=cmd_wiki)
     wn = wsub.add_parser("new")
-    wn.add_argument("--template", choices=["page", "decision", "source-summary"], default="page")
+    wn.add_argument("--template", choices=["page", "decision", "source-summary", "import-manifest"], default="page")
     wn.add_argument("--title", required=True)
     wn.add_argument("--domain", default="framework")
     wn.add_argument("--slug")

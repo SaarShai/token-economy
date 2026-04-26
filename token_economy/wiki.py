@@ -59,6 +59,13 @@ Legacy v1 pages remain readable. Strict lint emits migration warnings for v1 pag
 - Query: search -> timeline -> fetch only relevant pages -> cite paths -> file answer in `queries/` when it will be reused.
 - Lint: stale claims, orphan pages, broken links, contradictions, supersession candidates.
 - Crystallize: successful verified work -> `L3_sops/` and durable lessons.
+
+## Imported Wiki Completeness
+- Imported projects must be self-contained in this working folder.
+- Treat any previous project wiki as source evidence only; adapt its useful information into repo-local pages.
+- `index.md` and `L1_index.md` must point to local wiki pages and local commands only.
+- After import, agents must not use home-directory rules, external wikis, or source-wiki paths for project facts.
+- Validate imported projects with `./te wiki import-audit --manifest raw/<date>-import-manifest.md`.
 """
 
 
@@ -707,12 +714,162 @@ class WikiStore:
                 if target_id not in ids and Path(target_id).name not in stems:
                     errors.append({"code": "broken_supersession", "page": page.id, "target": target})
 
+    def import_audit(self, manifest: str | Path) -> dict[str, Any]:
+        manifest_path = Path(manifest).expanduser()
+        if not manifest_path.is_absolute():
+            manifest_path = self.root / manifest_path
+        errors: list[dict[str, Any]] = []
+        warnings: list[dict[str, Any]] = []
+        rows: list[dict[str, str]] = []
+        if not manifest_path.exists():
+            errors.append({"code": "missing_manifest", "path": str(manifest_path)})
+        else:
+            rows = self._parse_import_manifest(manifest_path)
+            if not rows:
+                errors.append({"code": "manifest_has_no_coverage_rows", "path": manifest_path.relative_to(self.root).as_posix() if self._is_under_root(manifest_path) else str(manifest_path)})
+        pages_by_id = {p.id: p for p in self.pages()}
+        pages_by_path = {p.path.relative_to(self.root).as_posix(): p for p in pages_by_id.values() if self._is_under_root(p.path)}
+        original_paths = []
+        for idx, row in enumerate(rows, start=1):
+            status = self._cell(row, "status").lower()
+            original = self._cell(row, "original page/path", "original page", "original path", "source")
+            if original:
+                original_paths.append(original)
+            target = self._cell(row, "target local page", "target", "local page")
+            if status not in {"adapted", "archived", "discarded"}:
+                errors.append({"code": "invalid_manifest_status", "row": idx, "status": status})
+                continue
+            if status == "discarded":
+                if not self._cell(row, "rationale"):
+                    errors.append({"code": "discarded_row_missing_rationale", "row": idx, "original": original})
+                continue
+            if not target:
+                errors.append({"code": "missing_target_page", "row": idx, "original": original})
+                continue
+            normalized = self._normalize_manifest_target(target)
+            page = pages_by_id.get(normalized.removesuffix(".md")) or pages_by_path.get(normalized if normalized.endswith(".md") else f"{normalized}.md")
+            if page is None:
+                errors.append({"code": "target_page_missing", "row": idx, "target": target, "normalized": normalized})
+                continue
+            if not is_v2_page(page.frontmatter):
+                errors.append({"code": "target_page_not_v2", "row": idx, "target": page.id})
+        errors.extend(self._audit_synthesized_pages(original_paths))
+        errors.extend(self._audit_local_indexes())
+        return {
+            "ok": not errors,
+            "manifest": str(manifest_path),
+            "rows": len(rows),
+            "errors": errors,
+            "warnings": warnings,
+        }
+
+    def _parse_import_manifest(self, manifest_path: Path) -> list[dict[str, str]]:
+        lines = manifest_path.read_text(encoding="utf-8", errors="replace").splitlines()
+        rows: list[dict[str, str]] = []
+        header: list[str] | None = None
+        for line in lines:
+            stripped = line.strip()
+            if not stripped.startswith("|") or not stripped.endswith("|"):
+                continue
+            cells = [cell.strip().strip("`") for cell in stripped.strip("|").split("|")]
+            if cells and all(re.fullmatch(r":?-{3,}:?", cell.strip()) for cell in cells):
+                continue
+            normalized = [self._normalize_manifest_header(cell) for cell in cells]
+            if header is None:
+                if {"status", "rationale"}.issubset(set(normalized)) and any("original" in cell for cell in normalized) and any("target" in cell for cell in normalized):
+                    header = normalized
+                continue
+            if len(cells) < len(header):
+                cells.extend([""] * (len(header) - len(cells)))
+            row = {key: value for key, value in zip(header, cells)}
+            if any(value.strip() for value in row.values()):
+                rows.append(row)
+        return rows
+
+    def _normalize_manifest_header(self, value: str) -> str:
+        clean = re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+        aliases = {
+            "original page path": "original page/path",
+            "original path": "original page/path",
+            "original page": "original page/path",
+            "target": "target local page",
+            "local page": "target local page",
+            "target page": "target local page",
+        }
+        return aliases.get(clean, clean)
+
+    def _cell(self, row: dict[str, str], *names: str) -> str:
+        for name in names:
+            value = row.get(self._normalize_manifest_header(name), "")
+            if value:
+                return self._clean_manifest_cell(value)
+        return ""
+
+    def _clean_manifest_cell(self, value: str) -> str:
+        clean = value.strip().strip("`")
+        wiki_match = re.fullmatch(r"\[\[([^\]]+)\]\]", clean)
+        if wiki_match:
+            clean = wiki_match.group(1)
+        if "|" in clean:
+            clean = clean.split("|", 1)[0]
+        return clean.strip().removesuffix(".md")
+
+    def _normalize_manifest_target(self, target: str) -> str:
+        clean = self._clean_manifest_cell(target)
+        if clean.startswith("./"):
+            clean = clean[2:]
+        clean = clean.lstrip("/")
+        return clean.removesuffix(".md")
+
+    def _audit_synthesized_pages(self, original_paths: list[str]) -> list[dict[str, Any]]:
+        errors: list[dict[str, Any]] = []
+        source_paths = [path.strip().strip("`") for path in original_paths if self._looks_like_external_path(path)]
+        for page in self.pages():
+            if not page.id.startswith(("concepts/", "patterns/", "projects/", "people/", "queries/", "L2_facts/", "L3_sops/")):
+                continue
+            text = page.body.lower()
+            for phrase in ("old wiki", "original wiki"):
+                if phrase in text:
+                    errors.append({"code": "forbidden_external_wiki_reference", "page": page.id, "phrase": phrase})
+            blocked_rule = "~" + "/.claude/rules/common/llm-wiki.md"
+            if blocked_rule.lower() in text:
+                errors.append({"code": "forbidden_external_rule_reference", "page": page.id})
+            for source_path in source_paths:
+                if source_path and source_path.lower() in text:
+                    errors.append({"code": "forbidden_source_path_reference", "page": page.id, "path": source_path})
+        return errors
+
+    def _audit_local_indexes(self) -> list[dict[str, Any]]:
+        errors: list[dict[str, Any]] = []
+        for rel in ("index.md", "L1_index.md"):
+            path = self.root / rel
+            if not path.exists():
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            for match in re.findall(r"(?<![\w.-])(?:~|/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_. -]+)+)", text):
+                if match.startswith("/./") or match.startswith("//"):
+                    continue
+                errors.append({"code": "index_points_outside_workspace", "page": rel, "path": match})
+        return errors
+
+    def _looks_like_external_path(self, value: str) -> bool:
+        clean = value.strip().strip("`")
+        return clean.startswith("~") or clean.startswith("/") or bool(re.match(r"[A-Za-z]:\\", clean))
+
+    def _is_under_root(self, path: Path) -> bool:
+        try:
+            path.resolve().relative_to(self.root)
+            return True
+        except ValueError:
+            return False
+
     def new_page(self, template: str, title: str, domain: str = "framework", slug: str | None = None) -> dict[str, Any]:
         self.init()
         template_map = {
             "page": ("templates/page.template.md", "concepts"),
             "decision": ("templates/decision.template.md", "queries"),
             "source-summary": ("templates/source-summary.template.md", "raw"),
+            "import-manifest": ("templates/import-manifest.template.md", "raw"),
         }
         if template not in template_map:
             raise KeyError(f"unknown template: {template}")
