@@ -9,6 +9,8 @@ warn_threshold: 0.15
 default_scope: project
 model_registry: ./models.yaml
 profile: ultra
+reasoning_effort: high
+reply_style: ultra
 external_adapters: []
 output_filter_archive: true
 # Session-aware suppression: suppresses lines already seen in this TOKEN_ECONOMY_SESSION_ID.

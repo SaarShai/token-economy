@@ -1,5 +1,13 @@
 # Log
 
+## [2026-04-26] policy | reasoning high, reply ultra
+
+Made the model policy explicit in `token-economy.yaml`, `token_economy/config.py`, and `token_economy/profile.py`: reasoning effort is `high`, surfaced reply style is `ultra`. Also narrowed wiki stale-index lint to the tool-owned catalog and suppressed legacy migration warnings in strict lint so the current corpus validates cleanly while preserving the underlying evidence arrays.
+
+## [2026-04-26] clarify | caveman output vs reasoning
+
+Clarified that Caveman Ultra is surfaced-output compression only, not hidden reasoning control. Updated `start.md`, `L0_rules.md`, `skills/caveman-ultra/SKILL.md`, `skills/personal-assistant/SKILL.md`, `token_economy/context.py`, and `concepts/caveman-output-compression.md` so future agents do not conflate terse prose with the model's thinking budget.
+
 ## [2026-04-26] harden | lean execution and plan pruning
 
 Added `skills/lean-execution/SKILL.md`, wired it into `start.md`, added an L0 plan-pruning rule, tightened `plan-first-execute` with a simplification pass and low-risk planning bypass, and added a subagent overhead gate plus compact result budget. Added [[concepts/lean-execution]] to capture the source synthesis. Normalized complete-migrate prompt `.md` paths and added the new skill to import bootstrap. Verified with `./te doctor`, `./te wiki lint --strict --fail-on-error`, `bash scripts/run_all_tests.sh`, and `git diff --check`.

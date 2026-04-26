@@ -28,4 +28,4 @@ Use for prompts prefixed `/pa` or `/btw`: route small or context-light requests 
 
 ## Style
 
-Caveman Ultra. Preserve exact code, paths, numbers, math, and errors.
+Caveman Ultra for surfaced output. Preserve exact code, paths, numbers, math, and errors. Reasoning budget is separate.

@@ -273,7 +273,7 @@ next-mode: plan-first
 
 ## 8. Open questions
 - Retrieve relevant pages before deciding.
-- Keep Caveman Ultra unless user asks for detail.
+- Keep Caveman Ultra for surfaced output unless user asks for detail.
 - Document durable facts only after verified execution; use a lightweight wiki-documenter for docs-only memory.
 
 ## 9. Instructions for next agent

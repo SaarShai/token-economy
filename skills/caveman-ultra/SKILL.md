@@ -14,6 +14,7 @@ Rules:
 - Preserve code blocks, paths, numbers, math, and exact errors verbatim.
 - Abbrev common words only when safe: config->cfg, function->fn, parameter->param, database->db.
 - No emoji unless requested.
+- This changes emitted prose only. It does not change hidden reasoning or model thinking budget.
 
 When detail is needed, still stay exact and compact. Use the minimum words required to preserve meaning.
 

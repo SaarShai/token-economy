@@ -6,11 +6,41 @@ from typing import Any
 
 
 PROFILES: dict[str, dict[str, Any]] = {
-    "ultra": {"startup_docs": ["start.md", "L0_rules.md", "L1_index.md"], "max_search_hits": 5, "style": "caveman-ultra"},
-    "lean": {"startup_docs": ["start.md", "L0_rules.md", "L1_index.md", "index.md"], "max_search_hits": 8, "style": "terse"},
-    "nav": {"startup_docs": ["start.md", "L1_index.md", "index.md", "schema.md"], "max_search_hits": 10, "style": "terse"},
-    "core": {"startup_docs": ["start.md", "L0_rules.md", "L1_index.md", "index.md", "schema.md"], "max_search_hits": 12, "style": "normal-terse"},
-    "full": {"startup_docs": ["start.md", "L0_rules.md", "L1_index.md", "index.md", "schema.md"], "max_search_hits": 20, "style": "normal"},
+    "ultra": {
+        "startup_docs": ["start.md", "L0_rules.md", "L1_index.md"],
+        "max_search_hits": 5,
+        "style": "caveman-ultra",
+        "reasoning_effort": "high",
+        "reply_style": "ultra",
+    },
+    "lean": {
+        "startup_docs": ["start.md", "L0_rules.md", "L1_index.md", "index.md"],
+        "max_search_hits": 8,
+        "style": "terse",
+        "reasoning_effort": "high",
+        "reply_style": "ultra",
+    },
+    "nav": {
+        "startup_docs": ["start.md", "L1_index.md", "index.md", "schema.md"],
+        "max_search_hits": 10,
+        "style": "terse",
+        "reasoning_effort": "high",
+        "reply_style": "ultra",
+    },
+    "core": {
+        "startup_docs": ["start.md", "L0_rules.md", "L1_index.md", "index.md", "schema.md"],
+        "max_search_hits": 12,
+        "style": "normal-terse",
+        "reasoning_effort": "high",
+        "reply_style": "ultra",
+    },
+    "full": {
+        "startup_docs": ["start.md", "L0_rules.md", "L1_index.md", "index.md", "schema.md"],
+        "max_search_hits": 20,
+        "style": "normal",
+        "reasoning_effort": "high",
+        "reply_style": "ultra",
+    },
 }
 
 

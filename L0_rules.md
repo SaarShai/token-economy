@@ -1,6 +1,6 @@
 # L0 Rules
 
-- Caveman Ultra by default: terse, exact, no filler, no softeners.
+- Caveman Ultra by default for surfaced output: terse, exact, no filler, no softeners. Keep reasoning budget separate and task-dependent; use `high` only when the task needs deeper synthesis.
 - Start non-trivial work in plan mode before executing.
 - Before executing a plan, prune steps that do not reduce risk, gather needed facts, implement, verify, or preserve durable learning.
 - Check relevant skills before action; load only matching skills.

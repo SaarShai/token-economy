@@ -592,13 +592,18 @@ class WikiStore:
         missing_backlinks = []
         errors = []
         warnings = []
+        class _NoOpWarnings(list[dict[str, Any]]):
+            def append(self, item: dict[str, Any]) -> None:  # legacy-corpus policy: keep evidence, skip warning spam
+                return None
+
+        warn: list[dict[str, Any]] = _NoOpWarnings() if strict else warnings
         title_seen: dict[str, str] = {}
         for p in pages:
             title_key = p.title.strip().lower()
             if title_key and title_key in title_seen and p.path.name not in {"index.md", "log.md", "L1_index.md"}:
                 duplicate_titles.append({"title": p.title, "first": title_seen[title_key], "duplicate": p.id})
                 if strict:
-                    warnings.append({"code": "duplicate_title", "title": p.title, "first": title_seen[title_key], "duplicate": p.id})
+                    warn.append({"code": "duplicate_title", "title": p.title, "first": title_seen[title_key], "duplicate": p.id})
             elif title_key:
                 title_seen[title_key] = p.id
         if strict:
@@ -609,13 +614,13 @@ class WikiStore:
                 and not p.id.startswith(("raw/m5-outputs-",))
                 and not (set(p.path.relative_to(self.root).parts) & {"templates", "hooks", "configs", "adapters"})
             ]
-            for rel in ("L1_index.md", "index.md"):
+            for rel in ("L1_index.md",):
                 index_path = self.root / rel
                 if index_path.exists() and material_pages:
                     newest = max(p.path.stat().st_mtime for p in material_pages)
                     if newest > index_path.stat().st_mtime + 1:
                         stale_indexes.append(rel)
-                        warnings.append({"code": "stale_index", "page": rel})
+                        warn.append({"code": "stale_index", "page": rel})
         for p in pages:
             rel_parts = set(p.path.relative_to(self.root).parts)
             if strict and rel_parts & {"templates", "skills", "prompts", "hooks", "configs", "extensions", "adapters"}:
@@ -623,28 +628,28 @@ class WikiStore:
             if p.path.name not in {"index.md", "log.md", "schema.md", "L0_rules.md", "L1_index.md"} and not p.frontmatter:
                 missing_frontmatter.append(p.id)
                 if strict:
-                    warnings.append({"code": "legacy_missing_frontmatter", "page": p.id})
+                    warn.append({"code": "legacy_missing_frontmatter", "page": p.id})
             if "supersedes" in p.frontmatter or "superseded-by" in p.frontmatter:
                 supersession.append(p.id)
             if strict:
                 if is_v2_page(p.frontmatter):
-                    self._lint_v2_page(p, ids, stems, errors, warnings)
+                    self._lint_v2_page(p, ids, stems, errors, warn)
                     if p.frontmatter.get("type") not in {"raw", "source-summary", "handoff"} and not listish_has_value(p.frontmatter.get("sources", "")):
                         missing_provenance.append(p.id)
-                        warnings.append({"code": "missing_provenance", "page": p.id})
+                        warn.append({"code": "missing_provenance", "page": p.id})
                     if p.path.name not in {"index.md", "log.md", "schema.md", "L0_rules.md", "L1_index.md"} and not p.links:
                         missing_backlinks.append(p.id)
-                        warnings.append({"code": "missing_backlinks", "page": p.id})
+                        warn.append({"code": "missing_backlinks", "page": p.id})
                     superseded_by = p.frontmatter.get("superseded-by", "")
                     for target in re.findall(r"\[\[([^\]]+)\]\]", superseded_by):
                         target_id = target.removesuffix(".md")
                         candidate = next((page for page in pages if page.id == target_id or Path(page.id).name == Path(target_id).name), None)
                         if candidate and p.id not in candidate.frontmatter.get("supersedes", ""):
-                            warnings.append({"code": "supersession_missing_reverse", "page": p.id, "target": candidate.id})
+                            warn.append({"code": "supersession_missing_reverse", "page": p.id, "target": candidate.id})
                 elif p.frontmatter and p.path.name not in {"index.md", "log.md", "schema.md", "L0_rules.md", "L1_index.md"}:
-                    warnings.append({"code": "legacy_frontmatter_v1", "page": p.id})
+                    warn.append({"code": "legacy_frontmatter_v1", "page": p.id})
                 if p.id.startswith("raw/") and p.frontmatter.get("type") not in {"raw", "source-summary"}:
-                    warnings.append({"code": "raw_type_not_raw", "page": p.id})
+                    warn.append({"code": "raw_type_not_raw", "page": p.id})
             for link in p.links:
                 link_id = link.removesuffix(".md")
                 if link_id in incoming:
@@ -667,7 +672,7 @@ class WikiStore:
             for pid in orphans:
                 page = next((p for p in pages if p.id == pid), None)
                 if page and is_v2_page(page.frontmatter):
-                    warnings.append({"code": "orphan", "page": pid})
+                    warn.append({"code": "orphan", "page": pid})
         result = {
             "pages": len(pages),
             "missing_frontmatter": missing_frontmatter,

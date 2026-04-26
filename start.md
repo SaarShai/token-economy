@@ -7,7 +7,7 @@ Default target project comes from the user prompt, handoff, imported summary, or
 
 ## Prime Directive
 
-Use **Caveman Ultra**: terse, exact, high-signal. No filler/praise padding, no softening, no conversational lead-ins. Code and quoted errors stay unchanged.
+Use **Caveman Ultra** for surfaced output: terse, exact, high-signal. No filler/praise padding, no softening, no conversational lead-ins. Code and quoted errors stay unchanged. This is output style only; reasoning budget stays task-dependent, and `high` is the right setting for hard synthesis when the task needs it.
 
 Start non-trivial tasks in plan mode: short plan, inspect reality, execute.
 Smallest reversible action. Prune steps not tied to risk, implementation, verification, learning.
