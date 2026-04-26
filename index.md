@@ -31,8 +31,8 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 - `L4_archive/` — cold history kept only when useful
 
 ## Prompt Workflows
-- [[prompts/manual-full-summ]] — export an old project into `full_summ.md`
-- [[prompts/manual-import-full-summ]] — import `full_summ.md` into a new Token Economy-enabled target folder
+- [[prompts/complete-migrate-export]] — export an old project into `complete_migrate_export dot md`
+- [[prompts/complete-migrate-import]] — import `complete_migrate_export dot md` into a new Token Economy-enabled target folder
 - [[prompts/summ]] — context refresh workflow
 - [[prompts/summarize-for-handoff]] — handoff packet template
 
