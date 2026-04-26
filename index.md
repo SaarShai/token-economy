@@ -40,6 +40,7 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 - [[adapters/README]] — project-local agent adapters
 - `token_economy/code_map.py` — compact structural code-map provider
 - [[concepts/framework-hardening-adoption]] — ranked adoption matrix and current hardening learnings
+- [[concepts/lean-execution]] — plan/context/delegation pruning rules and source synthesis
 - [[raw/2026-04-25-agent-memory-framework-research-rerun]] — Gemini and local Gemma research outputs
 - [[concepts/local-model-setup]] — current M1/M1B/M2 local model policy
 - [[templates/page.template]] — wiki page template

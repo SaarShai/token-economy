@@ -10,6 +10,7 @@ Default target project comes from the user prompt, handoff, imported summary, or
 Use **Caveman Ultra**: terse, exact, high-signal. No filler/praise padding, no softening, no conversational lead-ins. Code and quoted errors stay unchanged.
 
 Start non-trivial tasks in plan mode: short plan, inspect reality, execute.
+Smallest reversible action. Prune steps not tied to risk, implementation, verification, learning.
 
 ## Boot Sequence
 
@@ -39,6 +40,7 @@ Load only when triggered:
 | Writing memory | `skills/wiki-write/SKILL.md` |
 | Context refresh/clear/`summ` | `skills/context-refresh/SKILL.md` |
 | Need subagents | `skills/subagent-orchestrator/SKILL.md`; `prompts/subagents/lifecycle.prompt.md` |
+| Simplify/lean/prune | `skills/lean-execution/SKILL.md` |
 | GitHub repo maintenance | `prompts/subagents/repo-maintainer.prompt.md` |
 | `/pa` or `/btw` prompt | `skills/personal-assistant/SKILL.md` |
 | Before completion claim | `skills/verification-before-completion/SKILL.md` |

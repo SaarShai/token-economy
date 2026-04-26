@@ -11,10 +11,12 @@ Steps:
 1. Inspect discoverable facts.
 2. Identify unknowns.
 3. Draft plan with phases and verification.
-4. Get approval if host workflow requires it.
-5. Execute.
-6. Verify.
-7. Document durable facts.
+4. Simplify: remove ceremony, duplicate checks, broad research, speculative docs, and steps that do not reduce risk or produce evidence.
+5. Get approval if host workflow requires it.
+6. Execute.
+7. Verify.
+8. Document durable facts.
 
 Do not assume APIs exist. Retrieve docs or code first.
 
+Bypass formal planning when the task is clear, low-risk, and describable as a one-sentence diff. Inspect reality, execute, verify.

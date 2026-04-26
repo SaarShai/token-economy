@@ -1,5 +1,13 @@
 # Log
 
+## [2026-04-26] harden | lean execution and plan pruning
+
+Added `skills/lean-execution/SKILL.md`, wired it into `start.md`, added an L0 plan-pruning rule, tightened `plan-first-execute` with a simplification pass and low-risk planning bypass, and added a subagent overhead gate plus compact result budget. Added [[concepts/lean-execution]] to capture the source synthesis. Normalized complete-migrate prompt `.md` paths and added the new skill to import bootstrap. Verified with `./te doctor`, `./te wiki lint --strict --fail-on-error`, `bash scripts/run_all_tests.sh`, and `git diff --check`.
+
+## [2026-04-26] research | top repo lean execution deep pass
+
+Ranked the earlier repo candidates by live GitHub signals, then shallow-cloned and inspected the top three: `addyosmani/agent-skills`, `openai/skills`, and `memodb-io/Acontext`. Adopted small follow-ups only: tighter understand-before-delete and scope discipline in `lean-execution`, richer-page-over-thin-page wiki-writing rules, and a stricter subagent fan-out merge-size condition. Updated [[concepts/lean-execution]] with the repo evidence and kept external frameworks as source material, not dependencies.
+
 ## [2026-04-25] compile | framework hardening and adoption learnings
 
 Added a compact synthesis page and raw research note for the latest hardening/adoption pass, including Gemini ecosystem research, local M1 Gemma/Ollama research, Gemini cache guidance, local M1/M1B Ollama results, a ranked adoption matrix, implemented retrieval and lifecycle routing, the current skill-crystallizer and code-map layers, and deferred graph-memory/alias/SessionEnd ideas.
