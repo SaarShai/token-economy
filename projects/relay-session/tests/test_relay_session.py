@@ -46,6 +46,14 @@ class RelaySessionTests(unittest.TestCase):
             self.assertIn("## 6. Key decisions\n- none captured", text)
             self.assertNotIn("Handoff generated as a lean continuation packet", text)
 
+    def test_checkpoint_promotes_goal_decisions(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            packet = checkpoint(root, "Proven conclusion: launcher works. Current safe state keeps cli.py untouched.", plan="stop")
+            text = Path(packet["path"]).read_text(encoding="utf-8")
+            self.assertIn("Proven conclusion: launcher works", text)
+            self.assertIn("Current safe state keeps cli.py untouched", text)
+
     def test_ask_old_plan_prefers_thread_then_transcript(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
