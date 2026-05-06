@@ -43,6 +43,7 @@ class RelaySessionTests(unittest.TestCase):
             self.assertIn("User asked: Fix relay handoff summaries", text)
             self.assertIn("projects/relay-session/relay_session/core.py", text)
             self.assertIn("3 passed", text)
+            self.assertIn("## 6. Key decisions\n- none captured", text)
             self.assertNotIn("Handoff generated as a lean continuation packet", text)
 
     def test_ask_old_plan_prefers_thread_then_transcript(self):

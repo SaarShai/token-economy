@@ -51,17 +51,7 @@ def current_codex_transcript(thread_id: str | None = None, sessions_root: Path |
 
 
 def extract_transcript_facts(text: str) -> dict[str, list[str]]:
-    commands: list[str] = []
-    errors: list[str] = []
-    decisions = []
-    for role, body in transcript_messages(text):
-        if role != "assistant" or len(body) > 1200:
-            continue
-        if re.search(r"\b(decision|decided|choose|chosen|because|reason)\b", body, re.IGNORECASE):
-            decisions.append(body.strip()[:300])
-        if len(decisions) >= 80:
-            break
-    return {"files": [], "commands": commands, "errors": errors, "decisions": decisions}
+    return {"files": [], "commands": [], "errors": [], "decisions": []}
 
 
 def _message_text(payload: dict[str, Any]) -> str:
@@ -143,15 +133,18 @@ def extract_verification(text: str) -> list[str]:
             seen.add(cleaned)
             checks.append(cleaned)
 
+    latest_block: str | None = None
     for _, body in transcript_messages(text):
         marker = re.search(r"Verification:", body, re.IGNORECASE)
         if marker:
-            block = re.split(r"\n(?:Note|For the next|Next)\b", body[marker.end() :], maxsplit=1)[0]
-            for line in block.splitlines():
-                if "passed" in line.lower() or "ok:" in line.lower() or "smoke" in line.lower():
-                    add(line)
-    for match in re.finditer(r"\b\d+ passed[^\n`]*", text):
-        add(match.group(0))
+            latest_block = re.split(r"\n(?:Note|For the next|Next)\b", body[marker.end() :], maxsplit=1)[0]
+    if latest_block:
+        for line in latest_block.splitlines():
+            if "passed" in line.lower() or "ok:" in line.lower() or "smoke" in line.lower():
+                add(line)
+    if not checks:
+        for match in re.finditer(r"\b\d+ passed[^\n`]*", text):
+            add(match.group(0))
     return checks[:8]
 
 
