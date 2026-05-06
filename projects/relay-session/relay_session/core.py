@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 from datetime import datetime, timezone
 from math import ceil
 from pathlib import Path
@@ -14,6 +15,10 @@ PATCH_PATH_RE = re.compile(r"^\*\*\* (?:Update|Add|Delete) File: (?P<path>.+)$",
 CMD_RE = re.compile(r"(?:cmd|command|bash|shell)[\"': ]+([^\\n]{3,240})", re.IGNORECASE)
 ERR_RE = re.compile(r"((?:error|exception|traceback|failed|fatal)[^\n]{0,240})", re.IGNORECASE)
 RELAY_NAME_RE = re.compile(r"^Relay\[(?P<version>\d+)\]:\s*(?P<name>.+)$")
+SECTION_RE = re.compile(
+    r"^\s*(?P<title>Changed files|Verification|Tests|Conclusion|Conclusions|Confirmed|Decisions|Key decisions|Current safe state|Open questions|Next|What next)\s*:\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
 
 
 def estimate_tokens(text: str) -> int:
@@ -52,6 +57,7 @@ def current_codex_transcript(thread_id: str | None = None, sessions_root: Path |
 
 def extract_transcript_facts(text: str) -> dict[str, list[str]]:
     decisions: list[str] = []
+    errors: list[str] = []
     seen: set[str] = set()
 
     def add(line: str) -> None:
@@ -70,7 +76,11 @@ def extract_transcript_facts(text: str) -> dict[str, list[str]]:
                 continue
             if decision_re.search(line):
                 add(line)
-    return {"files": [], "commands": [], "errors": [], "decisions": decisions[:8]}
+            if ERR_RE.search(line):
+                cleaned = re.sub(r"\s+", " ", line.strip().lstrip("- ").strip("`"))
+                if cleaned and cleaned not in errors:
+                    errors.append(cleaned)
+    return {"files": [], "commands": [], "errors": errors[:4], "decisions": decisions[:8]}
 
 
 def _message_text(payload: dict[str, Any]) -> str:
@@ -123,24 +133,112 @@ def _summary_lines(body: str) -> list[str]:
     return lines
 
 
-def compact_summary(text: str) -> list[str]:
-    messages = transcript_messages(text)
-    items: list[str] = []
-    seen: set[str] = set()
+def _strip_bullet(line: str) -> str:
+    return re.sub(r"^\s*(?:[-*]|\d+[.)])\s*", "", line.strip()).strip("` ")
 
-    def add(item: str) -> None:
+
+def _dedupe(items: list[str], limit: int | None = None) -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for item in items:
         clean = re.sub(r"\s+", " ", item).strip()
         if clean and clean not in seen:
             seen.add(clean)
-            items.append(clean)
+            result.append(clean)
+            if limit and len(result) >= limit:
+                break
+    return result
 
-    for role, body in messages[-16:]:
-        if role == "user":
-            add("User asked: " + body.splitlines()[0].strip())
-            continue
-        for line in _summary_lines(body)[:5]:
-            add("Assistant reported: " + line)
-    return items[-12:]
+
+def _structured_blocks(body: str) -> dict[str, list[str]]:
+    matches = list(SECTION_RE.finditer(body))
+    blocks: dict[str, list[str]] = {}
+    for index, match in enumerate(matches):
+        title = match.group("title").lower()
+        start = match.end()
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(body)
+        lines = []
+        for raw in body[start:end].splitlines():
+            line = _strip_bullet(raw)
+            if not line or len(line) < 4:
+                continue
+            if line.startswith("```"):
+                continue
+            lines.append(line)
+        if lines:
+            blocks.setdefault(title, []).extend(lines)
+    return blocks
+
+
+def extract_structured_summary(text: str) -> dict[str, list[str]]:
+    facts: list[str] = []
+    decisions: list[str] = []
+    next_steps: list[str] = []
+    open_questions: list[str] = []
+    fallback: list[str] = []
+
+    fact_re = re.compile(
+        r"\b(proven conclusion|conclusion|confirmed|fixed|regression boundary|safe state|current safe state|backend|sidebar|ui visibility|listed_after_start|reverted|restored|commit|pushed|installed|launched)\b",
+        re.IGNORECASE,
+    )
+    decision_re = re.compile(r"\b(should|should not|must|do not|avoid|keep|treat|only|priority|assumption)\b", re.IGNORECASE)
+    messages = transcript_messages(text)
+
+    for role, body in messages[-24:]:
+        if role == "assistant":
+            blocks = _structured_blocks(body)
+            for key, lines in blocks.items():
+                if key in {"conclusion", "conclusions", "confirmed", "current safe state"}:
+                    facts.extend(lines)
+                elif key in {"decisions", "key decisions"}:
+                    decisions.extend(lines)
+                elif key in {"next", "what next"}:
+                    next_steps.extend(lines)
+                elif key == "open questions":
+                    open_questions.extend(lines)
+            for raw in body.splitlines():
+                line = _strip_bullet(raw)
+                if not line or line.endswith(":") or len(line) < 8:
+                    continue
+                if fact_re.search(line):
+                    facts.append(line)
+                elif decision_re.search(line):
+                    decisions.append(line)
+        elif role == "user":
+            first = body.splitlines()[0].strip()
+            if first:
+                fallback.append("User request: " + first)
+
+    if not facts:
+        facts = fallback[-4:]
+    return {
+        "facts": _dedupe(facts, 10),
+        "decisions": _dedupe(decisions, 8),
+        "next": _dedupe(next_steps, 4),
+        "open_questions": _dedupe([q for q in open_questions if q.lower() not in {"none", "none captured"}], 4),
+    }
+
+
+def compact_summary(text: str) -> list[str]:
+    structured = extract_structured_summary(text)
+    return structured["facts"][:12]
+
+
+def current_git_state(repo_root: Path) -> list[str]:
+    def run(args: list[str]) -> str:
+        try:
+            return subprocess.check_output(args, cwd=repo_root, stderr=subprocess.DEVNULL, text=True, timeout=3).strip()
+        except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+            return ""
+
+    inside = run(["git", "rev-parse", "--is-inside-work-tree"])
+    if inside != "true":
+        return ["not a git worktree"]
+    branch = run(["git", "branch", "--show-current"]) or "detached"
+    head = run(["git", "rev-parse", "--short", "HEAD"]) or "unknown"
+    status = run(["git", "status", "--short"])
+    dirty = len([line for line in status.splitlines() if line.strip()])
+    return [f"HEAD {head} on {branch}", f"dirty entries: {dirty}"]
 
 
 def extract_changed_files(text: str) -> list[str]:
@@ -187,7 +285,7 @@ def extract_verification(text: str) -> list[str]:
         for line in latest_block.splitlines():
             if line.strip().endswith("?"):
                 continue
-            if "passed" in line.lower() or "ok:" in line.lower() or "smoke" in line.lower():
+            if re.search(r"\b(passed|ok:|smoke|appeared|visible|listed|launched|restored)\b", line, re.IGNORECASE):
                 add(line)
     if not checks:
         for match in re.finditer(r"\b\d+ passed[^\n`]*", text):
@@ -205,6 +303,41 @@ def format_list(items: list[str], max_items: int = 8, max_chars: int = 140) -> s
     if len(items) > max_items:
         lines.append(f"- `...[{len(items) - max_items} more omitted; ask old session or inspect transcript if needed]...`")
     return "\n".join(lines)
+
+
+def _handoff_quality(text: str, max_tokens: int) -> dict[str, Any]:
+    required = [
+        "old-session-query-policy: explicit-only",
+        "old-thread-id:",
+        "old-transcript:",
+        "## 1. Current task",
+        "## 2. Context packet",
+        "## 9. Instructions for next agent",
+        "Layer 1:",
+        "Layer 2:",
+        "Layer 3:",
+        "Layer 4:",
+        "Omit `--execute`",
+        "add `--execute`",
+        "even older relay handoff",
+    ]
+    missing = [item for item in required if item not in text]
+    warnings: list[str] = []
+    if re.search(r"\b(User asked|Assistant reported):", text):
+        warnings.append("transcript-style summary fragments present")
+    if re.search(r"(?<!Do not )load broad archives", text, re.IGNORECASE):
+        warnings.append("broad archive instruction is ambiguous")
+    command_section = re.search(r"## Commands Seen\n(?P<body>.*?)(?:\n## |\Z)", text, re.DOTALL)
+    if command_section and len([line for line in command_section.group("body").splitlines() if line.strip().startswith("-")]) > 4:
+        warnings.append("too many command bullets")
+    tokens = estimate_tokens(text)
+    return {
+        "tokens": tokens,
+        "max_tokens": max_tokens,
+        "missing": missing,
+        "warnings": warnings,
+        "ok": not missing and not warnings and tokens <= max_tokens,
+    }
 
 
 def parse_handoff_metadata(path: Path) -> dict[str, str]:
@@ -234,9 +367,14 @@ def checkpoint(
     state_dir.mkdir(parents=True, exist_ok=True)
     transcript_text = transcript.read_text(encoding="utf-8", errors="replace") if transcript and transcript.exists() else ""
     facts = extract_transcript_facts(transcript_text)
-    summary = compact_summary(transcript_text)
+    structured = extract_structured_summary(transcript_text)
+    summary = structured["facts"]
+    decisions = _dedupe(structured["decisions"] + facts["decisions"], 8)
     changed_files = extract_changed_files(transcript_text)
     verification = extract_verification(transcript_text)
+    next_steps = structured["next"]
+    open_questions = structured["open_questions"]
+    git_state = current_git_state(repo_root)
     old_thread_id = os.environ.get("CODEX_THREAD_ID") or "none"
     old_transcript = str(transcript) if transcript else "none"
     start = repo_root / "start.md"
@@ -259,32 +397,52 @@ old-session-query-policy: explicit-only
 ## 1. Current task
 {goal or "Continue current work."}
 
-## 2. What done
-{format_list(summary, max_items=12, max_chars=1000) if summary else "- No authored/recent user-assistant summary captured."}
+## 2. Context packet
+### Proven facts
+{format_list(summary, max_items=10, max_chars=260) if summary else "- none captured; retrieve narrowly before asking old"}
+
+### Recent decisions
+{format_list(decisions, max_items=8, max_chars=220)}
+
+### Changed files
+{format_list(changed_files, max_items=12, max_chars=220) if changed_files else "- none captured; ask old only if exact files are needed and repo retrieval is insufficient"}
+
+### Verification seen
+{format_list(verification, max_items=6, max_chars=220)}
+
+### Current git state
+{format_list(git_state, max_items=4, max_chars=180)}
+
+### UI/session access notes
+- `Backend listing proves session creation; Codex Desktop sidebar visibility can lag. Restart Codex to refresh if needed.`
+- `If the relay is backend-listed but hidden in the sidebar, use codex resume <thread-id> if a thread id is available.`
 
 ## 3. What in-progress
 - {plan or "Inspect repo state, retrieve narrowly, then execute verified steps."}
 
 ## 4. What next
-- Read this handoff and `start.md` if present only.
+- {next_steps[0] if next_steps else "Read this handoff and `start.md` if present only."}
 - Verify this is a fresh successor context.
 - Build plan before execution.
 
 ## 5. Key files touched
-{format_list(changed_files, max_items=12, max_chars=220) if changed_files else "- none captured; ask old only if exact files are needed and repo retrieval is insufficient"}
+- See `### Changed files` in the context packet.
 
 ## 6. Key decisions
-{format_list(facts["decisions"])}
+- See `### Recent decisions` in the context packet.
 
 ## Verification Seen
-{format_list(verification, max_items=6, max_chars=220)}
+- See `### Verification seen` in the context packet.
 
 ## 7. Retrieval pointers
 {start_pointer}
-- Ask old only for a specific missing fact after repo retrieval is insufficient.
+- Layer 1: read `start.md` plus this handoff only.
+- Layer 2: use narrow repo retrieval against known files, `rg`, `git status`, and focused tests.
+- Layer 3: if a needed fact is still absent, ask old with `ask-old --handoff <file> --question "<specific missing fact>"`.
+- Layer 4: if the old session identifies an even older relay handoff as the source, repeat `ask-old` with that older handoff and the same narrow question.
 
 ## 8. Open questions
-- none captured
+{format_list(open_questions, max_items=4, max_chars=220)}
 
 ## 9. Instructions for next agent
 - Start in plan mode. Think step-by-step. Create a compact plan before executing.
@@ -305,25 +463,19 @@ old-session-query-policy: explicit-only
     if estimate_tokens(packet) > max_packet_tokens:
         packet = packet.replace(format_list(facts["commands"]), "- omitted to preserve relay instructions")
         packet = packet.replace(format_list(facts["errors"]), "- omitted to preserve relay instructions")
+    if estimate_tokens(packet) > max_packet_tokens:
+        packet = packet.replace(format_list(decisions), format_list(decisions, max_items=4, max_chars=160))
+        packet = packet.replace(format_list(summary, max_items=10, max_chars=260), format_list(summary, max_items=6, max_chars=180))
     path = state_dir / f"{ts}-fresh-session.md"
     path.write_text(packet, encoding="utf-8")
-    return {"path": str(path), "tokens": estimate_tokens(packet), "packet": packet}
+    quality = _handoff_quality(packet, max_packet_tokens)
+    return {"path": str(path), "tokens": estimate_tokens(packet), "packet": packet, "quality": quality}
 
 
 def lint_handoff(path: Path, max_tokens: int = 2000) -> dict[str, Any]:
     text = path.read_text(encoding="utf-8", errors="replace")
-    required = [
-        "old-session-query-policy: explicit-only",
-        "old-thread-id:",
-        "old-transcript:",
-        "## 1. Current task",
-        "## 9. Instructions for next agent",
-        "Start in plan mode",
-        "ask-old",
-    ]
-    missing = [item for item in required if item not in text]
-    tokens = estimate_tokens(text)
-    return {"path": str(path), "tokens": tokens, "max_tokens": max_tokens, "missing": missing, "ok": not missing and tokens <= max_tokens}
+    quality = _handoff_quality(text, max_tokens)
+    return {"path": str(path), **quality}
 
 
 def ask_old_from_transcript(transcript: Path, question: str, max_snippets: int = 8) -> dict[str, Any]:

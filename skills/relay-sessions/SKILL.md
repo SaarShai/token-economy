@@ -16,6 +16,8 @@ Use the repo-local `relay_session` package to create compact handoffs and launch
 - Ask old sessions only for specific missing facts after narrow repo retrieval is insufficient.
 - If the old session identifies an even older relay handoff as the source, repeat `ask-old` with that older handoff and the same narrow question.
 - Treat UI visibility as user-confirmed; backend `listed_after_start: true` proves app-server listing, not immediate sidebar rendering.
+- Use the handoff's progressive disclosure order: Layer 1 `start.md` plus handoff, Layer 2 narrow repo retrieval, Layer 3 `ask-old`, Layer 4 repeat `ask-old` on an older handoff if pointed there.
+- Prefer factual packet sections over transcript snippets when judging continuity quality.
 
 ## Commands
 
