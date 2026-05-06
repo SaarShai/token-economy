@@ -63,7 +63,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [ ! -d "$src" ]; then
+if [ ! -d "$src" ] || { [ "$install_skill" -eq 1 ] && [ ! -d "$skill_src" ]; }; then
   tmp="$(mktemp -d)"
   archive="$tmp/token-economy.tar.gz"
   curl -fsSL "https://codeload.github.com/SaarShai/token-economy/tar.gz/main" -o "$archive"
