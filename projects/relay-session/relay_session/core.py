@@ -54,17 +54,6 @@ def extract_transcript_facts(text: str) -> dict[str, list[str]]:
     return {"files": [], "commands": [], "errors": [], "decisions": []}
 
 
-def goal_decisions(goal: str) -> list[str]:
-    decisions: list[str] = []
-    for raw in re.split(r";\s*|\.\s+", goal or ""):
-        line = re.sub(r"\s+", " ", raw.strip())
-        if len(line) < 24:
-            continue
-        if re.search(r"\b(proven|conclusion|regression boundary|safe state|do not touch|untouched|launcher|UI-sensitive)\b", line, re.IGNORECASE):
-            decisions.append(line.rstrip(".")[:220].rstrip())
-    return decisions[:4]
-
-
 def _message_text(payload: dict[str, Any]) -> str:
     content = payload.get("content")
     if isinstance(content, str):
@@ -100,7 +89,7 @@ def transcript_messages(text: str) -> list[tuple[str, str]]:
 
 def compact_summary(text: str) -> list[str]:
     items = []
-    for role, body in transcript_messages(text)[-8:]:
+    for role, body in transcript_messages(text)[-12:]:
         clean = re.sub(r"\s+", " ", body).strip()
         if not clean:
             continue
@@ -203,7 +192,6 @@ def checkpoint(
     summary = compact_summary(transcript_text)
     changed_files = extract_changed_files(transcript_text)
     verification = extract_verification(transcript_text)
-    decisions = goal_decisions(goal) or facts["decisions"]
     old_thread_id = os.environ.get("CODEX_THREAD_ID") or "none"
     old_transcript = str(transcript) if transcript else "none"
     start = repo_root / "start.md"
@@ -241,7 +229,7 @@ old-session-query-policy: explicit-only
 {format_list(changed_files, max_items=12, max_chars=220) if changed_files else "- none captured; ask old only if exact files are needed and repo retrieval is insufficient"}
 
 ## 6. Key decisions
-{format_list(decisions)}
+{format_list(facts["decisions"])}
 
 ## Verification Seen
 {format_list(verification, max_items=6, max_chars=220)}
