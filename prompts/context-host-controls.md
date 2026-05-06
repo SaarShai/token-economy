@@ -40,7 +40,7 @@ If an older project-local `te` does not have `host-controls`, `fresh-command`, o
 
 Best practical workaround for hosts without callable clear: launch a fresh successor session with only `start.md` and the handoff file. This does not clear the current transcript; it bypasses it.
 
-For older Codex installs where the Token Economy wrapper is not present but `codex app-server` exists, a fresh successor can be created directly with persistent `thread/start` (`ephemeral: false`) plus a single `turn/start` containing only the handoff instruction. This is a clean-continuation workaround, not an in-place context clear.
+For older Codex installs where the Token Economy wrapper is not present but `codex app-server` exists, a fresh successor can be created directly by starting the thread first and then sending the first `turn/start` with the handoff instruction and target model. This is a clean-continuation workaround, not an in-place context clear.
 
 Examples:
 
@@ -54,7 +54,7 @@ gemini --prompt-interactive "Read $PWD/start.md and <handoff-file> only. Continu
 For Codex hosts with App Server support, Token Economy can start a persistent fresh successor thread directly. This is clean continuation, not clearing the old visible thread:
 
 ```bash
-./te context codex-fresh-thread --handoff <handoff-file> --model gpt-5.3-codex-spark --execute
+./te context codex-fresh-thread --handoff <handoff-file> --execute
 ```
 
 Use `--ephemeral` only for throwaway smoke tests. Use `TOKEN_ECONOMY_CODEX_FRESH_MODEL=<model>` to change the default. Success means the command reports `ok: true`, `thread_persistent: true`, `thread_turns_empty: true`, `assistant_responded: true`, `thread_idle: true`, and ideally `listed_after_start: true`. The fresh thread bypasses rather than erases the old host transcript. Codex may still show large input-token counts from host/system/tool context; that is not evidence that the old transcript was loaded.

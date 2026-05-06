@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
+import sqlite3
 import sys
 from pathlib import Path
 from typing import Any
@@ -10,8 +12,9 @@ from typing import Any
 from .config import detect_agent, load_config
 from .bench import run_framework_smoke
 from .code_map import code_map
-from .codex_app_server import codex_compact_thread_plan, codex_fresh_thread_plan, run_codex_compact_thread, run_codex_fresh_thread
-from .context import checkpoint, fresh_launch_commands, host_context_controls, lint_handoff, meter, status_for_files
+from .cleanup import apply_cleanup, cleanup_expectations, cleanup_plan
+from .codex_app_server import codex_compact_thread_plan, codex_fresh_thread_plan, run_codex_ask_old_thread, run_codex_compact_thread, run_codex_fresh_thread
+from .context import ask_old_session_plan, checkpoint, current_codex_transcript, fresh_launch_commands, host_context_controls, lint_handoff, meter, should_auto_relay, status_for_files, write_pending_relay
 from .delegate import delegation_plan, documentation_lifecycle_packet, dumps, load_models, classify, personal_assistant_directive, personal_assistant_packet
 from .docs import audit as docs_audit, split_plan
 from .hooks import doctor as hooks_doctor
@@ -20,6 +23,53 @@ from .output_filter import cmd_filter as output_filter_cmd_filter, cmd_rules as 
 from .profile import set_profile, show as show_profile
 from .tokens import estimate_tokens
 from .wiki import WikiStore
+
+
+RELAY_NAME_RE = re.compile(r"^Relay\[(?P<version>\d+)\]:\s*(?P<name>.+)$")
+
+
+def relay_session_name(name: str | None = None, version: str = "01") -> str:
+    session = name or "auto-context-refresh"
+    if session.startswith("Relay["):
+        return session
+    return f"Relay[{version}]: {session}"
+
+
+def next_relay_session_name(previous: str | None = None, fallback: str | None = None, version: str = "01") -> str:
+    source = (previous or fallback or "auto-context-refresh").strip()
+    match = RELAY_NAME_RE.match(source)
+    if match:
+        next_version = int(match.group("version")) + 1
+        return f"Relay[{next_version:02d}]: {match.group('name')}"
+    if fallback and fallback != source:
+        return relay_session_name(fallback, version)
+    return relay_session_name(source, version)
+
+
+def codex_thread_title(thread_id: str | None) -> str | None:
+    if not thread_id:
+        return None
+    db = Path.home() / ".codex" / "state_5.sqlite"
+    if not db.exists():
+        return None
+    try:
+        with sqlite3.connect(db) as con:
+            row = con.execute("SELECT title FROM threads WHERE id = ?", (thread_id,)).fetchone()
+    except sqlite3.Error:
+        return None
+    title = row[0] if row else None
+    return title.strip() if isinstance(title, str) and title.strip() else None
+
+
+def codex_thread_id_from_transcript(transcript: Path | None) -> str | None:
+    if not transcript:
+        return None
+    match = re.search(r"rollout-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-(?P<id>[0-9a-f-]{36})\.jsonl$", transcript.name)
+    return match.group("id") if match else None
+
+
+def codex_previous_thread_title(transcript: Path | None) -> str | None:
+    return codex_thread_title(codex_thread_id_from_transcript(transcript) or None)
 
 
 def print_json(obj: Any) -> None:
@@ -145,6 +195,33 @@ def cmd_code(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_cleanup(args: argparse.Namespace) -> int:
+    cfg = load_config(args.repo)
+    if args.cleanup_cmd == "scan":
+        result = cleanup_plan(cfg.repo_root, surface=args.surface, min_age_days=args.older_than_days, min_size=args.min_size, keep_recent=args.keep_recent)
+        print_json(result)
+    elif args.cleanup_cmd == "expectations":
+        result = cleanup_expectations(cfg.repo_root)
+        print_json(result)
+        return 0 if result["ok"] else 1
+    elif args.cleanup_cmd == "apply":
+        try:
+            result = apply_cleanup(
+                cfg.repo_root,
+                surface=args.surface,
+                older_than_days=args.older_than_days,
+                min_size=args.min_size,
+                keep_recent=args.keep_recent,
+                confirm=args.confirm,
+            )
+        except ValueError as exc:
+            print_json({"ok": False, "error": str(exc)})
+            return 2
+        print_json(result)
+        return 0 if result["ok"] else 1
+    return 0
+
+
 def cmd_context(args: argparse.Namespace) -> int:
     cfg = load_config(args.repo)
     if args.context_cmd == "status":
@@ -154,13 +231,13 @@ def cmd_context(args: argparse.Namespace) -> int:
         result = status_for_files(files, cfg.context_max_tokens, cfg.refresh_threshold)
         print_json(result)
     elif args.context_cmd == "meter":
-        transcript = Path(args.transcript).expanduser() if args.transcript else None
-        print_json(meter(transcript=transcript, model=args.model, max_tokens=cfg.context_max_tokens))
+        transcript = Path(args.transcript).expanduser() if args.transcript else current_codex_transcript()
+        print_json(meter(transcript=transcript, model=args.model, max_tokens=cfg.context_max_tokens, threshold=cfg.refresh_threshold))
     elif args.context_cmd == "checkpoint":
         transcript = Path(args.transcript).expanduser() if args.transcript else None
         context_pct = "unknown"
         if transcript and transcript.exists():
-            context_pct = str(meter(transcript=transcript, max_tokens=cfg.context_max_tokens)["pct"])
+            context_pct = str(meter(transcript=transcript, max_tokens=cfg.context_max_tokens, threshold=cfg.refresh_threshold)["pct"])
         result = checkpoint(cfg.repo_root, goal=args.goal or "", plan=args.plan or "", transcript=transcript, max_packet_tokens=args.max_tokens, context_pct=context_pct)
         if args.print_packet:
             print(result["packet"])
@@ -171,8 +248,23 @@ def cmd_context(args: argparse.Namespace) -> int:
         print(result["packet"])
         print(f"\nFresh packet written: {result['path']}")
         print("Open a fresh session with this packet if the host cannot clear context programmatically.")
+    elif args.context_cmd == "current-transcript":
+        transcript = current_codex_transcript(args.thread_id)
+        if transcript:
+            print(transcript)
+        else:
+            return 1
     elif args.context_cmd == "lint-handoff":
         print_json(lint_handoff(Path(args.path).expanduser(), max_tokens=args.max_tokens))
+    elif args.context_cmd == "ask-old":
+        handoff = Path(args.handoff).expanduser()
+        if not handoff.is_absolute():
+            handoff = cfg.repo_root / handoff
+        plan = ask_old_session_plan(cfg.repo_root, handoff, args.question, execute=args.execute)
+        if args.execute and plan.get("mode") == "codex-old-thread":
+            print_json(run_codex_ask_old_thread(cfg.repo_root, str(plan["thread_id"]), args.question, model=args.model if args.model != "auto" else None, timeout=args.timeout))
+        else:
+            print_json(plan)
     elif args.context_cmd == "host-controls":
         agent = detect_agent() if args.agent == "auto" else args.agent
         print_json(host_context_controls(agent))
@@ -186,10 +278,103 @@ def cmd_context(args: argparse.Namespace) -> int:
         handoff = Path(args.handoff).expanduser()
         if not handoff.is_absolute():
             handoff = cfg.repo_root / handoff
+        session_name = relay_session_name(args.name, args.version) if args.name else None
         if args.execute:
-            print_json(run_codex_fresh_thread(cfg.repo_root, handoff, model=args.model, timeout=args.timeout, ephemeral=args.ephemeral))
+            print_json(run_codex_fresh_thread(cfg.repo_root, handoff, model=args.model, timeout=args.timeout, ephemeral=args.ephemeral, session_name=session_name, continue_work=args.continue_work))
         else:
-            print_json(codex_fresh_thread_plan(cfg.repo_root, handoff, model=args.model, ephemeral=args.ephemeral))
+            print_json(codex_fresh_thread_plan(cfg.repo_root, handoff, model=args.model, ephemeral=args.ephemeral, session_name=session_name, continue_work=args.continue_work))
+    elif args.context_cmd == "relay":
+        transcript = Path(args.transcript).expanduser() if args.transcript else current_codex_transcript()
+        status = meter(transcript=transcript, model=args.model, max_tokens=cfg.context_max_tokens, threshold=cfg.refresh_threshold)
+        old_title = codex_previous_thread_title(transcript)
+        relay_name = next_relay_session_name(old_title, fallback=args.name, version=args.version)
+        packet = checkpoint(
+            cfg.repo_root,
+            goal=args.goal or f"Automatic context relay for {relay_name}",
+            plan="Fresh successor should continue from this handoff with start.md only.",
+            transcript=transcript,
+            max_packet_tokens=args.max_tokens,
+            context_pct=status["pct"],
+        )
+        handoff = Path(packet["path"])
+        result: dict[str, Any] = {
+            "agent": "codex",
+            "mode": "relay",
+            "session_name": relay_name,
+            "previous_session_name": old_title,
+            "threshold": cfg.refresh_threshold,
+            "meter": status,
+            "handoff": str(handoff),
+            "handoff_tokens": packet["tokens"],
+            "execute": args.execute,
+        }
+        if args.execute:
+            result["successor"] = run_codex_fresh_thread(
+                cfg.repo_root,
+                handoff,
+                model=args.model if args.model != "auto" else None,
+                timeout=args.timeout,
+                ephemeral=args.ephemeral,
+                session_name=relay_name,
+                continue_work=True,
+            )
+            result["ok"] = bool(result["successor"].get("ok"))
+        else:
+            result["successor"] = codex_fresh_thread_plan(
+                cfg.repo_root,
+                handoff,
+                model=args.model if args.model != "auto" else None,
+                ephemeral=args.ephemeral,
+                session_name=relay_name,
+                continue_work=True,
+            )
+            result["ok"] = True
+        print_json(result)
+    elif args.context_cmd == "auto-relay":
+        transcript = Path(args.transcript).expanduser() if args.transcript else current_codex_transcript()
+        status = meter(transcript=transcript, model=args.model, max_tokens=cfg.context_max_tokens, threshold=args.threshold if args.threshold is not None else cfg.refresh_threshold)
+        decision = should_auto_relay(cfg.repo_root, transcript, status, cooldown_seconds=args.cooldown)
+        result: dict[str, Any] = {
+            "agent": "codex",
+            "mode": "auto-relay",
+            "meter": status,
+            "transcript": str(transcript) if transcript else None,
+            **decision,
+        }
+        if decision.get("should_relay"):
+            state = write_pending_relay(cfg.repo_root, dict(decision["payload"]))
+            result["state"] = state
+            if args.execute:
+                old_title = codex_previous_thread_title(transcript)
+                relay_name = next_relay_session_name(old_title, fallback=args.name, version=args.version)
+                packet = checkpoint(
+                    cfg.repo_root,
+                    goal=args.goal or f"Automatic context relay for {relay_name}",
+                    plan="Fresh successor should continue from this handoff with start.md only.",
+                    transcript=transcript,
+                    max_packet_tokens=args.max_tokens,
+                    context_pct=status["pct"],
+                )
+                handoff = Path(packet["path"])
+                result["handoff"] = str(handoff)
+                result["handoff_tokens"] = packet["tokens"]
+                result["session_name"] = relay_name
+                result["previous_session_name"] = old_title
+                result["successor"] = run_codex_fresh_thread(
+                    cfg.repo_root,
+                    handoff,
+                    model=args.model if args.model != "auto" else None,
+                    timeout=args.timeout,
+                    ephemeral=args.ephemeral,
+                    session_name=relay_name,
+                    continue_work=True,
+                )
+                result["ok"] = bool(result["successor"].get("ok"))
+            else:
+                result["ok"] = True
+        else:
+            result["ok"] = True
+        print_json(result)
     elif args.context_cmd == "codex-compact-thread":
         handoff = Path(args.handoff).expanduser() if args.handoff else None
         if handoff and not handoff.is_absolute():
@@ -348,6 +533,25 @@ def build_parser() -> argparse.ArgumentParser:
     cdm.add_argument("--max-symbols", type=int, default=200)
     cdm.set_defaults(func=cmd_code)
 
+    clean = sub.add_parser("cleanup", help="Scan and safely clean generated state, artifacts, docs, wiki, and context residue")
+    cleansub = clean.add_subparsers(dest="cleanup_cmd", required=True)
+    cs = cleansub.add_parser("scan")
+    cs.add_argument("--surface", choices=["all", "sessions", "db", "filesystem", "docs", "wiki", "context"], default="all")
+    cs.add_argument("--older-than-days", type=int, default=14)
+    cs.add_argument("--min-size", type=int, default=1024 * 1024)
+    cs.add_argument("--keep-recent", type=int, default=5)
+    cs.add_argument("--json", action="store_true", help="Accepted for explicit machine-readable use; output is always JSON")
+    cs.set_defaults(func=cmd_cleanup)
+    ca = cleansub.add_parser("apply")
+    ca.add_argument("--surface", choices=["sessions", "db", "filesystem"], required=True)
+    ca.add_argument("--older-than-days", type=int, default=14)
+    ca.add_argument("--min-size", type=int, default=1024 * 1024)
+    ca.add_argument("--keep-recent", type=int, default=5)
+    ca.add_argument("--confirm", action="store_true")
+    ca.set_defaults(func=cmd_cleanup)
+    ce = cleansub.add_parser("expectations")
+    ce.set_defaults(func=cmd_cleanup)
+
     ctx = sub.add_parser("context")
     csub = ctx.add_subparsers(dest="context_cmd", required=True)
     csub.add_parser("status").set_defaults(func=cmd_context)
@@ -368,10 +572,20 @@ def build_parser() -> argparse.ArgumentParser:
     cf.add_argument("--plan")
     cf.add_argument("--max-tokens", type=int, default=2000)
     cf.set_defaults(func=cmd_context)
+    ct = csub.add_parser("current-transcript", help="Print the current Codex transcript path when CODEX_THREAD_ID is available")
+    ct.add_argument("--thread-id")
+    ct.set_defaults(func=cmd_context)
     cl = csub.add_parser("lint-handoff")
     cl.add_argument("path")
     cl.add_argument("--max-tokens", type=int, default=2000)
     cl.set_defaults(func=cmd_context)
+    cao = csub.add_parser("ask-old", help="Ask an explicit bounded follow-up of the old relay session")
+    cao.add_argument("--handoff", required=True)
+    cao.add_argument("--question", required=True)
+    cao.add_argument("--model", default="auto")
+    cao.add_argument("--execute", action="store_true", help="Actually query an old Codex thread when old-thread-id is available")
+    cao.add_argument("--timeout", type=int, default=120)
+    cao.set_defaults(func=cmd_context)
     ch = csub.add_parser("host-controls")
     ch.add_argument("--agent", choices=["auto", "claude", "codex", "gemini", "cursor", "generic"], default="auto")
     ch.set_defaults(func=cmd_context)
@@ -382,6 +596,9 @@ def build_parser() -> argparse.ArgumentParser:
     cft = csub.add_parser("codex-fresh-thread")
     cft.add_argument("--handoff", required=True)
     cft.add_argument("--model")
+    cft.add_argument("--name", default=None, help='Name/label for the fresh successor, e.g. "Relay[01]: sessions-relay"')
+    cft.add_argument("--version", default="01", help='Relay version used when --name is a suffix, e.g. Relay[01]: sessions-relay')
+    cft.add_argument("--continue-work", action="store_true", help="Tell the successor to verify the handoff and continue instead of stopping")
     cft.add_argument("--execute", action="store_true", help="Actually launch Codex App Server and start a fresh successor thread")
     cft.add_argument("--ephemeral", action="store_true", help="Use an in-memory throwaway thread instead of the default persistent project thread")
     cft.add_argument("--timeout", type=int, default=120)
@@ -394,6 +611,30 @@ def build_parser() -> argparse.ArgumentParser:
     cct.add_argument("--execute", action="store_true", help="Actually ask Codex App Server to compact the target thread")
     cct.add_argument("--timeout", type=int, default=120)
     cct.set_defaults(func=cmd_context)
+    cr = csub.add_parser("relay", help="Write a handoff and launch or plan a fresh Codex relay successor")
+    cr.add_argument("--transcript")
+    cr.add_argument("--goal")
+    cr.add_argument("--name", default=None, help='Relay session label suffix; defaults to "auto-context-refresh"')
+    cr.add_argument("--version", default="01", help='Relay version used in the generated name, e.g. Relay[01]: auto-context-refresh')
+    cr.add_argument("--model", default="auto")
+    cr.add_argument("--max-tokens", type=int, default=2000)
+    cr.add_argument("--execute", action="store_true")
+    cr.add_argument("--ephemeral", action="store_true")
+    cr.add_argument("--timeout", type=int, default=120)
+    cr.set_defaults(func=cmd_context)
+    car = csub.add_parser("auto-relay", help="Check current context and launch or schedule relay when threshold is crossed")
+    car.add_argument("--transcript")
+    car.add_argument("--goal")
+    car.add_argument("--name", default=None)
+    car.add_argument("--version", default="01")
+    car.add_argument("--model", default="auto")
+    car.add_argument("--threshold", type=float)
+    car.add_argument("--cooldown", type=int, default=1800)
+    car.add_argument("--max-tokens", type=int, default=2000)
+    car.add_argument("--execute", action="store_true", help="Launch the fresh successor immediately when relay is due")
+    car.add_argument("--ephemeral", action="store_true")
+    car.add_argument("--timeout", type=int, default=120)
+    car.set_defaults(func=cmd_context)
 
     de = sub.add_parser("delegate")
     desub = de.add_subparsers(dest="delegate_cmd", required=True)
