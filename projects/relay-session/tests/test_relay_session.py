@@ -16,7 +16,16 @@ class RelaySessionTests(unittest.TestCase):
             root = Path(td)
             (root / "start.md").write_text("# start\n", encoding="utf-8")
             transcript = root / "session.jsonl"
-            transcript.write_text("\n".join(f"command: noisy-{idx} /tmp/file-{idx}.py" for idx in range(100)), encoding="utf-8")
+            transcript.write_text(
+                "\n".join(
+                    [
+                        json.dumps({"type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "Fix relay handoff summaries."}]}}),
+                        json.dumps({"type": "response_item", "payload": {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "Changed files:\n- projects/relay-session/relay_session/core.py\n- projects/relay-session/tests/test_relay_session.py\n\nVerification:\n- python3 -m pytest projects/relay-session/tests/test_relay_session.py -q -> 3 passed"}]}}),
+                        *[f"command: noisy-{idx} /tmp/file-{idx}.py" for idx in range(100)],
+                    ]
+                ),
+                encoding="utf-8",
+            )
             old_thread = os.environ.get("CODEX_THREAD_ID")
             os.environ["CODEX_THREAD_ID"] = "thread-xyz"
             try:
@@ -31,6 +40,10 @@ class RelaySessionTests(unittest.TestCase):
             text = handoff.read_text(encoding="utf-8")
             self.assertIn("old-thread-id: thread-xyz", text)
             self.assertIn("## 9. Instructions for next agent", text)
+            self.assertIn("User asked: Fix relay handoff summaries", text)
+            self.assertIn("projects/relay-session/relay_session/core.py", text)
+            self.assertIn("3 passed", text)
+            self.assertNotIn("Handoff generated as a lean continuation packet", text)
 
     def test_ask_old_plan_prefers_thread_then_transcript(self):
         with tempfile.TemporaryDirectory() as td:
@@ -60,4 +73,3 @@ class RelaySessionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

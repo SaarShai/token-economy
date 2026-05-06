@@ -10,6 +10,7 @@ from typing import Any
 
 
 PATH_RE = re.compile(r"(?P<path>(?:/|\.{1,2}/|[\w.-]+/)[\w./ @+-]+\.[A-Za-z0-9_+-]+)")
+PATCH_PATH_RE = re.compile(r"^\*\*\* (?:Update|Add|Delete) File: (?P<path>.+)$", re.MULTILINE)
 CMD_RE = re.compile(r"(?:cmd|command|bash|shell)[\"': ]+([^\\n]{3,240})", re.IGNORECASE)
 ERR_RE = re.compile(r"((?:error|exception|traceback|failed|fatal)[^\n]{0,240})", re.IGNORECASE)
 RELAY_NAME_RE = re.compile(r"^Relay\[(?P<version>\d+)\]:\s*(?P<name>.+)$")
@@ -50,16 +51,108 @@ def current_codex_transcript(thread_id: str | None = None, sessions_root: Path |
 
 
 def extract_transcript_facts(text: str) -> dict[str, list[str]]:
-    paths = sorted(set(match.group("path").strip().rstrip(".,)") for match in PATH_RE.finditer(text)))[:200]
-    commands = [match.group(1).strip() for match in CMD_RE.finditer(text)][:80]
-    errors = [match.group(1).strip() for match in ERR_RE.finditer(text)][:80]
+    commands: list[str] = []
+    errors: list[str] = []
     decisions = []
-    for line in text.splitlines():
-        if re.search(r"\b(decision|decided|choose|chosen|because|reason)\b", line, re.IGNORECASE):
-            decisions.append(line.strip()[:300])
+    for role, body in transcript_messages(text):
+        if role != "assistant" or len(body) > 1200:
+            continue
+        if re.search(r"\b(decision|decided|choose|chosen|because|reason)\b", body, re.IGNORECASE):
+            decisions.append(body.strip()[:300])
         if len(decisions) >= 80:
             break
-    return {"files": paths, "commands": commands, "errors": errors, "decisions": decisions}
+    return {"files": [], "commands": commands, "errors": errors, "decisions": decisions}
+
+
+def _message_text(payload: dict[str, Any]) -> str:
+    content = payload.get("content")
+    if isinstance(content, str):
+        return content
+    if not isinstance(content, list):
+        return ""
+    parts = []
+    for item in content:
+        if not isinstance(item, dict):
+            continue
+        value = item.get("text") or item.get("input_text")
+        if isinstance(value, str):
+            parts.append(value)
+    return "\n".join(parts).strip()
+
+
+def transcript_messages(text: str) -> list[tuple[str, str]]:
+    messages: list[tuple[str, str]] = []
+    for raw in text.splitlines():
+        try:
+            event = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        payload = event.get("payload") if event.get("type") == "response_item" else {}
+        if isinstance(payload, dict) and payload.get("type") == "message":
+            role = payload.get("role")
+            if role in {"user", "assistant"}:
+                body = _message_text(payload)
+                if body and not body.startswith("<turn_aborted>"):
+                    messages.append((role, body))
+    return messages
+
+
+def compact_summary(text: str) -> list[str]:
+    items = []
+    for role, body in transcript_messages(text)[-8:]:
+        clean = re.sub(r"\s+", " ", body).strip()
+        if not clean:
+            continue
+        label = "User asked" if role == "user" else "Assistant reported"
+        items.append(f"{label}: {clean}")
+    return items
+
+
+def extract_changed_files(text: str) -> list[str]:
+    def clean(path: str) -> str:
+        cleaned = path.strip().rstrip(".,)")
+        return cleaned
+
+    latest_reported: list[str] = []
+    for _, body in transcript_messages(text):
+        marker = re.search(r"Changed (?:in this pass|files):", body, re.IGNORECASE)
+        if not marker:
+            continue
+        block = re.split(r"\n(?:Verification|Tests|Next|For the next)\b", body[marker.end() :], maxsplit=1)[0]
+        current: list[str] = []
+        for match in re.finditer(r"\[[^\]]+\]\((?P<path>/[^)]+|[^)]+\.[A-Za-z0-9_+-]+)\)", block):
+            current.append(clean(match.group("path")))
+        for match in re.finditer(r"^- `?(?P<path>(?:/|[\w.-]+/)[\w./ @+-]+\.[A-Za-z0-9_+-]+)`?", block, re.MULTILINE):
+            current.append(clean(match.group("path")))
+        if current:
+            latest_reported = current
+    if latest_reported:
+        return list(dict.fromkeys(path for path in latest_reported if path))[:24]
+
+    patch_paths = [clean(match.group("path")) for match in PATCH_PATH_RE.finditer(text)]
+    return list(dict.fromkeys(path for path in patch_paths[-24:] if path))[:24]
+
+
+def extract_verification(text: str) -> list[str]:
+    checks: list[str] = []
+    seen: set[str] = set()
+
+    def add(line: str) -> None:
+        cleaned = re.sub(r"\s+", " ", line.strip().lstrip("- ").strip("`"))
+        if cleaned and cleaned not in seen:
+            seen.add(cleaned)
+            checks.append(cleaned)
+
+    for _, body in transcript_messages(text):
+        marker = re.search(r"Verification:", body, re.IGNORECASE)
+        if marker:
+            block = re.split(r"\n(?:Note|For the next|Next)\b", body[marker.end() :], maxsplit=1)[0]
+            for line in block.splitlines():
+                if "passed" in line.lower() or "ok:" in line.lower() or "smoke" in line.lower():
+                    add(line)
+    for match in re.finditer(r"\b\d+ passed[^\n`]*", text):
+        add(match.group(0))
+    return checks[:8]
 
 
 def format_list(items: list[str], max_items: int = 8, max_chars: int = 140) -> str:
@@ -101,6 +194,9 @@ def checkpoint(
     state_dir.mkdir(parents=True, exist_ok=True)
     transcript_text = transcript.read_text(encoding="utf-8", errors="replace") if transcript and transcript.exists() else ""
     facts = extract_transcript_facts(transcript_text)
+    summary = compact_summary(transcript_text)
+    changed_files = extract_changed_files(transcript_text)
+    verification = extract_verification(transcript_text)
     old_thread_id = os.environ.get("CODEX_THREAD_ID") or "none"
     old_transcript = str(transcript) if transcript else "none"
     start = repo_root / "start.md"
@@ -124,7 +220,7 @@ old-session-query-policy: explicit-only
 {goal or "Continue current work."}
 
 ## 2. What done
-- Handoff generated as a lean continuation packet.
+{format_list(summary, max_items=8, max_chars=320) if summary else "- No authored/recent user-assistant summary captured."}
 
 ## 3. What in-progress
 - {plan or "Inspect repo state, retrieve narrowly, then execute verified steps."}
@@ -135,10 +231,13 @@ old-session-query-policy: explicit-only
 - Build plan before execution.
 
 ## 5. Key files touched
-{format_list(facts["files"])}
+{format_list(changed_files, max_items=12, max_chars=220) if changed_files else "- none captured; ask old only if exact files are needed and repo retrieval is insufficient"}
 
 ## 6. Key decisions
 {format_list(facts["decisions"])}
+
+## Verification Seen
+{format_list(verification, max_items=6, max_chars=220)}
 
 ## 7. Retrieval pointers
 {start_pointer}
@@ -224,4 +323,3 @@ def ask_old_plan(repo_root: Path, handoff: Path, question: str, execute: bool = 
             transcript = repo_root / transcript
         return ask_old_from_transcript(transcript, question)
     return {"ok": False, "mode": "unavailable", "handoff": str(handoff), "question": question, "error": "old session unavailable"}
-

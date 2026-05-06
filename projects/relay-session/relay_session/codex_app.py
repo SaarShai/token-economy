@@ -72,6 +72,40 @@ def _idle(events: list[dict[str, Any]], thread_id: str | None) -> bool:
     return False
 
 
+def _turn_completed(events: list[dict[str, Any]], thread_id: str | None) -> bool:
+    for event in reversed(events):
+        if event.get("method") != "turn/completed":
+            continue
+        params = event.get("params") or {}
+        if thread_id and params.get("threadId") != thread_id:
+            continue
+        return True
+    return False
+
+
+def _thread_started_info(events: list[dict[str, Any]], thread_id: str | None) -> dict[str, Any]:
+    for event in events:
+        if event.get("method") != "thread/started":
+            continue
+        thread = (event.get("params") or {}).get("thread") or {}
+        if thread_id and thread.get("id") != thread_id:
+            continue
+        return {
+            "thread_persistent": thread.get("ephemeral") is False,
+            "thread_turns_empty": thread.get("turns") == [],
+            "thread_source": thread.get("source"),
+            "thread_cwd": thread.get("cwd"),
+        }
+    return {"thread_persistent": False, "thread_turns_empty": False, "thread_source": None, "thread_cwd": None}
+
+
+def _listed_info(events: list[dict[str, Any]], request_id: int, thread_id: str | None) -> dict[str, Any]:
+    response = _response(events, request_id)
+    data = ((response or {}).get("result") or {}).get("data") or []
+    ids = [thread.get("id") for thread in data if isinstance(thread, dict)]
+    return {"listed_after_start": bool(thread_id and thread_id in ids), "listed_count": len(data)}
+
+
 def successor_prompt(repo_root: Path, handoff: Path, session_name: str | None, continue_work: bool) -> str:
     title = f"{session_name}\n\n" if session_name else ""
     name_text = f'This relay session is named "{session_name}". ' if session_name else ""
@@ -95,6 +129,7 @@ def run_fresh_thread(repo_root: Path, handoff: Path, session_name: str | None, m
     events: list[dict[str, Any]] = []
     stderr_text = ""
     thread_id = None
+    list_request_id = 4
     try:
         _send(proc, {"id": 1, "method": "initialize", "params": {"clientInfo": {"name": "relay-session", "title": "Relay Session", "version": "0.1.0"}, "capabilities": {"experimentalApi": True}}})
         events.extend(_read_until(proc, 5, lambda _events, event: event.get("id") == 1))
@@ -109,7 +144,9 @@ def run_fresh_thread(repo_root: Path, handoff: Path, session_name: str | None, m
         thread_id = (((response or {}).get("result") or {}).get("thread") or {}).get("id")
         if thread_id:
             _send(proc, {"id": 3, "method": "turn/start", "params": {"threadId": thread_id, "input": [{"type": "text", "text": prompt}], "approvalPolicy": "never", "model": model_name}})
-            events.extend(_read_until(proc, timeout, lambda seen, event: (_assistant_responded(seen) and _idle(seen, thread_id)) or event.get("method") == "turn/completed"))
+            events.extend(_read_until(proc, timeout, lambda seen, event: (_assistant_responded(seen) and _idle(seen, thread_id)) or _turn_completed(seen, thread_id) or bool(event.get("method") == "error" and not event.get("willRetry"))))
+            _send(proc, {"id": list_request_id, "method": "thread/list", "params": {"cwd": str(repo_root), "archived": False, "limit": 20, "sourceKinds": ["cli", "vscode", "exec", "appServer", "unknown"], "sortKey": "updated_at"}})
+            events.extend(_read_until(proc, 8, lambda _events, event: event.get("id") == list_request_id))
     finally:
         proc.terminate()
         try:
@@ -121,7 +158,27 @@ def run_fresh_thread(repo_root: Path, handoff: Path, session_name: str | None, m
     events_path = outdir / "events.jsonl"
     events_path.write_text("\n".join(json.dumps(event, sort_keys=True) for event in events) + "\n", encoding="utf-8")
     (outdir / "stderr.txt").write_text(stderr_text, encoding="utf-8")
-    return {"ok": bool(thread_id and _assistant_responded(events)), "thread_id": thread_id, "session_name": session_name, "model": model_name, "events": str(events_path)}
+    started_info = _thread_started_info(events, thread_id)
+    listed_info = _listed_info(events, list_request_id, thread_id)
+    ok = bool(
+        thread_id
+        and _assistant_responded(events)
+        and _idle(events, thread_id)
+        and started_info["thread_persistent"]
+        and started_info["thread_turns_empty"]
+        and listed_info["listed_after_start"]
+    )
+    return {
+        "ok": ok,
+        "thread_id": thread_id,
+        "session_name": session_name,
+        "model": model_name,
+        "assistant_responded": _assistant_responded(events),
+        "thread_idle": _idle(events, thread_id),
+        **started_info,
+        **listed_info,
+        "events": str(events_path),
+    }
 
 
 def run_ask_old(repo_root: Path, thread_id: str, question: str, model: str | None = None, timeout: int = 120) -> dict[str, Any]:
@@ -153,4 +210,3 @@ def run_ask_old(repo_root: Path, thread_id: str, question: str, model: str | Non
     (outdir / "stderr.txt").write_text(stderr_text, encoding="utf-8")
     answers = [((event.get("params") or {}).get("item") or {}).get("text") for event in events if ((event.get("params") or {}).get("item") or {}).get("type") == "agentMessage"]
     return {"ok": bool(_assistant_responded(events)), "mode": "codex-old-thread", "thread_id": thread_id, "question": question, "answer": "\n".join(answer for answer in answers if answer), "events": str(events_path)}
-

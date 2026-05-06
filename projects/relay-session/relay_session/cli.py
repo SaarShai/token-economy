@@ -39,12 +39,13 @@ def main(argv: list[str] | None = None) -> int:
 
     relay = sub.add_parser("relay")
     relay.add_argument("--goal", default=None)
-    relay.add_argument("--plan", default="Fresh successor should continue from this handoff.")
+    relay.add_argument("--plan", default=None)
     relay.add_argument("--name", default="auto-context-refresh")
     relay.add_argument("--version", default="01")
     relay.add_argument("--model", default=None)
     relay.add_argument("--execute", action="store_true")
     relay.add_argument("--timeout", type=int, default=120)
+    relay.add_argument("--stop-after-verify", action="store_true")
 
     ask = sub.add_parser("ask-old")
     ask.add_argument("--handoff", required=True)
@@ -80,11 +81,23 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "relay":
         session_name = relay_session_name(args.name, args.version)
         transcript = current_codex_transcript()
-        packet = checkpoint(repo, args.goal or f"Automatic relay for {session_name}", plan=args.plan, transcript=transcript)
+        relay_plan = args.plan or (
+            "Fresh successor should verify the handoff and stop."
+            if args.stop_after_verify
+            else "Fresh successor should continue from this handoff."
+        )
+        packet = checkpoint(repo, args.goal or f"Automatic relay for {session_name}", plan=relay_plan, transcript=transcript)
         handoff = Path(packet["path"])
         result: dict[str, Any] = {"ok": True, "session_name": session_name, "handoff": str(handoff), "handoff_tokens": packet["tokens"], "execute": args.execute}
         if args.execute:
-            result["successor"] = run_fresh_thread(repo, handoff, session_name=session_name, model=args.model, timeout=args.timeout, continue_work=True)
+            result["successor"] = run_fresh_thread(
+                repo,
+                handoff,
+                session_name=session_name,
+                model=args.model,
+                timeout=args.timeout,
+                continue_work=not args.stop_after_verify,
+            )
             result["ok"] = bool(result["successor"].get("ok"))
         print_json(result)
         return 0 if result["ok"] else 1
@@ -103,4 +116,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
