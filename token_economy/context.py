@@ -124,6 +124,17 @@ def host_context_controls(agent: str = "auto") -> dict[str, Any]:
     }
 
 
+def current_codex_transcript(thread_id: str | None = None, sessions_root: Path | None = None) -> Path | None:
+    target = thread_id or os.environ.get("CODEX_THREAD_ID")
+    if not target:
+        return None
+    root = sessions_root or (Path.home() / ".codex" / "sessions")
+    if not root.exists():
+        return None
+    matches = sorted(root.rglob(f"*{target}*.jsonl"), key=lambda path: path.stat().st_mtime, reverse=True)
+    return matches[0] if matches else None
+
+
 def fresh_launch_commands(agent: str, repo_root: Path, handoff: Path | None = None) -> dict[str, Any]:
     key = (agent or "generic").lower()
     if key == "auto":
@@ -209,14 +220,75 @@ def extract_transcript_facts(text: str) -> dict[str, list[str]]:
     return {"files": paths, "commands": commands, "errors": errors, "decisions": decisions, "wiki_pages": wiki_pages}
 
 
-def meter(transcript: Path | None = None, model: str = "auto", max_tokens: int | str | None = None) -> dict[str, Any]:
+def parse_handoff_metadata(path: Path) -> dict[str, str]:
+    text = path.read_text(encoding="utf-8", errors="replace")
+    if not text.startswith("---"):
+        return {}
+    parts = text.split("---", 2)
+    if len(parts) < 3:
+        return {}
+    meta: dict[str, str] = {}
+    for raw in parts[1].splitlines():
+        if ":" not in raw:
+            continue
+        key, value = raw.split(":", 1)
+        meta[key.strip()] = value.strip().strip("\"'")
+    return meta
+
+
+def meter(transcript: Path | None = None, model: str = "auto", max_tokens: int | str | None = None, threshold: float = 0.20) -> dict[str, Any]:
     text = ""
     if transcript and transcript.exists():
         text = transcript.read_text(encoding="utf-8", errors="replace")
-    status = status_for_text(text, max_tokens=max_tokens, model=model)
+    status = status_for_text(text, max_tokens=max_tokens, model=model, threshold=threshold)
     status["model"] = model
     status["tokenizer"] = "char/4-fallback"
     return status
+
+
+def relay_state_paths(repo_root: Path) -> dict[str, Path]:
+    state_dir = repo_root / ".token-economy" / "checkpoints" / "relay-auto"
+    return {
+        "dir": state_dir,
+        "last": state_dir / "last-relay.json",
+        "pending": state_dir / "pending-relay.json",
+    }
+
+
+def should_auto_relay(repo_root: Path, transcript: Path | None, status: dict[str, Any], cooldown_seconds: int = 1800) -> dict[str, Any]:
+    paths = relay_state_paths(repo_root)
+    if status.get("action") != "refresh":
+        return {"should_relay": False, "reason": "below_threshold", "state": {k: str(v) for k, v in paths.items()}}
+    if not transcript or not transcript.exists():
+        return {"should_relay": False, "reason": "transcript_unavailable", "state": {k: str(v) for k, v in paths.items()}}
+    stat = transcript.stat()
+    key = {"path": str(transcript), "size": stat.st_size}
+    now = datetime.now(timezone.utc).timestamp()
+    previous: dict[str, Any] = {}
+    if paths["last"].exists():
+        try:
+            previous = json.loads(paths["last"].read_text(encoding="utf-8"))
+        except Exception:
+            previous = {}
+    recent = now - float(previous.get("time", 0)) < cooldown_seconds
+    same_or_older = previous.get("path") == key["path"] and int(previous.get("size", 0)) >= key["size"]
+    if recent or same_or_older:
+        return {
+            "should_relay": False,
+            "reason": "cooldown_or_same_transcript",
+            "previous": previous,
+            "state": {k: str(v) for k, v in paths.items()},
+        }
+    payload = {**key, "time": now, "reason": "context >= refresh threshold", "action": "relay_at_safe_checkpoint"}
+    return {"should_relay": True, "reason": "threshold_crossed", "payload": payload, "state": {k: str(v) for k, v in paths.items()}}
+
+
+def write_pending_relay(repo_root: Path, payload: dict[str, Any]) -> dict[str, str]:
+    paths = relay_state_paths(repo_root)
+    paths["dir"].mkdir(parents=True, exist_ok=True)
+    paths["last"].write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    paths["pending"].write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    return {k: str(v) for k, v in paths.items()}
 
 
 def checkpoint(
@@ -234,6 +306,8 @@ def checkpoint(
     if transcript and transcript.exists():
         transcript_text = transcript.read_text(encoding="utf-8", errors="replace")
     facts = extract_transcript_facts(transcript_text)
+    old_thread_id = os.environ.get("CODEX_THREAD_ID") or "none"
+    old_transcript = str(transcript) if transcript else "none"
     l1 = repo_root / "L1_index.md"
     l1_pointer = f"- L1 index: `{l1}`" if l1.exists() else "- L1 index: missing; run `./te wiki index`."
     task_slug = re.sub(r"[^a-zA-Z0-9]+", "-", (goal or "token-economy-task").lower()).strip("-") or "token-economy-task"
@@ -244,6 +318,9 @@ from-session: local
 created: {iso}
 context-pct-at-refresh: {context_pct}
 next-mode: plan-first
+old-thread-id: {old_thread_id}
+old-transcript: {old_transcript}
+old-session-query-policy: explicit-only
 ---
 
 # HANDOFF - {task_slug}
@@ -252,7 +329,7 @@ next-mode: plan-first
 {goal or "Continue the current Token Economy task."}
 
 ## 2. What done
-- Handoff generated. Review repo state before acting.
+- Handoff generated as a lean continuation packet.
 
 ## 3. What in-progress (blockers)
 - {plan or "Inspect repo state, retrieve relevant wiki/context on demand, then execute verified steps."}
@@ -260,6 +337,7 @@ next-mode: plan-first
 ## 4. What next (priority order)
 - Read this handoff and `start.md` only.
 - Load L0/L1 pointers.
+- Verify this is the fresh successor, then continue from where the old session stopped.
 - Build plan before execution.
 
 ## 5. Key files touched (paths only - do NOT re-read speculatively)
@@ -281,8 +359,11 @@ next-mode: plan-first
 - Read this handoff + `start.md` only. Do not load full wiki.
 - Do not load docs-only wiki memory; retrieve linked pages only when relevant.
 - Build plan. Get user approval if host process requires approval. Then execute.
-- On complete: update wiki, log entry, create fresh handoff if context > 20%.
-- If old host could not clear context, continue only in this fresh session.
+- If a needed fact is absent and repo/wiki retrieval is insufficient, ask the old session explicitly:
+  `./te context ask-old --handoff <handoff-file> --question "<specific missing fact>"`
+- Record old-session answers only if they change ongoing work or the next handoff.
+- On complete: update wiki, log entry, create fresh handoff if context >= 20%.
+- If old host could not clear context, continue implementation only in this fresh session.
 
 ## Memory Pointers
 {l1_pointer}
@@ -323,7 +404,81 @@ def lint_handoff(path: Path, max_tokens: int = 2000) -> dict[str, Any]:
     return {"path": str(path), "tokens": tokens, "max_tokens": max_tokens, "missing": missing, "ok": not missing and tokens <= max_tokens}
 
 
-def format_list(items: list[str]) -> str:
+def ask_old_from_transcript(transcript: Path, question: str, max_snippets: int = 8) -> dict[str, Any]:
+    if not transcript.exists():
+        return {"ok": False, "mode": "transcript", "error": "old transcript unavailable", "transcript": str(transcript)}
+    text = transcript.read_text(encoding="utf-8", errors="replace")
+    terms = [term.lower() for term in re.findall(r"[A-Za-z0-9_.-]{4,}", question)][:12]
+    lines = text.splitlines()
+    scored: list[tuple[int, int, str]] = []
+    for i, line in enumerate(lines):
+        haystack = line.lower()
+        score = sum(1 for term in terms if term in haystack)
+        if score:
+            scored.append((score, i, line.strip()))
+    scored.sort(key=lambda row: (-row[0], row[1]))
+    snippets = []
+    seen: set[int] = set()
+    for _, idx, _ in scored:
+        if idx in seen:
+            continue
+        seen.add(idx)
+        start = max(0, idx - 1)
+        end = min(len(lines), idx + 2)
+        snippets.append({"line": idx + 1, "text": "\n".join(line.strip() for line in lines[start:end] if line.strip())[:1200]})
+        if len(snippets) >= max_snippets:
+            break
+    return {
+        "ok": bool(snippets),
+        "mode": "transcript",
+        "question": question,
+        "transcript": str(transcript),
+        "snippets": snippets,
+        "note": "Bounded transcript search only; ask a narrower question if the answer is missing.",
+    }
+
+
+def ask_old_session_plan(repo_root: Path, handoff: Path, question: str, execute: bool = False) -> dict[str, Any]:
+    meta = parse_handoff_metadata(handoff)
+    old_thread_id = meta.get("old-thread-id")
+    old_transcript = meta.get("old-transcript")
+    if old_thread_id and old_thread_id != "none":
+        return {
+            "ok": True,
+            "mode": "codex-old-thread",
+            "execute": execute,
+            "thread_id": old_thread_id,
+            "handoff": str(handoff),
+            "question": question,
+            "prompt": (
+                "Answer only this specific relay follow-up from your old session context. "
+                "Cite the source from old context when possible. Do not continue implementation. "
+                f"Question: {question}"
+            ),
+            "command": f'./te context ask-old --handoff "{handoff}" --question "{question}" --execute',
+        }
+    if old_transcript and old_transcript != "none":
+        transcript = Path(old_transcript).expanduser()
+        if not transcript.is_absolute():
+            transcript = repo_root / transcript
+        return ask_old_from_transcript(transcript, question)
+    return {
+        "ok": False,
+        "mode": "unavailable",
+        "handoff": str(handoff),
+        "question": question,
+        "error": "old session unavailable",
+        "next": "Use repo/wiki retrieval such as `./te wiki search` or `./te code map`.",
+    }
+
+
+def format_list(items: list[str], max_items: int = 8, max_chars: int = 140) -> str:
     if not items:
         return "- none captured"
-    return "\n".join(f"- `{item}`" for item in items[:40])
+    lines = []
+    for item in items[:max_items]:
+        value = item if len(item) <= max_chars else item[: max_chars - 15].rstrip() + " ...[trimmed]"
+        lines.append(f"- `{value}`")
+    if len(items) > max_items:
+        lines.append(f"- `...[{len(items) - max_items} more omitted; ask old session or inspect transcript if needed]...`")
+    return "\n".join(lines)
