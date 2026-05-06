@@ -17,6 +17,8 @@ projects/compound-compression-pipeline/eval_v*_run.out
 # Token Economy runtime state
 .token-economy/
 .token-economy-profile
+.relay-session/
+relay_session
 .claude/
 .mcp.json
 
