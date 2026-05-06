@@ -89,7 +89,7 @@ def transcript_messages(text: str) -> list[tuple[str, str]]:
 
 def compact_summary(text: str) -> list[str]:
     items = []
-    for role, body in transcript_messages(text)[-8:]:
+    for role, body in transcript_messages(text)[-12:]:
         clean = re.sub(r"\s+", " ", body).strip()
         if not clean:
             continue
@@ -140,6 +140,8 @@ def extract_verification(text: str) -> list[str]:
             latest_block = re.split(r"\n(?:Note|For the next|Next)\b", body[marker.end() :], maxsplit=1)[0]
     if latest_block:
         for line in latest_block.splitlines():
+            if line.strip().endswith("?"):
+                continue
             if "passed" in line.lower() or "ok:" in line.lower() or "smoke" in line.lower():
                 add(line)
     if not checks:
@@ -213,7 +215,7 @@ old-session-query-policy: explicit-only
 {goal or "Continue current work."}
 
 ## 2. What done
-{format_list(summary, max_items=8, max_chars=320) if summary else "- No authored/recent user-assistant summary captured."}
+{format_list(summary, max_items=12, max_chars=1000) if summary else "- No authored/recent user-assistant summary captured."}
 
 ## 3. What in-progress
 - {plan or "Inspect repo state, retrieve narrowly, then execute verified steps."}
