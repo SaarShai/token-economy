@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 from datetime import datetime, timezone
 from math import ceil
 from pathlib import Path
@@ -51,17 +52,7 @@ def current_codex_transcript(thread_id: str | None = None, sessions_root: Path |
 
 
 def extract_transcript_facts(text: str) -> dict[str, list[str]]:
-    commands: list[str] = []
-    errors: list[str] = []
-    decisions = []
-    for role, body in transcript_messages(text):
-        if role != "assistant" or len(body) > 1200:
-            continue
-        if re.search(r"\b(decision|decided|choose|chosen|because|reason)\b", body, re.IGNORECASE):
-            decisions.append(body.strip()[:300])
-        if len(decisions) >= 80:
-            break
-    return {"files": [], "commands": commands, "errors": errors, "decisions": decisions}
+    return {"files": [], "commands": [], "errors": [], "decisions": []}
 
 
 def _message_text(payload: dict[str, Any]) -> str:
@@ -155,6 +146,39 @@ def extract_verification(text: str) -> list[str]:
     return checks[:8]
 
 
+def git_onelines(repo_root: Path, args: list[str], limit: int = 8) -> list[str]:
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=repo_root,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    if result.returncode != 0:
+        return []
+    return [line.strip() for line in result.stdout.splitlines() if line.strip()][:limit]
+
+
+def repo_checkpoint_lines(repo_root: Path) -> list[str]:
+    current = git_onelines(repo_root, ["log", "--oneline", "-1"], limit=1)
+    relay = git_onelines(repo_root, ["log", "--oneline", "--regexp-ignore-case", "--grep=relay", "-8"], limit=8)
+    lines: list[str] = []
+    current_hash = current[0].split(" ", 1)[0] if current else None
+    if current:
+        lines.append(f"Current HEAD: {current[0]}")
+    for line in relay:
+        commit_hash = line.split(" ", 1)[0]
+        if "handoff visibility fix" in line.lower():
+            lines.append(f"Known-good relay visibility fix: {line}")
+        elif commit_hash != current_hash and line not in lines:
+            lines.append(line)
+    return lines[:8]
+
+
 def format_list(items: list[str], max_items: int = 8, max_chars: int = 140) -> str:
     if not items:
         return "- none captured"
@@ -197,6 +221,7 @@ def checkpoint(
     summary = compact_summary(transcript_text)
     changed_files = extract_changed_files(transcript_text)
     verification = extract_verification(transcript_text)
+    checkpoints = repo_checkpoint_lines(repo_root)
     old_thread_id = os.environ.get("CODEX_THREAD_ID") or "none"
     old_transcript = str(transcript) if transcript else "none"
     start = repo_root / "start.md"
@@ -239,6 +264,9 @@ old-session-query-policy: explicit-only
 ## Verification Seen
 {format_list(verification, max_items=6, max_chars=220)}
 
+## Repo Checkpoints
+{format_list(checkpoints, max_items=8, max_chars=220) if checkpoints else "- none captured"}
+
 ## 7. Retrieval pointers
 {start_pointer}
 - Ask old only for a specific missing fact after repo retrieval is insufficient.
@@ -251,6 +279,7 @@ old-session-query-policy: explicit-only
 - Do not load broad archives until retrieval proves relevance.
 - If a needed fact is absent and repo retrieval is insufficient, ask the old session explicitly:
   `python3 -m relay_session.cli ask-old --handoff <handoff-file> --question "<specific missing fact>"`
+- If that old session points to an even older relay handoff, repeat `ask-old` with that older handoff and the same narrow question.
 - Record old-session answers only if they change ongoing work or the next handoff.
 
 ## Commands Seen

@@ -40,6 +40,8 @@ class RelaySessionTests(unittest.TestCase):
             text = handoff.read_text(encoding="utf-8")
             self.assertIn("old-thread-id: thread-xyz", text)
             self.assertIn("## 9. Instructions for next agent", text)
+            self.assertIn("## Repo Checkpoints", text)
+            self.assertIn("even older relay handoff", text)
             self.assertIn("User asked: Fix relay handoff summaries", text)
             self.assertIn("projects/relay-session/relay_session/core.py", text)
             self.assertIn("3 passed", text)
