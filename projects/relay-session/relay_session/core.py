@@ -51,7 +51,26 @@ def current_codex_transcript(thread_id: str | None = None, sessions_root: Path |
 
 
 def extract_transcript_facts(text: str) -> dict[str, list[str]]:
-    return {"files": [], "commands": [], "errors": [], "decisions": []}
+    decisions: list[str] = []
+    seen: set[str] = set()
+
+    def add(line: str) -> None:
+        cleaned = re.sub(r"\s+", " ", line.strip().lstrip("- ").strip("`"))
+        if cleaned and cleaned not in seen:
+            seen.add(cleaned)
+            decisions.append(cleaned)
+
+    decision_re = re.compile(r"\b(confirmed|conclusion|rule|fixed|not solved|caveat|current read|important|should|should not|worked|restarting codex)\b", re.IGNORECASE)
+    for role, body in transcript_messages(text)[-24:]:
+        if role not in {"user", "assistant"}:
+            continue
+        for raw in body.splitlines():
+            line = raw.strip()
+            if line.endswith(":") or len(line) < 8:
+                continue
+            if decision_re.search(line):
+                add(line)
+    return {"files": [], "commands": [], "errors": [], "decisions": decisions[:8]}
 
 
 def _message_text(payload: dict[str, Any]) -> str:
@@ -87,15 +106,41 @@ def transcript_messages(text: str) -> list[tuple[str, str]]:
     return messages
 
 
-def compact_summary(text: str) -> list[str]:
-    items = []
-    for role, body in transcript_messages(text)[-12:]:
-        clean = re.sub(r"\s+", " ", body).strip()
-        if not clean:
+def _summary_lines(body: str) -> list[str]:
+    lines: list[str] = []
+    for raw in body.splitlines():
+        line = raw.strip()
+        if not line:
             continue
-        label = "User asked" if role == "user" else "Assistant reported"
-        items.append(f"{label}: {clean}")
-    return items
+        if line.startswith(("-", "*")):
+            line = line.lstrip("-* ").strip()
+        if line.endswith(":"):
+            continue
+        if len(line) < 8:
+            continue
+        if re.search(r"\b(ok: true|passed|listed_name|thread_named|backend|sidebar|ui|commit|pushed|reverted|installed|fixed|launched|thread id)\b", line, re.IGNORECASE):
+            lines.append(line)
+    return lines
+
+
+def compact_summary(text: str) -> list[str]:
+    messages = transcript_messages(text)
+    items: list[str] = []
+    seen: set[str] = set()
+
+    def add(item: str) -> None:
+        clean = re.sub(r"\s+", " ", item).strip()
+        if clean and clean not in seen:
+            seen.add(clean)
+            items.append(clean)
+
+    for role, body in messages[-16:]:
+        if role == "user":
+            add("User asked: " + body.splitlines()[0].strip())
+            continue
+        for line in _summary_lines(body)[:5]:
+            add("Assistant reported: " + line)
+    return items[-12:]
 
 
 def extract_changed_files(text: str) -> list[str]:

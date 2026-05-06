@@ -20,7 +20,7 @@ class RelaySessionTests(unittest.TestCase):
                 "\n".join(
                     [
                         json.dumps({"type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "Fix relay handoff summaries."}]}}),
-                        json.dumps({"type": "response_item", "payload": {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "Changed files:\n- projects/relay-session/relay_session/core.py\n- projects/relay-session/tests/test_relay_session.py\n\nVerification:\n- python3 -m pytest projects/relay-session/tests/test_relay_session.py -q -> 3 passed"}]}}),
+                        json.dumps({"type": "response_item", "payload": {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "Changed files:\n- projects/relay-session/relay_session/core.py\n- projects/relay-session/tests/test_relay_session.py\n\nVerification:\n- python3 -m pytest projects/relay-session/tests/test_relay_session.py -q -> 3 passed\n\nConfirmed: handoffs should prefer fact bullets over transcript snippets.\nBackend listed is not the same as Desktop UI visible."}]}}),
                         *[f"command: noisy-{idx} /tmp/file-{idx}.py" for idx in range(100)],
                     ]
                 ),
@@ -46,7 +46,9 @@ class RelaySessionTests(unittest.TestCase):
             self.assertIn("User asked: Fix relay handoff summaries", text)
             self.assertIn("projects/relay-session/relay_session/core.py", text)
             self.assertIn("3 passed", text)
-            self.assertIn("## 6. Key decisions\n- none captured", text)
+            self.assertIn("handoffs should prefer fact bullets", text)
+            self.assertIn("Backend listed is not the same as Desktop UI visible", text)
+            self.assertNotIn("## 6. Key decisions\n- none captured", text)
             self.assertNotIn("Handoff generated as a lean continuation packet", text)
 
     def test_ask_old_plan_prefers_thread_then_transcript(self):
