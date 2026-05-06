@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 from datetime import datetime, timezone
 from math import ceil
 from pathlib import Path
@@ -51,17 +52,7 @@ def current_codex_transcript(thread_id: str | None = None, sessions_root: Path |
 
 
 def extract_transcript_facts(text: str) -> dict[str, list[str]]:
-    commands: list[str] = []
-    errors: list[str] = []
-    decisions = []
-    for role, body in transcript_messages(text):
-        if role != "assistant" or len(body) > 1200:
-            continue
-        if re.search(r"\b(decision|decided|choose|chosen|because|reason)\b", body, re.IGNORECASE):
-            decisions.append(body.strip()[:300])
-        if len(decisions) >= 80:
-            break
-    return {"files": [], "commands": commands, "errors": errors, "decisions": decisions}
+    return {"files": [], "commands": [], "errors": [], "decisions": []}
 
 
 def _message_text(payload: dict[str, Any]) -> str:
@@ -133,6 +124,23 @@ def extract_changed_files(text: str) -> list[str]:
     return list(dict.fromkeys(path for path in patch_paths[-24:] if path))[:24]
 
 
+def recent_commit_files(repo_root: Path) -> list[str]:
+    try:
+        result = subprocess.run(
+            ["git", "show", "--name-only", "--format=", "HEAD"],
+            cwd=repo_root,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    if result.returncode != 0:
+        return []
+    return [line.strip() for line in result.stdout.splitlines() if line.strip()][:24]
+
+
 def extract_verification(text: str) -> list[str]:
     checks: list[str] = []
     seen: set[str] = set()
@@ -143,16 +151,35 @@ def extract_verification(text: str) -> list[str]:
             seen.add(cleaned)
             checks.append(cleaned)
 
+    latest_block: str | None = None
     for _, body in transcript_messages(text):
         marker = re.search(r"Verification:", body, re.IGNORECASE)
         if marker:
-            block = re.split(r"\n(?:Note|For the next|Next)\b", body[marker.end() :], maxsplit=1)[0]
-            for line in block.splitlines():
-                if "passed" in line.lower() or "ok:" in line.lower() or "smoke" in line.lower():
-                    add(line)
-    for match in re.finditer(r"\b\d+ passed[^\n`]*", text):
-        add(match.group(0))
+            latest_block = re.split(r"\n(?:Note|For the next|Next)\b", body[marker.end() :], maxsplit=1)[0]
+    if latest_block:
+        for line in latest_block.splitlines():
+            if "passed" in line.lower() or "ok:" in line.lower() or "smoke" in line.lower():
+                add(line)
+    if not checks:
+        for match in re.finditer(r"\b\d+ passed[^\n`]*", text):
+            add(match.group(0))
     return checks[:8]
+
+
+def normalize_file_list(repo_root: Path, files: list[str]) -> list[str]:
+    normalized: list[str] = []
+    for file in files:
+        path = file.strip()
+        if not path:
+            continue
+        try:
+            candidate = Path(path)
+            if candidate.is_absolute():
+                path = str(candidate.relative_to(repo_root))
+        except ValueError:
+            pass
+        normalized.append(path)
+    return list(dict.fromkeys(normalized))[:24]
 
 
 def format_list(items: list[str], max_items: int = 8, max_chars: int = 140) -> str:
@@ -195,7 +222,7 @@ def checkpoint(
     transcript_text = transcript.read_text(encoding="utf-8", errors="replace") if transcript and transcript.exists() else ""
     facts = extract_transcript_facts(transcript_text)
     summary = compact_summary(transcript_text)
-    changed_files = extract_changed_files(transcript_text)
+    changed_files = normalize_file_list(repo_root, extract_changed_files(transcript_text) + recent_commit_files(repo_root))
     verification = extract_verification(transcript_text)
     old_thread_id = os.environ.get("CODEX_THREAD_ID") or "none"
     old_transcript = str(transcript) if transcript else "none"
@@ -251,6 +278,7 @@ old-session-query-policy: explicit-only
 - Do not load broad archives until retrieval proves relevance.
 - If a needed fact is absent and repo retrieval is insufficient, ask the old session explicitly:
   `python3 -m relay_session.cli ask-old --handoff <handoff-file> --question "<specific missing fact>"`
+- If that old session points to an even older relay handoff, repeat `ask-old` with that older handoff and the same narrow question.
 - Record old-session answers only if they change ongoing work or the next handoff.
 
 ## Commands Seen
