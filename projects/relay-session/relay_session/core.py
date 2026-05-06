@@ -244,8 +244,10 @@ old-session-query-policy: explicit-only
 ## 9. Instructions for next agent
 - Start in plan mode. Think step-by-step. Create a compact plan before executing.
 - Do not load broad archives until retrieval proves relevance.
+- Narrow repo retrieval means targeted reads/searches of known files, status, or symbols; it does not mean loading broad archives.
 - If a needed fact is absent and repo retrieval is insufficient, ask the old session explicitly:
   `python3 -m relay_session.cli ask-old --handoff <handoff-file> --question "<specific missing fact>"`
+- Omit `--execute` to dry-run old-session routing; add `--execute` to actually ask the old session.
 - If the old session identifies an even older relay handoff as the source, repeat `ask-old` with that older handoff and the same narrow question.
 - Record old-session answers only if they change ongoing work or the next handoff.
 
