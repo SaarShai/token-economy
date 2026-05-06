@@ -103,7 +103,8 @@ def _listed_info(events: list[dict[str, Any]], request_id: int, thread_id: str |
     response = _response(events, request_id)
     data = ((response or {}).get("result") or {}).get("data") or []
     ids = [thread.get("id") for thread in data if isinstance(thread, dict)]
-    return {"listed_after_start": bool(thread_id and thread_id in ids), "listed_count": len(data)}
+    listed = next((thread for thread in data if isinstance(thread, dict) and thread.get("id") == thread_id), None)
+    return {"listed_after_start": bool(thread_id and thread_id in ids), "listed_count": len(data), "listed_name": (listed or {}).get("name")}
 
 
 def successor_prompt(repo_root: Path, handoff: Path, session_name: str | None, continue_work: bool) -> str:
@@ -129,20 +130,22 @@ def run_fresh_thread(repo_root: Path, handoff: Path, session_name: str | None, m
     events: list[dict[str, Any]] = []
     stderr_text = ""
     thread_id = None
-    list_request_id = 4
+    set_name_request_id = 4
+    list_request_id = 5
     try:
         _send(proc, {"id": 1, "method": "initialize", "params": {"clientInfo": {"name": "relay-session", "title": "Relay Session", "version": "0.1.0"}, "capabilities": {"experimentalApi": True}}})
         events.extend(_read_until(proc, 5, lambda _events, event: event.get("id") == 1))
         _send(proc, {"method": "initialized", "params": {}})
         params: dict[str, Any] = {"cwd": str(repo_root), "approvalPolicy": "never", "sandbox": "workspace-write", "ephemeral": False, "model": model_name}
-        if session_name:
-            params["name"] = session_name
         _send(proc, {"id": 2, "method": "thread/start", "params": params})
         start_events = _read_until(proc, 10, lambda _events, event: event.get("id") == 2)
         events.extend(start_events)
         response = _response(start_events, 2)
         thread_id = (((response or {}).get("result") or {}).get("thread") or {}).get("id")
         if thread_id:
+            if session_name:
+                _send(proc, {"id": set_name_request_id, "method": "thread/name/set", "params": {"threadId": thread_id, "name": session_name}})
+                events.extend(_read_until(proc, 8, lambda _events, event: event.get("id") == set_name_request_id or event.get("method") == "thread/name/updated"))
             _send(proc, {"id": 3, "method": "turn/start", "params": {"threadId": thread_id, "input": [{"type": "text", "text": prompt}], "approvalPolicy": "never", "model": model_name}})
             events.extend(_read_until(proc, timeout, lambda seen, event: (_assistant_responded(seen) and _idle(seen, thread_id)) or _turn_completed(seen, thread_id) or bool(event.get("method") == "error" and not event.get("willRetry"))))
             _send(proc, {"id": list_request_id, "method": "thread/list", "params": {"cwd": str(repo_root), "archived": False, "limit": 20, "sourceKinds": ["cli", "vscode", "exec", "appServer", "unknown"], "sortKey": "updated_at"}})
@@ -172,6 +175,7 @@ def run_fresh_thread(repo_root: Path, handoff: Path, session_name: str | None, m
         "ok": ok,
         "thread_id": thread_id,
         "session_name": session_name,
+        "thread_named": not session_name or listed_info.get("listed_name") == session_name,
         "model": model_name,
         "assistant_responded": _assistant_responded(events),
         "thread_idle": _idle(events, thread_id),
