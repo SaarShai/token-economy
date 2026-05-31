@@ -17,7 +17,6 @@ For ratings and measured deltas see [`SKILLS_INDEX_RATED.md`](SKILLS_INDEX_RATED
 | [wiki-memory](wiki-memory/SKILL.md) | Repo-local markdown wiki: progressive retrieval + gated writes. |
 | [handoff](handoff/SKILL.md) | Unified session handoff. `/handoff` writes a doc; `--full` also routes facts to wiki; `--ask` queries the last handoff. Mattpocock-style, slash-only. |
 | [handoff-from](handoff-from/SKILL.md) | Inverse of `/handoff` — pulls a previous/parallel session's state into *this* new session. Use when the source session is blocked/waiting and you can't `/handoff` from it. |
-| [auto-handoff](auto-handoff/SKILL.md) | UserPromptSubmit hook: at ~50% context fill, auto-writes a lean packet and (default) hands you an interactive launch command for a fresh session; opt-in `mode=spawn` for a headless `claude -p` successor (needs API key — 401s on OAuth-only). Claude Code only. Revives `context-refresh`'s dropped auto-launcher via the per-turn trigger. |
 | [prompt-triage](prompt-triage/SKILL.md) | Pre-model classifier hook; routes simple tasks to cheap models. |
 | [context-keeper](context-keeper/SKILL.md) | PreCompact hook: structured memory before compaction. |
 | [compress-context](compress-context/SKILL.md) | LLMLingua-based compound compression with self-verify (opt-in). |
@@ -32,7 +31,7 @@ For ratings and measured deltas see [`SKILLS_INDEX_RATED.md`](SKILLS_INDEX_RATED
 | [cache-lint](cache-lint/SKILL.md) | Static audit against Anthropic's 6 prompt-cache rules — dynamic content above breakpoint, prefix mutation by Stop-hooks, model switching, breakpoint sizing. Lineage: ussumant/cache-audit. |
 | [eval-gate](eval-gate/SKILL.md) | LLM-as-judge quality gate for AI output (content + product). `score` one output · `suite` regression vs baseline · `add-case` failure→test ratchet. Promotes `eval/judge.py` to a user-facing skill. Opt-in / unmeasured. |
 
-21 skills total. Removed after measurement: `personal-assistant` / `memory-api` / `skill-creator` (v1.1.0, redundancy), `delegate` (v1.2.0, zero measured gain — auto-routing via `prompt-triage` already covers the use case), `context-refresh` (v1.3.0, merged into `handoff` — the rest is now `/handoff --full` and `/handoff --ask`). Its auto-launcher — the one piece that "never worked reliably" — is now revived as the standalone [`auto-handoff`](auto-handoff/SKILL.md): the `UserPromptSubmit` per-turn trigger fixes the missing trigger; a live test confirmed headless `claude -p` still can't auth on OAuth-only, so it's **detection-only by default** (hands you a launch command) with headless spawn opt-in.
+20 skills total. Removed after measurement: `personal-assistant` / `memory-api` / `skill-creator` (v1.1.0, redundancy), `delegate` (v1.2.0, zero measured gain — auto-routing via `prompt-triage` already covers the use case), `context-refresh` (v1.3.0, merged into `handoff` — its only unique piece was the auto-launcher which never worked reliably; the rest is now `/handoff --full` and `/handoff --ask`).
 
 External integrations: [`index-first`](index-first/SKILL.md) and [`wiki-memory`](wiki-memory/SKILL.md) recognize [graphify](https://github.com/safishamsi/graphify) (`graphify-out/graph.json`) when present — graphify owns the auto-extracted *what/how/connected* layer; wiki-memory owns the curated *why/decision* layer. See each skill's body for the exact protocol.
 
