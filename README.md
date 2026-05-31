@@ -32,7 +32,7 @@ graphify extract .
 
 `./install.sh` installs `graphify` from our maintained fork ([SaarShai/graphify@token-economy-patches](https://github.com/SaarShai/graphify/tree/token-economy-patches)) — published `graphifyy` 0.8.17 ships four bugs that affect our skill flow (see [skills/index-first/EVAL.md](skills/index-first/EVAL.md) for the bug list and impact). The installer prefers `pipx` and falls back to `python3 -m pip install --user`. Opt out with `./install.sh --no-graphify` (the wiki-memory and index-first skills degrade gracefully when the graph isn't present). After bootstrap the stack is on automatically — hooks fire per event, descriptions trigger on prompt shape.
 
-## The catalog (15 skills)
+## The catalog (20 skills)
 
 | Skill | Trigger | Desc tokens | Notes |
 |---|---|---:|---|
@@ -42,17 +42,22 @@ graphify extract .
 | [verify-before-completion](skills/verify-before-completion/SKILL.md) | before any "done" claim | 49 | Evidence-first. |
 | [wiki-memory](skills/wiki-memory/SKILL.md) | retrieve OR write durable | 108 | Tier-aware (L0–L4) repo-local markdown wiki. |
 | [handoff](skills/handoff/SKILL.md) | explicit `/handoff` (+ `--full`, `--ask`) | ~150 | Unified session handoff. Three modes: write doc to $TMPDIR / write doc + route facts to wiki / query last handoff. Replaces `context-refresh`; manual successor launch only. |
+| [handoff-from](skills/handoff-from/SKILL.md) | explicit `/handoff-from` | ~90 | Inverse of `/handoff` — pulls a previous/parallel session's state into *this* new session (via a context-keeper sidecar). Use when the source session is blocked and can't `/handoff` out. |
 | [prompt-triage](skills/prompt-triage/SKILL.md) | UserPromptSubmit hook | 89 | Pre-model regex+Ollama classifier; routes simple tasks to cheap models. |
 | [context-keeper](skills/context-keeper/SKILL.md) | PreCompact hook | 80 | Structured memory before compaction. |
-| [compress-context](skills/compress-context/SKILL.md) | opt-in long-context | 127 | LLMLingua-based compound compression. 44.9% savings, Δscore −0.12 measured on SQuAD v2 (n=8). |
+| [loop-breaker](skills/loop-breaker/SKILL.md) | PreToolUse hook | ~85 | Detects mid-task loops — N consecutive identical tool calls; injects a replan signal, optionally hard-blocks. Drift mitigation. |
+| [skill-pulse](skills/skill-pulse/SKILL.md) | UserPromptSubmit hook | ~80 | Every N user turns (default 4) re-injects active skills' rule summaries to fight instruction drift. Paper-calibrated (arXiv 2510.07777). |
+| [compliance-canary](skills/compliance-canary/SKILL.md) | UserPromptSubmit hook | ~75 | Scans recent assistant messages for per-skill drift signals (filler, word-count creep, claim-without-evidence); injects targeted correctives. Symptomatic complement to skill-pulse. |
+| [compress-context](skills/compress-context/SKILL.md) | opt-in long-context | 127 | **(opt-in)** LLMLingua-based compound compression. 44.9% savings, Δscore −0.12 measured on SQuAD v2 (n=8). |
 | [semantic-diff](skills/semantic-diff/SKILL.md) | file re-read | 99 | AST-node diff. 95.5% measured savings on argparse.py re-reads. |
 | [index-first](skills/index-first/SKILL.md) | "where is X used / what calls Y" | ~110 | Prefer pre-built indexes / composite verbs over grep+read chains. Eval pending. (colbymchenry/codegraph lineage.) |
 | [output-filter](skills/output-filter/SKILL.md) | terminal output hook | 99 | Strip ANSI/progress/dup noise; preserves errors. |
 | [write-gate](skills/write-gate/SKILL.md) | before any persistent write | ~120 | Content-quality gate on durable memory. Signal-score (ogham lineage) + why-clause enforcement (codenamev lineage). Prevents reasonless decisions and recap-style writes. |
 | [memory-decay](skills/memory-decay/SKILL.md) | weekly cron / wiki audit | ~120 | Exponential confidence decay on wiki pages (5%/30d default). Errors / lessons / high-evidence pages protected. Dry-run by default. |
 | [cache-lint](skills/cache-lint/SKILL.md) | before merging hooks/skills, CI | ~110 | Static audit against Anthropic's 6 prompt-cache rules (ussumant lineage). FAIL on dynamic content above breakpoint, prefix mutation by Stop-hooks, etc. |
+| [eval-gate](skills/eval-gate/SKILL.md) | opt-in; pre-ship / CI | ~110 | **(opt-in)** LLM-as-judge quality gate (0–5 + reason; exit code gates). **Not a token-saver** — one judge call per gate. Real-task gain unmeasured; mechanism validated at 79% judge–human agreement (mt_bench, N=20). |
 
-**Always-resident context tax (15 descriptions): ~1,450 tokens.** Roughly 0.7% of a 200K context window.
+**Always-resident context tax (20 descriptions): ~1,900 tokens.** Roughly ~0.9% of a 200K context window.
 
 Full body cost (worst case, all loaded at once): ~6,500 tokens. In practice, only the triggered skill's body loads.
 
@@ -86,7 +91,7 @@ See [eval/results/static_cost.json](eval/results/static_cost.json) for the full 
 | Codex / Cursor / Gemini CLI / Copilot | per-project (no plugin format exists for these) | clone into `<project>/.token-economy`, then `.token-economy/install.sh --host <name>` + symlink — see [Per-project install](#per-project-install-non-claude-code-hosts) |
 | any host (inside the token-economy clone itself, e.g. contributing) | for that clone only | `./install.sh` (all hosts) or `./install.sh --host <name>` |
 
-The plugin (`token-economy` v1.4.0) bundles all 15 skills plus optional `UserPromptSubmit` and `PreCompact` hooks (off by default; toggle in plugin config).
+The plugin (`token-economy` v1.4.0) bundles all 20 skills plus optional `UserPromptSubmit` and `PreCompact` hooks (off by default; toggle in plugin config).
 
 ### Host install matrix
 
@@ -178,7 +183,7 @@ Built on prior work:
 
 ## Status
 
-- 15 skills written and lint-clean.
+- 20 skills written and lint-clean.
 - 4 hosts wired and verified (Claude Code, Codex, Cursor, Gemini CLI).
 - Static-cost measurements published.
 - Live A/B harness ready; needs a healthy Ollama / explicit `ANTHROPIC_API_KEY` / `HF_TOKEN` to run.
