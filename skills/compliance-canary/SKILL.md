@@ -73,6 +73,37 @@ Looks for claim words in the last assistant message AND checks that a verificati
 
 Use for: verify-before-completion drift (claiming success without running a check).
 
+### `llm_judge` (semantic, opt-in)
+
+Scores the last assistant message against a rubric with a small LLM and fires
+when the score is below `min_score` (0-5). This is the **semantic** complement
+to the three syntactic probes above — it catches hollow or paraphrased drift
+that no regex matches. It is the runtime form of the
+[`eval-gate`](../eval-gate/SKILL.md) judge.
+
+```json
+{
+  "kind": "llm_judge",
+  "id": "hollow-output",
+  "rubric": "Rate 0-5: is this reply specific and actionable, or generic filler? 5=specific and correct, 0=hollow. One digit then a short reason.",
+  "min_score": 3,
+  "backend": "ollama",
+  "model": "qwen2.5:7b",
+  "severity": "warn"
+}
+```
+
+**OFF by default.** Unlike the syntactic probes this one makes a model call —
+which the canary's "always exit 0, bound the cost" contract forbids on every
+turn unless you opt in. It runs only when BOTH a skill declares an `llm_judge`
+probe AND `COMPLIANCE_CANARY_JUDGE=1` is set. Bounded by
+`COMPLIANCE_CANARY_JUDGE_TIMEOUT` (default 8s); an unreachable or unparseable
+judge returns nothing (fail-open — never blocks the turn). Backend/model are set
+per-probe or via `COMPLIANCE_CANARY_JUDGE_BACKEND` / `_MODEL`.
+
+Use for: semantic quality drift (hollow output, off-brand tone, a "done" with no
+substance) that syntactic probes can't see.
+
 ## Install
 
 Claude Code (project-local):
@@ -114,6 +145,9 @@ Env vars (all optional):
 - `COMPLIANCE_CANARY_COOLDOWN=3` — turns to suppress the same probe after it fires. Default 3.
 - `COMPLIANCE_CANARY_STATE_DIR` — override state location.
 - `COMPLIANCE_CANARY_SKILLS_ROOT` — override skills lookup root.
+- `COMPLIANCE_CANARY_JUDGE=1` — enable `llm_judge` probes (off by default; makes a model call).
+- `COMPLIANCE_CANARY_JUDGE_TIMEOUT=8` — per-judge timeout, seconds.
+- `COMPLIANCE_CANARY_JUDGE_BACKEND` / `COMPLIANCE_CANARY_JUDGE_MODEL` — judge backend (`ollama`|`mimo`) and model defaults.
 
 ## Offline analyzer (`measure.py`)
 
@@ -156,6 +190,6 @@ tools/
 
 ## Known gaps (v1)
 
-- Detectors are syntactic — they catch keyword/structural signals but miss semantic drift (a paraphrased "done" without claim-word match). A judge-style probe using a tiny LLM is the natural v2.
+- The three default detectors are syntactic — they catch keyword/structural signals but can't see meaning (a paraphrased "done" with no claim-word match). The `llm_judge` probe (above) adds the semantic tier, but it's opt-in and costs a model call; the syntactic probes remain the always-on default.
 - `edit_count_per_turn` (lean-execution drift) and `tool_choice_drift` (model picks Write when rule says Edit) are not yet detector kinds. Easy adds when needed.
 - Cooldown is per-probe; no global "stop nagging" cap. If multiple probes fire on every turn, the user could see consecutive correctives.

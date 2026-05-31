@@ -86,6 +86,8 @@ def fmt_fire(fire: dict) -> str:
                 f"over window {r.get('window')} > threshold {r.get('threshold')}")
     if p["kind"] == "claim_without_evidence":
         return f"  ! {pid} — claim {r.get('claim')!r} in: {r.get('snippet')}"
+    if p["kind"] == "llm_judge":
+        return f"  ! {pid} — quality {r.get('score')}/5 < min {r.get('min_score')} | {r.get('reason', '')}"
     return f"  ! {pid} — {r}"
 
 

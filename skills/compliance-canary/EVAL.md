@@ -1,6 +1,6 @@
 # compliance-canary — eval status
 
-**Status:** v1.5.1. Hook correctness verified by [tools/test.sh](tools/test.sh) (25 cases including code-block false-positive guard and multi-probe cooldown interleaving); offline drift baselining via [tools/measure.py](tools/measure.py); multi-hook chaining with `skill-pulse` verified live; canary p99 latency 41 ms on a 400-line synthetic transcript.
+**Status:** v1.6.0 (adds the opt-in `llm_judge` semantic probe — off by default, needs `COMPLIANCE_CANARY_JUDGE=1`; effectiveness A/B pending). Hook correctness verified by [tools/test.sh](tools/test.sh) (25 cases including code-block false-positive guard and multi-probe cooldown interleaving); offline drift baselining via [tools/measure.py](tools/measure.py); multi-hook chaining with `skill-pulse` verified live; canary p99 latency 41 ms on a 400-line synthetic transcript.
 
 ## Verified — unit
 
@@ -89,6 +89,6 @@ bash skills/compliance-canary/tools/test.sh
 
 ## Out of scope
 
-- LLM-judge probes (semantic, not syntactic). Cleanest v2 add.
+- LLM-judge probes (semantic, not syntactic). **Shipped** v1.6.0 as the opt-in `llm_judge` kind (off by default; needs `COMPLIANCE_CANARY_JUDGE=1` + a declared probe). Effectiveness A/B still pending.
 - Edit-vs-Write tool-choice drift detector. Easy v2 add.
 - Cross-session drift trends (week-over-week regression in a project). Belongs in `wiki-memory` long-term, not here.

@@ -34,6 +34,7 @@ import os
 import re
 import sys
 import time
+import urllib.request
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -345,10 +346,113 @@ def detect_claim_without_evidence(probe: dict, messages: list[dict], tool_uses: 
     }
 
 
+# -------------------------- llm_judge (semantic, opt-in) --------------------
+#
+# A judge-style probe: scores the last assistant message against a rubric with
+# a small LLM and fires when the score is below `min_score` (0-5). This is the
+# semantic complement to the syntactic detectors above — it catches a
+# paraphrased "done" or hollow output that no regex matches. It is the runtime
+# form of the `eval-gate` skill's judge.
+#
+# OFF by default. Unlike the syntactic detectors it makes a model call, which
+# the canary's "always exit 0, bound the cost" contract otherwise forbids on
+# every UserPromptSubmit. It runs only when BOTH:
+#   - a skill declares an `llm_judge` probe (with a `rubric`), AND
+#   - COMPLIANCE_CANARY_JUDGE=1 is set.
+# Any error or unreachable judge -> returns None (fail-open; never blocks).
+
+JUDGE_TIMEOUT_S = float(os.environ.get("COMPLIANCE_CANARY_JUDGE_TIMEOUT", "8"))
+JUDGE_OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434/api/generate")
+JUDGE_SYSTEM = "You are an evaluation judge. Be strict, fair, terse."
+
+
+def _judge_enabled() -> bool:
+    return os.environ.get("COMPLIANCE_CANARY_JUDGE") == "1"
+
+
+def _parse_judge_score(out: str):
+    for line in out.splitlines():
+        s = line.strip()
+        if s and s[0].isdigit():
+            try:
+                return int(s[0]), s[1:].lstrip(" .:-)").strip()
+            except ValueError:
+                return None, ""
+    return None, ""
+
+
+def _judge_call(rubric: str, candidate: str, model: str, backend: str):
+    """Return (score:int|None, reason:str). Never raises."""
+    try:
+        prompt = f"CANDIDATE:\n{candidate}\n\nRUBRIC:\n{rubric}"
+        if backend == "mimo":
+            key = os.environ.get("MIMO_API_KEY")
+            if not key:
+                return None, ""
+            base = os.environ.get("MIMO_BASE_URL", "https://api.xiaomimimo.com/v1").rstrip("/")
+            body = json.dumps({
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": JUDGE_SYSTEM},
+                    {"role": "user", "content": prompt},
+                ],
+                "max_tokens": 120, "temperature": 0.0,
+            }).encode()
+            req = urllib.request.Request(
+                f"{base}/chat/completions", data=body,
+                headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=JUDGE_TIMEOUT_S) as resp:
+                data = json.loads(resp.read())
+            return _parse_judge_score(data["choices"][0]["message"]["content"].strip())
+        # default: ollama (local, no key)
+        body = json.dumps({
+            "model": model,
+            "system": JUDGE_SYSTEM,
+            "prompt": prompt + "\n\nRespond with one digit 0-5, then a short reason.",
+            "stream": False, "options": {"temperature": 0.0},
+        }).encode()
+        req = urllib.request.Request(JUDGE_OLLAMA_URL, data=body, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=JUDGE_TIMEOUT_S) as resp:
+            data = json.loads(resp.read())
+        return _parse_judge_score(data.get("response", "").strip())
+    except Exception as e:
+        log_err(f"judge-call-fail backend={backend} err={e!r}")
+        return None, ""
+
+
+def detect_llm_judge(probe: dict, messages: list[dict], _tool_uses) -> dict | None:
+    if not _judge_enabled():
+        return None
+    if not messages:
+        return None
+    rubric = probe.get("rubric")
+    if not rubric:
+        log_err(f"llm_judge-no-rubric probe={probe.get('_probe_id')}")
+        return None
+    # Judge the model's actual prose, code included (raw_text), not the
+    # code-stripped form the syntactic detectors use.
+    candidate = (messages[-1].get("raw_text") or messages[-1].get("text", "")).strip()
+    if not candidate:
+        return None
+    try:
+        min_score = int(probe.get("min_score", 3))
+    except (TypeError, ValueError):
+        min_score = 3
+    backend = probe.get("backend", os.environ.get("COMPLIANCE_CANARY_JUDGE_BACKEND", "ollama"))
+    model = probe.get("model", os.environ.get("COMPLIANCE_CANARY_JUDGE_MODEL", "qwen2.5:7b"))
+    score, reason = _judge_call(rubric, candidate, model, backend)
+    if score is None:
+        return None  # fail-open
+    if score < min_score:
+        return {"score": score, "min_score": min_score, "reason": reason[:160], "model": model}
+    return None
+
+
 DETECTORS = {
     "forbidden_regex": detect_forbidden_regex,
     "word_count_per_message": detect_word_count_per_message,
     "claim_without_evidence": detect_claim_without_evidence,
+    "llm_judge": detect_llm_judge,
 }
 
 
@@ -399,6 +503,11 @@ def format_one_probe(probe: dict) -> str:
         return (
             f"- {skill} [claim_without_evidence]: claim {r.get('claim')!r} appears "
             f"without a verification tool call in last {r.get('lookback')} tool_uses"
+        )
+    if kind == "llm_judge":
+        return (
+            f"- {skill} [llm_judge]: quality {r.get('score')}/5 < min {r.get('min_score')}"
+            + (f" — {r.get('reason')}" if r.get("reason") else "")
         )
     return f"- {skill} [{kind}]: triggered"
 
