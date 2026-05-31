@@ -52,6 +52,17 @@ The eight slots below cover the measured-win axes (output × routing × memory �
 
 Bootstrap once per project: `python3 skills/wiki-memory/tools/wiki.py init && graphify extract .` (graphify is auto-installed by `./install.sh`; pass `--no-graphify` to opt out).
 
+## Opt-in (enable deliberately — not in the default stack)
+
+These cost something to run or aren't yet measured on a real task, so they stay off-default and get turned on per-need:
+
+| Skill | Why opt-in |
+|---|---|
+| [`compress-context`](compress-context/SKILL.md) | ≥2K-token prompts only; spends a compression + self-verify pass. |
+| [`eval-gate`](eval-gate/SKILL.md) | **Not a token-saver** — one judge call per gate, spent to buy quality. Real-task gain unmeasured; mechanism validated at **79%** judge↔human agreement (`mt_bench`, N=20). Gate audience-facing output, not scratch. |
+
+Promotion to the default stack requires the N≥50 measured win each `EVAL.md` targets — same bar that retired `delegate` / `personal-assistant`.
+
 ## Prime directive
 
 - **Caveman-Ultra by default** for emitted prose. Reasoning budget separate.
